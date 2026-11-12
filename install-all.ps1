@@ -1,5 +1,5 @@
 ﻿<#
-daily-log-kit v1.0.0 — 複数のリポジトリへ日報の仕組みを一括で入れる
+daily-log-kit v1.0.1 — 複数のリポジトリへ日報の仕組みを一括で入れる
 
 安全のための仕組み
 - 既定は確認のみ（何も変えない）。-Apply を付けたときだけコミットする
@@ -12,7 +12,7 @@ daily-log-kit v1.0.0 — 複数のリポジトリへ日報の仕組みを一括�
   # 1. 確認だけ（C:\AllGitRepository 直下の全リポジトリ）
   .\install-all.ps1
   # 2. 2つだけ、過去の日報も作ってPRまで
-  .\install-all.ps1 -Repos RPGMZ_prototype,yukkuri-tool -Backfill -Apply -CreatePR
+  .\install-all.ps1 -Repos RPGMZ_prototype -Backfill -Apply -CreatePR
   # 3. GitHub の自分のリポジトリで未クローンのものもクローンしてから全部
   .\install-all.ps1 -Owner Hamm-Coder -Backfill -Apply -CreatePR
 #>
@@ -73,11 +73,15 @@ if ($Owner) {
 $targets = if ($Repos) { $Repos | ForEach-Object { Join-Path $Root $_ } } else {
   Get-ChildItem $Root -Directory | Where-Object { Test-Path (Join-Path $_.FullName '.git') } | ForEach-Object { $_.FullName }
 }
+# キット自身は対象にしない
+$kitFull = (Resolve-Path $Kit).Path.TrimEnd('\', '/')
+$targets = @($targets | Where-Object { (Resolve-Path $_ -ErrorAction SilentlyContinue).Path -ne $kitFull })
 
 $results = @()
 foreach ($repo in $targets) {
   $name = Split-Path $repo -Leaf
   $created = $false
+  $pushed = $false
   $wt = Join-Path ([System.IO.Path]::GetTempPath()) ("daily-log-" + $name + "-" + [guid]::NewGuid().ToString('N').Substring(0, 6))
   try {
     if (-not (Test-Path (Join-Path $repo '.git'))) { throw 'Git リポジトリではありません' }
@@ -113,6 +117,7 @@ foreach ($repo in $targets) {
     Invoke-Git $wt @('commit', '-m', $title) | Out-Null
     if ($CreatePR) {
       Invoke-Git $wt @('push', '-u', 'origin', $Branch) | Out-Null
+      $pushed = $true
       $body = "daily-log-kit v$KitVersion を${verb}します。`n`n- 仕様: docs/specs/daily-log.md`n- 過去の日報: $(if ($Backfill) { 'docs/log/ に生成済み' } else { '未生成（node tools/daily-log.mjs generate --all）' })`n- 確認: node --test tools/daily-log.test.mjs"
       Push-Location $wt
       try { $url = gh pr create --base $baseName --head $Branch --title $title --body $body }
@@ -127,7 +132,8 @@ foreach ($repo in $targets) {
   } finally {
     if (Test-Path $wt) { & git -C $repo worktree remove --force $wt 2>$null | Out-Null }
     & git -C $repo worktree prune 2>$null | Out-Null
-    if ($created -and -not $Apply) { & git -C $repo branch -D $Branch 2>$null | Out-Null }
+    # 確認のみのときと、GitHub に push 済みのときは、手元の作業用ブランチを消す（PRは GitHub 側に残る）
+    if ($created -and (-not $Apply -or $pushed)) { & git -C $repo branch -D $Branch 2>$null | Out-Null }
   }
 }
 

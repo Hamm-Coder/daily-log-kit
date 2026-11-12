@@ -1,4 +1,4 @@
-# daily-log-kit v1.0.0
+# daily-log-kit v1.0.1
 
 Claude Code を使うリポジトリに「日報（日毎ログ）」の仕組みを入れるキット。チャット・Claude Code・Git の作業を `docs/log/` に日ごとにまとめる。仕様は `files/docs/specs/daily-log.md`。
 
@@ -37,7 +37,7 @@ node ..\daily-log-kit\install.mjs . --dry-run     # 変更予定の確認
 node ..\daily-log-kit\install.mjs . --backfill    # 導入＋過去の日報
 node --test tools/daily-log.test.mjs
 git add -A
-git commit -m "chore: 日報の仕組みを導入（daily-log-kit v1.0.0）"
+git commit -m "chore: 日報の仕組みを導入（daily-log-kit v1.0.1）"
 git push -u origin chore/daily-log
 gh pr create --fill
 ```
@@ -103,7 +103,7 @@ cd C:\AllGitRepository\daily-log-kit
 node --test install.test.mjs files/tools/daily-log.test.mjs
 git init -b main
 git add -A
-git commit -m "daily-log-kit v1.0.0"
+git commit -m "daily-log-kit v1.0.1"
 gh repo create Hamm-Coder/daily-log-kit --public --source . --push
 git tag v1.0.0
 git push origin v1.0.0
@@ -113,7 +113,7 @@ git push origin v1.0.0
 
 ### 2. 既存のリポジトリに入れる（初回）
 
-PC から一括（推奨）:
+PC から一括（推奨）。実行する場所はキットのフォルダ。対象は `-Root`（既定 `C:\AllGitRepository`）直下の Git リポジトリで、キット自身は除外される:
 
 ```powershell
 cd C:\AllGitRepository\daily-log-kit
@@ -161,6 +161,7 @@ git push origin main --tags
 
 | 版 | 日付 | 内容 |
 | --- | --- | --- |
+| 1.0.1 | 2026-11-12 | 一括導入でキット自身を対象から除外。PR作成後に手元の作業用ブランチを削除 |
 | 1.0.0 | 2026-11-10 | 最初の版 |
 
 ## 過去の分の作り方

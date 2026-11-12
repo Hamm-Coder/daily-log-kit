@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// daily-log-kit v1.0.0 — 1つのリポジトリに日報の仕組みを入れる（何度実行しても同じ結果になる）
+// daily-log-kit v1.0.1 — 1つのリポジトリに日報の仕組みを入れる（何度実行しても同じ結果になる）
 //
 //   node install.mjs <リポジトリのフォルダ> [--backfill] [--dry-run] [--no-workflow] [--no-hook] [--force]
 //
@@ -21,7 +21,7 @@ import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
-export const KIT_VERSION = '1.0.0';
+export const KIT_VERSION = '1.0.1';
 const KIT_DIR = path.dirname(fileURLToPath(import.meta.url));
 const FILES_DIR = path.join(KIT_DIR, 'files');
 const MARK_START = '<!-- daily-log:start';

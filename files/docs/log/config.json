@@ -1,0 +1,10 @@
+{
+  "tz": "Asia/Tokyo",
+  "dayStartHour": 4,
+  "logDir": "docs/log",
+  "entriesDir": "docs/log/entries",
+  "baseBranch": "",
+  "excludeAuthors": ["github-actions[bot]"],
+  "excludeSubjectPattern": "^docs\\(log\\): 日報を更新",
+  "defaultDays": 14
+}

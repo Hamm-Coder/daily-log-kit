@@ -1,0 +1,54 @@
+# daily-log-kit v1.0.0 — main への push ごとに日報を作り直してコミットする
+# GITHUB_TOKEN による push は別のワークフローを起動しないので、ループしない
+name: daily-log
+
+on:
+  push:
+    branches: [main, master]
+    paths-ignore:
+      - 'docs/log/20*/**'
+      - 'docs/log/README.md'
+  workflow_dispatch:
+    inputs:
+      all:
+        description: '全期間を作り直す'
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: daily-log-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0 # 日別の集計に全履歴が必要
+          lfs: false # 画像などの LFS 素材は取得しない（帯域を消費しない）
+      - name: 日報を生成
+        run: |
+          node --version
+          if [ "${{ inputs.all }}" = "true" ]; then
+            node tools/daily-log.mjs generate --all
+          else
+            node tools/daily-log.mjs generate
+          fi
+      - name: 変更があればコミット
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add docs/log
+          if git diff --cached --quiet; then echo '変更なし'; exit 0; fi
+          git commit -m 'docs(log): 日報を更新 [skip ci]'
+          for i in 1 2 3; do
+            git pull --rebase --autostash origin "${GITHUB_REF_NAME}" && git push origin "HEAD:${GITHUB_REF_NAME}" && exit 0
+            sleep 5
+          done
+          echo 'push に失敗しました。ブランチ保護がある場合は docs/specs/daily-log.md の「ブランチ保護があるとき」を参照' >&2
+          exit 1

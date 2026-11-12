@@ -1,4 +1,4 @@
-# daily-log-kit v1.0.1
+# daily-log-kit v1.1.2
 
 Claude Code を使うリポジトリに「日報（日毎ログ）」の仕組みを入れるキット。チャット・Claude Code・Git の作業を `docs/log/` に日ごとにまとめる。仕様は `files/docs/specs/daily-log.md`。
 
@@ -10,6 +10,8 @@ Claude Code を使うリポジトリに「日報（日毎ログ）」の仕組�
 | `install.mjs` | 1つのリポジトリに導入する。何度実行しても同じ結果。既存の設定は保持して追記だけ |
 | `install-all.ps1` | `C:\AllGitRepository` 配下の複数リポジトリへ一括導入（既定は確認のみ） |
 | `install.test.mjs` | 導入スクリプトのテスト（`node --test install.test.mjs`） |
+| `templates/adr-daily-log.md` | 導入時に作る ADR のひな形（状態: 採用。導入PRのマージで採用とする） |
+| `publish-kit.bat` / `publish-kit.ps1` | 新しい版の zip をキットのリポジトリに反映（展開・上書き・テスト・コミット・タグ・push）。キットのフォルダで実行 |
 | `bump-version.mjs` | キットの版番号を全ファイルで一括変更（`node bump-version.mjs 1.1.0`） |
 | `prompts/` | Claude Code・claude.ai に貼る依頼文（導入、仕様からの実装、過去チャットからの補完、チャットの締め） |
 | `extras/RPGMZ_Prototype/` | RPGMZ_Prototype 専用: ADR 0011、過去チャット分の日報メモ |
@@ -37,7 +39,7 @@ node ..\daily-log-kit\install.mjs . --dry-run     # 変更予定の確認
 node ..\daily-log-kit\install.mjs . --backfill    # 導入＋過去の日報
 node --test tools/daily-log.test.mjs
 git add -A
-git commit -m "chore: 日報の仕組みを導入（daily-log-kit v1.0.1）"
+git commit -m "chore: 日報の仕組みを導入（daily-log-kit v1.1.2）"
 git push -u origin chore/daily-log
 gh pr create --fill
 ```
@@ -103,7 +105,7 @@ cd C:\AllGitRepository\daily-log-kit
 node --test install.test.mjs files/tools/daily-log.test.mjs
 git init -b main
 git add -A
-git commit -m "daily-log-kit v1.0.1"
+git commit -m "daily-log-kit v1.1.2"
 gh repo create Hamm-Coder/daily-log-kit --public --source . --push
 git tag v1.0.0
 git push origin v1.0.0
@@ -138,7 +140,21 @@ Web 版だけで入れる場合は、各リポジトリのセッションに `pr
 - PC: `.\install-all.ps1 -Repos <新しいリポジトリ> -Apply -CreatePR`
 - Web: セッションで「`https://github.com/Hamm-Coder/daily-log-kit` の install.mjs で日報の仕組みを導入してPRにして」と頼む
 
-### 5. キットを改良して配る
+### 5. 新しい版の zip を受け取ったとき（publish-kit）
+
+**実行する場所: キットのフォルダ `C:\AllGitRepository\daily-log-kit` の直下にある `publish-kit.bat`。** 各リポジトリやダウンロードフォルダでは実行しない。
+
+| 方法 | 使う zip |
+| --- | --- |
+| zip をキットのフォルダに置いて `publish-kit.bat` をダブルクリック | ①キットのフォルダ ②ダウンロードフォルダ の順に探し、版番号が最大の `daily-log-kit-v*.zip`（キットのフォルダの zip は `.gitignore` でコミットされない） |
+| zip を `publish-kit.bat` にドラッグ＆ドロップ | その zip |
+| PowerShell で `.\publish-kit.ps1 -Zip <パス> [-Yes]` | 指定した zip（`-Yes` で確認を省略） |
+
+処理: 事前確認（未コミットの変更なし・GitHub と同期）→ zip を一時フォルダに展開 → 版番号の確認（今より新しく未公開か）→ 上書きコピー → テスト（失敗なら元に戻す）→ 変更一覧の表示と確認 → コミット・タグ・push → 一時フォルダの削除。
+
+途中で止まった場合、キットのフォルダは上書き前の状態に戻る（push の失敗だけは、コミットとタグが手元に残るので表示された1行を実行する）。
+
+### 6. キットを自分で改良して配る
 
 ```powershell
 cd C:\AllGitRepository\daily-log-kit
@@ -161,6 +177,9 @@ git push origin main --tags
 
 | 版 | 日付 | 内容 |
 | --- | --- | --- |
+| 1.1.2 | 2026-11-13 | `publish-kit` の zip をキットのフォルダから優先して探す（次にダウンロードフォルダ）。版番号が最大の zip を使う。`.gitignore` で zip をコミット対象から除外 |
+| 1.1.1 | 2026-11-13 | `publish-kit.bat` / `publish-kit.ps1` を追加（新しい版の zip を GitHub に反映する作業を1回の実行にまとめる） |
+| 1.1.0 | 2026-11-13 | `docs/decisions/` があるリポジトリに、日報の ADR を「採用」で自動作成（既にあれば作らない。`--no-adr` / `-NoAdr` で無効） |
 | 1.0.1 | 2026-11-12 | 一括導入でキット自身を対象から除外。PR作成後に手元の作業用ブランチを削除 |
 | 1.0.0 | 2026-11-10 | 最初の版 |
 

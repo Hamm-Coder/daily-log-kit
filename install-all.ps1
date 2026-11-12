@@ -1,5 +1,5 @@
 ﻿<#
-daily-log-kit v1.0.1 — 複数のリポジトリへ日報の仕組みを一括で入れる
+daily-log-kit v1.1.2 — 複数のリポジトリへ日報の仕組みを一括で入れる
 
 安全のための仕組み
 - 既定は確認のみ（何も変えない）。-Apply を付けたときだけコミットする
@@ -23,6 +23,7 @@ param(
   [string]$Owner,
   [switch]$Backfill,
   [switch]$NoWorkflow,
+  [switch]$NoAdr,
   [switch]$Apply,
   [switch]$CreatePR,
   [string]$Branch
@@ -100,6 +101,7 @@ foreach ($repo in $targets) {
     $nodeArgs = @($Installer, $wt)
     if ($Backfill) { $nodeArgs += '--backfill' }
     if ($NoWorkflow) { $nodeArgs += '--no-workflow' }
+    if ($NoAdr) { $nodeArgs += '--no-adr' }
     if (-not $Apply) { $nodeArgs += '--dry-run' }
     $out = & node @nodeArgs 2>&1 | Out-String
     if ($LASTEXITCODE -ne 0) { throw $out.Trim() }
@@ -118,7 +120,7 @@ foreach ($repo in $targets) {
     if ($CreatePR) {
       Invoke-Git $wt @('push', '-u', 'origin', $Branch) | Out-Null
       $pushed = $true
-      $body = "daily-log-kit v$KitVersion を${verb}します。`n`n- 仕様: docs/specs/daily-log.md`n- 過去の日報: $(if ($Backfill) { 'docs/log/ に生成済み' } else { '未生成（node tools/daily-log.mjs generate --all）' })`n- 確認: node --test tools/daily-log.test.mjs"
+      $body = "daily-log-kit v$KitVersion を${verb}します。`n`n- 仕様: docs/specs/daily-log.md`n- 過去の日報: $(if ($Backfill) { 'docs/log/ に生成済み' } else { '未生成（node tools/daily-log.mjs generate --all）' })`n- ADR: docs/decisions/ があるリポジトリでは「採用」で追加（このPRのマージで採用）`n- 確認: node --test tools/daily-log.test.mjs"
       Push-Location $wt
       try { $url = gh pr create --base $baseName --head $Branch --title $title --body $body }
       finally { Pop-Location }

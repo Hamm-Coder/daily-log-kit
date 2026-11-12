@@ -3,7 +3,7 @@ name: daily-log
 description: セッションの終わり、PRを作る前、または日報を書いて・過去の日報を作ってと頼まれたときに使う。決めたこと・作ったもの・次にやることを docs/log/entries に記録し、日報を生成する。
 ---
 
-# 日報の記録（daily-log-kit v1.0.1）
+# 日報の記録（daily-log-kit v1.1.2）
 
 仕様は `docs/specs/daily-log.md`。生成される `docs/log/YYYY-MM/YYYY-MM-DD.md` と `docs/log/README.md` は手で編集しない。人が書くのは `docs/log/entries/` のメモだけ。
 

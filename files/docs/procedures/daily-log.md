@@ -2,7 +2,7 @@
 
 - 目的: 作業と決定を日ごとに `docs/log/` へ残し、次のセッションや次作で参照できるようにする
 - 前提: daily-log-kit が導入済み（`tools/daily-log.mjs` がある）。Node.js 18 以上
-- 仕様: `docs/specs/daily-log.md`（daily-log-kit v1.0.1）
+- 仕様: `docs/specs/daily-log.md`（daily-log-kit v1.1.2）
 - 更新日: 2026-11-10
 
 ## 手順

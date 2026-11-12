@@ -4,7 +4,7 @@
 
 | ファイル | 内容 |
 | --- | --- |
-| `docs/decisions/0011-daily-log.md` | 日報の仕組みを導入する ADR（状態: 提案。採用したら「採用」に直す） |
+| `docs/decisions/0011-daily-log.md` | 日報の仕組みを導入する ADR（2026-11-13 に採用。RPGMZ_Prototype には反映済み） |
 | `docs/log/entries/2026-10-31〜2026-11-08/` | `claude/ACTIVITY-LOG-2026-11.md` のチャット分を日報メモにしたもの（7件。推定の日付は本文に明記） |
 
 ```powershell

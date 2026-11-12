@@ -1,13 +1,14 @@
 #!/usr/bin/env node
-// daily-log-kit v1.0.1 — 1つのリポジトリに日報の仕組みを入れる（何度実行しても同じ結果になる）
+// daily-log-kit v1.1.2 — 1つのリポジトリに日報の仕組みを入れる（何度実行しても同じ結果になる）
 //
-//   node install.mjs <リポジトリのフォルダ> [--backfill] [--dry-run] [--no-workflow] [--no-hook] [--force]
+//   node install.mjs <リポジトリのフォルダ> [--backfill] [--dry-run] [--no-workflow] [--no-hook] [--no-adr] [--force]
 //
 //   --backfill     導入後に全履歴から過去の日報を作る（generate --all）
 //   --dry-run      何をするかだけ表示する
 //   --no-workflow  GitHub Actions を入れない（ブランチ保護がある等）
 //   --no-hook      Stop フックを入れない
 //   --force        キット以外の同名ファイルがあっても上書きする
+//   --no-adr       ADR を作らない（docs/decisions/ があるリポジトリでは、既定で「採用」の ADR を1件作る）
 //
 // 既存ファイルの扱い:
 //   キットのファイル（先頭付近に "daily-log-kit v" がある）→ 新しい版で上書き
@@ -21,12 +22,14 @@ import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
-export const KIT_VERSION = '1.0.1';
+export const KIT_VERSION = '1.1.2';
 const KIT_DIR = path.dirname(fileURLToPath(import.meta.url));
 const FILES_DIR = path.join(KIT_DIR, 'files');
 const MARK_START = '<!-- daily-log:start';
 const MARK_END = '<!-- daily-log:end -->';
 const HOOK_FILE = '.claude/hooks/daily-log-reminder.mjs';
+const ADR_DIR = 'docs/decisions';
+const ADR_TEMPLATE = path.join(KIT_DIR, 'templates', 'adr-daily-log.md');
 
 export const CLAUDE_MD_BLOCK = `${MARK_START} (daily-log-kit v${KIT_VERSION}。この区間は導入スクリプトが更新します) -->
 ## 日報
@@ -87,6 +90,28 @@ export function isKitFile(text) {
   return /daily-log-kit v\d/.test(text.slice(0, 600));
 }
 
+/** docs/decisions の次の番号（4桁）。番号付きのファイルがなければ 0001 */
+export function nextAdrNumber(names) {
+  const nums = names.map((n) => /^(\d{4})-/.exec(n)).filter(Boolean).map((m) => Number(m[1]));
+  return String((nums.length ? Math.max(...nums) : 0) + 1).padStart(4, '0');
+}
+
+/** 日報の ADR が既にあるか（ファイル名か本文で判定。導入済み・手書き済みのどちらも二重に作らない） */
+export function hasDailyLogAdr(files) {
+  return files.some(({ name, text }) => /daily-log/i.test(name) || /daily-log-kit/.test(text) || /^# ADR.*日報/m.test(text));
+}
+
+export function renderAdr(template, { number, date, version, workflow }) {
+  return template.replaceAll('{{NUMBER}}', number).replaceAll('{{DATE}}', date).replaceAll('{{VERSION}}', version)
+    .replaceAll('{{WORKFLOW_LINE}}', workflow
+      ? 'main への push で GitHub Actions が日報を作り直す'
+      : 'このリポジトリでは GitHub Actions を使わず、PRの中で `node tools/daily-log.mjs generate` を実行して日報を更新する');
+}
+
+export function todayIn(tz) {
+  return new Intl.DateTimeFormat('en-CA', { timeZone: tz, year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
+}
+
 function detectIndent(text) {
   const m = /^( +|\t)"/m.exec(text);
   return m ? m[1] : '  ';
@@ -143,6 +168,26 @@ export function install(target, opt = {}) {
   const cmNew = upsertBlock(cmText, CLAUDE_MD_BLOCK);
   if (cmNew !== cmText) act(`${cmText ? '更新' : '追加'} CLAUDE.md（日報の区間）`, () => fs.writeFileSync(cm, cmNew));
 
+  const adrDir = path.join(root, ADR_DIR);
+  if (opt.noAdr) {
+    // 何もしない
+  } else if (!fs.existsSync(adrDir)) {
+    log.push(`ADR なし（${ADR_DIR}/ がないリポジトリなので作らない）`);
+  } else {
+    const names = fs.readdirSync(adrDir).filter((n) => n.endsWith('.md'));
+    const files = names.map((name) => ({ name, text: fs.readFileSync(path.join(adrDir, name), 'utf8') }));
+    if (hasDailyLogAdr(files)) {
+      log.push(`ADR あり（${ADR_DIR}/ に日報の ADR が既にあるので作らない）`);
+    } else {
+      let tz = 'Asia/Tokyo';
+      try { tz = JSON.parse(fs.readFileSync(path.join(root, 'docs/log/config.json'), 'utf8')).tz || tz; } catch { /* 既定 */ }
+      const number = nextAdrNumber(names);
+      const file = `${ADR_DIR}/${number}-daily-log.md`;
+      const text = renderAdr(fs.readFileSync(ADR_TEMPLATE, 'utf8'), { number, date: todayIn(tz), version: KIT_VERSION, workflow: !opt.noWorkflow });
+      act(`追加 ${file}（状態: 採用）`, () => fs.writeFileSync(path.join(root, file), text));
+    }
+  }
+
   const pj = path.join(root, 'package.json');
   if (fs.existsSync(pj)) {
     const text = fs.readFileSync(pj, 'utf8');
@@ -163,10 +208,10 @@ export function install(target, opt = {}) {
 if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href) {
   const args = process.argv.slice(2);
   const target = args.find((a) => !a.startsWith('--'));
-  if (!target) { console.log('使い方: node install.mjs <リポジトリのフォルダ> [--backfill] [--dry-run] [--no-workflow] [--no-hook] [--force]'); process.exit(1); }
+  if (!target) { console.log('使い方: node install.mjs <リポジトリのフォルダ> [--backfill] [--dry-run] [--no-workflow] [--no-hook] [--no-adr] [--force]'); process.exit(1); }
   const opt = {
     backfill: args.includes('--backfill'), dryRun: args.includes('--dry-run'),
-    noWorkflow: args.includes('--no-workflow'), noHook: args.includes('--no-hook'), force: args.includes('--force'),
+    noWorkflow: args.includes('--no-workflow'), noHook: args.includes('--no-hook'), noAdr: args.includes('--no-adr'), force: args.includes('--force'),
   };
   try {
     const log = install(target, opt);

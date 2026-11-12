@@ -1,7 +1,7 @@
 # ADR 0011: 日報の仕組み（daily-log-kit）を導入する
 
-- 状態: 提案
-- 日付: 2026-11-10
+- 状態: 採用
+- 日付: 2026-11-13
 - 関連: `docs/specs/daily-log.md`、`docs/procedures/daily-log.md`、ADR 0003（Web版を主軸）、ADR 0005（main のブランチ保護なし）
 
 ## 背景

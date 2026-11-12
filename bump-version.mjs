@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// daily-log-kit v1.0.1 — キットの版番号をまとめて書き換える
+// daily-log-kit v1.1.2 — キットの版番号をまとめて書き換える
 //   node bump-version.mjs 1.1.0
 // "daily-log-kit vX.Y.Z" の表記と KIT_VERSION を、キット内の全ファイルで置き換える（extras/ と .git/ は対象外）
 import fs from 'node:fs';

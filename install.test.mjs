@@ -1,7 +1,7 @@
 // 実行: node --test install.test.mjs
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { upsertBlock, hookCommand, mergeSettings, mergePackageScripts, isKitFile, CLAUDE_MD_BLOCK } from './install.mjs';
+import { upsertBlock, hookCommand, mergeSettings, mergePackageScripts, isKitFile, CLAUDE_MD_BLOCK, nextAdrNumber, hasDailyLogAdr, renderAdr } from './install.mjs';
 
 test('CLAUDE.md の区間は追加・置き換えのどちらでも1つだけ', () => {
   const once = upsertBlock('# プロジェクト\n本文\n', CLAUDE_MD_BLOCK);
@@ -38,4 +38,21 @@ test('package.json の同名スクリプトは触らない', () => {
 test('キットのファイルの判別', () => {
   assert.equal(isKitFile('// daily-log-kit v1.0.0 — x'), true);
   assert.equal(isKitFile('# 自作の日報ツール'), false);
+});
+
+test('ADR の番号は最大+1、なければ 0001', () => {
+  assert.equal(nextAdrNumber(['0001-a.md', '0010-b.md', 'README.md', 'template.md']), '0011');
+  assert.equal(nextAdrNumber(['README.md']), '0001');
+});
+
+test('日報の ADR が既にあれば二重に作らない', () => {
+  assert.equal(hasDailyLogAdr([{ name: '0011-daily-log.md', text: '' }]), true);
+  assert.equal(hasDailyLogAdr([{ name: '0012-x.md', text: '# ADR 0012: 日報を残す' }]), true);
+  assert.equal(hasDailyLogAdr([{ name: '0001-engine.md', text: '# ADR 0001: MZ を使う' }]), false);
+});
+
+test('ADR は最初から「採用」で、Actions なしの注記を切り替える', () => {
+  const tpl = '# ADR {{NUMBER}}\n- 状態: 採用\n- 日付: {{DATE}}\nv{{VERSION}}\n- {{WORKFLOW_LINE}}';
+  assert.equal(renderAdr(tpl, { number: '0012', date: '2026-11-13', version: '1.1.0', workflow: true }), '# ADR 0012\n- 状態: 採用\n- 日付: 2026-11-13\nv1.1.0\n- main への push で GitHub Actions が日報を作り直す');
+  assert.match(renderAdr(tpl, { number: '0003', date: 'd', version: 'v', workflow: false }), /GitHub Actions を使わず/);
 });

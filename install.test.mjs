@@ -19,11 +19,13 @@ test('既存フックの書き方に合わせる', () => {
   assert.equal(hookCommand({}), 'node "$CLAUDE_PROJECT_DIR/.claude/hooks/daily-log-reminder.mjs"');
 });
 
-test('settings.json は既存を保持し、Stop フックを1回だけ足す', () => {
+test('settings.json は既存を保持し、Stop と SessionStart のフックを1回だけ足す', () => {
   const cur = { permissions: { allow: ['Bash(npm test)'] }, hooks: { Stop: [{ hooks: [{ type: 'command', command: 'echo done' }] }] } };
   const a = mergeSettings(cur);
   assert.equal(a.changed, true);
+  assert.deepEqual(a.added, ['Stop', 'SessionStart']);
   assert.equal(a.settings.hooks.Stop.length, 2);
+  assert.match(a.settings.hooks.SessionStart[0].hooks[0].command, /daily-log-session-start\.mjs/);
   assert.deepEqual(a.settings.permissions, cur.permissions);
   assert.equal(mergeSettings(a.settings).changed, false);
   assert.equal(cur.hooks.Stop.length, 1); // 元のオブジェクトは変えない
@@ -32,7 +34,7 @@ test('settings.json は既存を保持し、Stop フックを1回だけ足す', 
 test('package.json の同名スクリプトは触らない', () => {
   const { pkg, added } = mergePackageScripts({ scripts: { log: 'echo mine' } });
   assert.equal(pkg.scripts.log, 'echo mine');
-  assert.deepEqual(added, ['log:entry', 'test:log']);
+  assert.deepEqual(added, ['log:entry', 'log:analyze', 'log:brief', 'test:log']);
 });
 
 test('キットのファイルの判別', () => {
@@ -55,4 +57,11 @@ test('ADR は最初から「採用」で、Actions なしの注記を切り替�
   const tpl = '# ADR {{NUMBER}}\n- 状態: 採用\n- 日付: {{DATE}}\nv{{VERSION}}\n- {{WORKFLOW_LINE}}';
   assert.equal(renderAdr(tpl, { number: '0012', date: '2026-11-13', version: '1.1.0', workflow: true }), '# ADR 0012\n- 状態: 採用\n- 日付: 2026-11-13\nv1.1.0\n- main への push で GitHub Actions が日報を作り直す');
   assert.match(renderAdr(tpl, { number: '0003', date: 'd', version: 'v', workflow: false }), /GitHub Actions を使わず/);
+});
+
+test('Stop だけ入っている古い導入には SessionStart だけを足す（更新時）', () => {
+  const old = { hooks: { Stop: [{ hooks: [{ type: 'command', command: 'node "$CLAUDE_PROJECT_DIR/.claude/hooks/daily-log-reminder.mjs"' }] }] } };
+  const a = mergeSettings(old);
+  assert.deepEqual(a.added, ['SessionStart']);
+  assert.equal(a.settings.hooks.Stop.length, 1);
 });

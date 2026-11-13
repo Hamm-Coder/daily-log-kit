@@ -1,0 +1,736 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>daily-log-kit マニュアル</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Zen+Kaku+Gothic+New:wght@700;900&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: 左に目次、右に本文の2段（狭い画面では1段）。各手順に「実行する場所」の札を付ける */
+:root {
+  --bg: #f6f7f9;
+  --surface: #ffffff;
+  --ink: #1d2733;
+  --muted: #5b6878;
+  --line: #d9dee5;
+  --accent: #1f6f8b;
+  --accent-soft: #e3f0f4;
+  --code-bg: #eef1f5;
+  --kit: #7a4fd1;      /* 札: キットのフォルダ */
+  --repo: #1f6f8b;     /* 札: 各リポジトリ */
+  --gh: #2c7a3f;       /* 札: GitHub */
+  --web: #b4621a;      /* 札: Web版 Claude Code / claude.ai */
+  --warn: #9a5b00;
+  --warn-soft: #fbf1df;
+  --ok: #2c7a3f;
+  --ng: #b3261e;
+  --font-display: "Zen Kaku Gothic New", "BIZ UDPGothic", "Hiragino Sans", "Yu Gothic", sans-serif;
+  --font-body: "BIZ UDPGothic", "Hiragino Sans", "Yu Gothic", "Meiryo", sans-serif;
+  --font-mono: "JetBrains Mono", "BIZ UDGothic", Consolas, "MS Gothic", monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #12171d; --surface: #1a2129; --ink: #e3e8ee; --muted: #9aa7b6; --line: #2e3a46;
+    --accent: #5bb3d0; --accent-soft: #1d3440; --code-bg: #0f1419;
+    --kit: #b597f5; --repo: #5bb3d0; --gh: #6cc483; --web: #f0a35c;
+    --warn: #f0b85c; --warn-soft: #33281a; --ok: #6cc483; --ng: #f28b82;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #12171d; --surface: #1a2129; --ink: #e3e8ee; --muted: #9aa7b6; --line: #2e3a46;
+  --accent: #5bb3d0; --accent-soft: #1d3440; --code-bg: #0f1419;
+  --kit: #b597f5; --repo: #5bb3d0; --gh: #6cc483; --web: #f0a35c;
+  --warn: #f0b85c; --warn-soft: #33281a; --ok: #6cc483; --ng: #f28b82;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+body {
+  margin: 0; background: var(--bg); color: var(--ink);
+  font-family: var(--font-body); font-size: 15.5px; line-height: 1.8;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.wrap { max-width: 1180px; margin: 0 auto; display: grid; grid-template-columns: 230px minmax(0, 1fr); gap: 40px; padding-block: 32px 80px; }
+@media (max-width: 900px) { .wrap { grid-template-columns: minmax(0, 1fr); gap: 16px; } }
+nav.toc { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 20px); align-self: start; font-size: 14px; }
+nav.toc .label { font-size: 12px; letter-spacing: .08em; color: var(--muted); margin-bottom: 8px; }
+nav.toc ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; counter-reset: s; }
+nav.toc a { display: block; padding: 5px 10px; border-radius: 6px; color: var(--ink); text-decoration: none; }
+nav.toc a:hover, nav.toc a:focus-visible { background: var(--accent-soft); color: var(--accent); }
+@media (max-width: 900px) {
+  nav.toc { position: static; }
+  nav.toc ol { display: flex; flex-wrap: wrap; gap: 6px; }
+  nav.toc a { border: 1px solid var(--line); background: var(--surface); padding: 4px 10px; }
+}
+main { min-width: 0; }
+header.top { margin-bottom: 36px; }
+.eyebrow { font-size: 12px; letter-spacing: .1em; color: var(--accent); font-weight: 700; }
+h1 { font-family: var(--font-display); font-weight: 900; font-size: clamp(28px, 4vw, 40px); line-height: 1.3; margin: 6px 0 12px; text-wrap: balance; }
+.lead { color: var(--muted); max-width: 46em; margin: 0; }
+section { padding-block: 28px; border-top: 1px solid var(--line); scroll-margin-top: 16px; }
+h2 { font-family: var(--font-display); font-weight: 700; font-size: 24px; margin: 0 0 14px; text-wrap: balance; }
+h3 { font-family: var(--font-display); font-weight: 700; font-size: 18px; margin: 26px 0 10px; }
+p { margin: 0 0 12px; max-width: 46em; }
+a { color: var(--accent); }
+code { font-family: var(--font-mono); font-size: .88em; background: var(--code-bg); padding: 1px 5px; border-radius: 4px; }
+.table-wrap { overflow-x: auto; margin: 12px 0 16px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
+table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-weight: 700; background: var(--accent-soft); white-space: nowrap; }
+tr:last-child td { border-bottom: 0; }
+td.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+/* 実行する場所の札 */
+.place { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 700; padding: 2px 10px 2px 8px; border-radius: 999px; border: 1.5px solid currentColor; white-space: nowrap; line-height: 1.6; background: var(--surface); }
+.place::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+.place.kit { color: var(--kit); } .place.repo { color: var(--repo); } .place.gh { color: var(--gh); } .place.web { color: var(--web); }
+.legend { display: flex; flex-wrap: wrap; gap: 8px 14px; margin: 14px 0 4px; }
+
+/* 手順 */
+.steps { list-style: none; margin: 14px 0; padding: 0; counter-reset: step; display: grid; gap: 14px; }
+.steps > li { counter-increment: step; position: relative; padding: 14px 16px 14px 56px; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; min-width: 0; }
+.steps > li::before { content: counter(step); position: absolute; left: 14px; top: 13px; width: 28px; height: 28px; border-radius: 50%; background: var(--accent); color: var(--surface); font-weight: 700; display: grid; place-items: center; font-size: 14px; font-variant-numeric: tabular-nums; }
+.steps .head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; font-weight: 700; margin-bottom: 4px; }
+.steps p:last-child { margin-bottom: 0; }
+
+/* コード */
+.code { position: relative; margin: 10px 0; min-width: 0; }
+.code pre { margin: 0; overflow-x: auto; background: var(--code-bg); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; font-family: var(--font-mono); font-size: 13px; line-height: 1.65; }
+.code pre .c { color: var(--muted); }
+.code button { position: absolute; top: 6px; right: 6px; font: 600 12px var(--font-body); color: var(--accent); background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 3px 9px; cursor: pointer; }
+.code button:hover, .code button:focus-visible { border-color: var(--accent); }
+
+.note { border-left: 4px solid var(--accent); background: var(--accent-soft); padding: 10px 14px; border-radius: 0 8px 8px 0; margin: 14px 0; max-width: 52em; }
+.note.warn { border-color: var(--warn); background: var(--warn-soft); }
+.note strong { display: block; margin-bottom: 2px; }
+.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 12px; margin: 14px 0; }
+.cards.four { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+@media (max-width: 640px) { .cards.four { grid-template-columns: minmax(0, 1fr); } }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; min-width: 0; }
+.card h4 { margin: 6px 0 6px; font-size: 16px; font-family: var(--font-display); }
+.card p { font-size: 14.5px; margin: 0; }
+.chip { display: inline-block; font-size: 12px; font-weight: 700; padding: 0 8px; border-radius: 4px; }
+.chip.hi { background: color-mix(in srgb, var(--ok) 18%, transparent); color: var(--ok); }
+.chip.mid { background: color-mix(in srgb, var(--warn) 20%, transparent); color: var(--warn); }
+.chip.lo { background: color-mix(in srgb, var(--ng) 16%, transparent); color: var(--ng); }
+
+/* 図 */
+.fig { overflow-x: auto; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 14px; margin: 14px 0; }
+.fig svg { display: block; min-width: 720px; width: 100%; height: auto; font-family: var(--font-body); }
+.fig figcaption { font-size: 13px; color: var(--muted); margin-top: 6px; }
+svg .box { fill: var(--surface); stroke: var(--line); stroke-width: 1.5; }
+svg .box.kit { stroke: var(--kit); } svg .box.repo { stroke: var(--repo); } svg .box.gh { stroke: var(--gh); } svg .box.web { stroke: var(--web); }
+svg .zone { fill: var(--bg); stroke: var(--line); stroke-dasharray: 5 4; }
+svg .t { fill: var(--ink); font-size: 14px; }
+svg .tb { fill: var(--ink); font-size: 14px; font-weight: 700; }
+svg .ts { fill: var(--muted); font-size: 12px; }
+svg .tk { fill: var(--kit); font-size: 12px; font-weight: 700; } svg .tr { fill: var(--repo); font-size: 12px; font-weight: 700; } svg .tg { fill: var(--gh); font-size: 12px; font-weight: 700; } svg .tw { fill: var(--web); font-size: 12px; font-weight: 700; }
+svg .arrow { stroke: var(--muted); stroke-width: 1.6; fill: none; }
+svg .arrow.a { stroke: var(--accent); stroke-width: 2; }
+svg .head { fill: var(--muted); } svg .head.a { fill: var(--accent); }
+svg .dot { fill: var(--accent); }
+svg .rail { stroke: var(--line); stroke-width: 3; }
+
+details { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 0 16px; margin: 10px 0; }
+details > summary { cursor: pointer; padding: 12px 0; font-weight: 700; list-style: none; display: flex; gap: 10px; align-items: baseline; }
+details > summary::-webkit-details-marker { display: none; }
+details > summary::before { content: "＋"; color: var(--accent); font-weight: 700; }
+details[open] > summary::before { content: "－"; }
+details > div { padding-bottom: 12px; min-width: 0; }
+.sample { font-family: var(--font-mono); font-size: 12.5px; white-space: pre; overflow-x: auto; background: var(--code-bg); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; line-height: 1.6; }
+.tree { font-family: var(--font-mono); font-size: 13px; white-space: pre; overflow-x: auto; background: var(--code-bg); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; line-height: 1.6; }
+.tree .k { color: var(--kit); font-weight: 600; } .tree .r { color: var(--repo); font-weight: 600; } .tree .m { color: var(--muted); }
+.two { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 14px; }
+.two > * { min-width: 0; }
+footer { margin-top: 40px; font-size: 13px; color: var(--muted); }
+</style>
+</head>
+<body>
+<div class="wrap">
+<nav class="toc" aria-label="目次">
+  <div class="label">目次</div>
+  <ol>
+    <li><a href="#where">実行する場所</a></li>
+    <li><a href="#overview">全体像</a></li>
+    <li><a href="#timing">日報ができるタイミング</a></li>
+    <li><a href="#tracked">日報でわかること</a></li>
+    <li><a href="#install">導入（初回）</a></li>
+    <li><a href="#daily">毎日の使い方</a></li>
+    <li><a href="#brief">セッション開始時の引き継ぎ</a></li>
+    <li><a href="#update">新しい版の反映</a></li>
+    <li><a href="#deploy">各リポジトリへの配布</a></li>
+    <li><a href="#analyze">分析</a></li>
+    <li><a href="#trouble">困ったとき</a></li>
+    <li><a href="#files">ファイル早見表</a></li>
+  </ol>
+</nav>
+
+<main>
+<header class="top">
+  <div class="eyebrow">daily-log-kit v1.3.0</div>
+  <h1>日報キット 操作マニュアル</h1>
+  <p class="lead">Claude Code・claude.ai・Git での作業と決定を、各リポジトリの <code>docs/log/</code> に日ごとに残し、作業の傾向と改善点を確かめるための道具一式です。人が書くのは短い「日報メモ」だけで、日報そのものは自動で作られます。</p>
+</header>
+
+<section id="where">
+  <h2>まず覚えること：実行する場所は4つ</h2>
+  <p>このマニュアルの手順には、どこで行うかを示す札が付いています。札と違う場所で実行すると、スクリプトはその旨を表示して止まります。</p>
+  <div class="table-wrap"><table>
+    <thead><tr><th>札</th><th>場所</th><th>そこでやること</th></tr></thead>
+    <tbody>
+      <tr><td><span class="place kit">キットのフォルダ</span></td><td><code>C:\AllGitRepository\daily-log-kit</code></td><td>新しい版の反映（<code>publish-kit.bat</code>）、各リポジトリへの配布（<code>install-all.ps1</code>）、複数リポジトリの分析</td></tr>
+      <tr><td><span class="place repo">各リポジトリ</span></td><td><code>C:\AllGitRepository\&lt;リポジトリ&gt;</code></td><td><code>git pull</code>、日報の手動生成、そのリポジトリの分析</td></tr>
+      <tr><td><span class="place gh">GitHub</span></td><td>github.com（ブラウザ）</td><td>PR の確認とマージ、Actions の結果の確認</td></tr>
+      <tr><td><span class="place web">Web版 / claude.ai</span></td><td>Claude Code Web、claude.ai のチャット</td><td>作業、日報メモ、「作業を分析して」の依頼、チャットの決定のメモ化</td></tr>
+    </tbody>
+  </table></div>
+  <div class="note warn"><strong>やらないこと</strong>ダウンロードフォルダや各リポジトリの中で <code>publish-kit.bat</code> や <code>install-all.ps1</code> を実行しない。どちらもキットのフォルダで実行します。</div>
+</section>
+
+<section id="overview">
+  <h2>全体像</h2>
+  <p>キットのリポジトリは「配布元」です。導入すると各リポジトリにファイルがコピーされ、その後はキットなしで動きます。キットを使うのは導入と更新のときだけです。</p>
+  <figure class="fig">
+    <svg viewBox="0 0 980 360" role="img" aria-label="キットのリポジトリから各リポジトリへ配布し、各リポジトリでは作業から日報までが自動で進む図">
+      <defs>
+        <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head" d="M0,0 L10,5 L0,10 z"/></marker>
+        <marker id="aha" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head a" d="M0,0 L10,5 L0,10 z"/></marker>
+      </defs>
+      <rect class="box kit" x="20" y="40" width="230" height="120" rx="10"/>
+      <text class="tk" x="36" y="64">キットのリポジトリ（公開）</text>
+      <text class="tb" x="36" y="90">Hamm-Coder/daily-log-kit</text>
+      <text class="ts" x="36" y="114">files/（配る中身）</text>
+      <text class="ts" x="36" y="134">install-all.ps1・publish-kit.bat</text>
+      <rect class="box kit" x="20" y="210" width="230" height="100" rx="10"/>
+      <text class="tk" x="36" y="234">キットのフォルダ（PC）</text>
+      <text class="t" x="36" y="260">C:\AllGitRepository\</text>
+      <text class="t" x="36" y="282">daily-log-kit</text>
+      <path class="arrow" d="M135 160 V205" marker-end="url(#ah)" marker-start="url(#ah)"/>
+      <text class="ts" x="145" y="188">git pull / push</text>
+
+      <path class="arrow a" d="M250 260 C300 260 300 190 330 190" marker-end="url(#aha)"/>
+      <text class="ts" x="20" y="336">install-all.ps1 が各リポジトリに PR を作る</text>
+
+      <rect class="zone" x="335" y="20" width="625" height="320" rx="12"/>
+      <text class="tr" x="352" y="44">各リポジトリ（RPGMZ_Prototype など）</text>
+
+      <rect class="box web" x="352" y="64" width="170" height="86" rx="8"/>
+      <text class="tw" x="366" y="86">Web版 / PC</text>
+      <text class="tb" x="366" y="110">Claude Code で作業</text>
+      <text class="ts" x="366" y="132">Stop フックで書き忘れ防止</text>
+
+      <rect class="box repo" x="560" y="64" width="170" height="86" rx="8"/>
+      <text class="tr" x="574" y="86">docs/log/entries/</text>
+      <text class="tb" x="574" y="110">日報メモ</text>
+      <text class="ts" x="574" y="132">決めたこと・次にやること</text>
+
+      <rect class="box gh" x="768" y="64" width="170" height="86" rx="8"/>
+      <text class="tg" x="782" y="86">GitHub</text>
+      <text class="tb" x="782" y="110">PR をマージ</text>
+      <text class="ts" x="782" y="132">あなたが確認して押す</text>
+
+      <rect class="box gh" x="768" y="206" width="170" height="86" rx="8"/>
+      <text class="tg" x="782" y="228">GitHub Actions</text>
+      <text class="tb" x="782" y="252">日報を作り直す</text>
+      <text class="ts" x="782" y="274">ボットがコミット</text>
+
+      <rect class="box repo" x="560" y="206" width="170" height="86" rx="8"/>
+      <text class="tr" x="574" y="228">docs/log/YYYY-MM/</text>
+      <text class="tb" x="574" y="252">日報と一覧</text>
+      <text class="ts" x="574" y="274">メモ＋PR＋コミット</text>
+
+      <rect class="box repo" x="352" y="206" width="170" height="86" rx="8"/>
+      <text class="tr" x="366" y="228">tools/</text>
+      <text class="tb" x="366" y="252">分析</text>
+      <text class="ts" x="366" y="274">傾向・改善点・判断待ち</text>
+
+      <path class="arrow a" d="M522 107 H555" marker-end="url(#aha)"/>
+      <path class="arrow a" d="M730 107 H763" marker-end="url(#aha)"/>
+      <path class="arrow a" d="M853 150 V201" marker-end="url(#aha)"/>
+      <path class="arrow a" d="M768 249 H735" marker-end="url(#aha)"/>
+      <path class="arrow" d="M560 249 H527" marker-end="url(#ah)"/>
+    </svg>
+    <figcaption>色は札と同じ（紫＝キット、青＝各リポジトリ、緑＝GitHub、橙＝Claude）。</figcaption>
+  </figure>
+</section>
+
+<section id="timing">
+  <h2>日報ができるタイミング</h2>
+  <p>作業中は何もしなくてよく、引き継ぎと記録は作業の区切りごとに自動で進みます。</p>
+  <figure class="fig">
+    <svg viewBox="0 0 980 210" role="img" aria-label="作業から分析までの6つのタイミング">
+      <line class="rail" x1="60" y1="70" x2="920" y2="70"/>
+      <g>
+        <circle class="dot" cx="80" cy="70" r="9"/><text class="tb" x="80" y="40" text-anchor="middle">開始</text>
+        <text class="ts" x="80" y="104" text-anchor="middle">SessionStart</text>
+        <text class="ts" x="80" y="124" text-anchor="middle">前回の続きと</text>
+        <text class="ts" x="80" y="142" text-anchor="middle">準備を渡す</text>
+      </g>
+      <g>
+        <circle class="dot" cx="250" cy="70" r="9"/><text class="tb" x="250" y="40" text-anchor="middle">応答の終わり</text>
+        <text class="ts" x="250" y="104" text-anchor="middle">Stop フック</text>
+        <text class="ts" x="250" y="124" text-anchor="middle">メモがなければ</text>
+        <text class="ts" x="250" y="142" text-anchor="middle">1回だけ促す</text>
+      </g>
+      <g>
+        <circle class="dot" cx="420" cy="70" r="9"/><text class="tb" x="420" y="40" text-anchor="middle">PR を作る前</text>
+        <text class="ts" x="420" y="104" text-anchor="middle">daily-log Skill</text>
+        <text class="ts" x="420" y="124" text-anchor="middle">日報メモを書いて</text>
+        <text class="ts" x="420" y="142" text-anchor="middle">同じ PR に入れる</text>
+      </g>
+      <g>
+        <circle class="dot" cx="590" cy="70" r="9"/><text class="tb" x="590" y="40" text-anchor="middle">マージ</text>
+        <text class="ts" x="590" y="104" text-anchor="middle">GitHub Actions</text>
+        <text class="ts" x="590" y="124" text-anchor="middle">日報と一覧を</text>
+        <text class="ts" x="590" y="142" text-anchor="middle">作り直す</text>
+      </g>
+      <g>
+        <circle class="dot" cx="760" cy="70" r="9"/><text class="tb" x="760" y="40" text-anchor="middle">チャットの終わり</text>
+        <text class="ts" x="760" y="104" text-anchor="middle">claude.ai で決めた日</text>
+        <text class="ts" x="760" y="124" text-anchor="middle">依頼文4でメモ化</text>
+        <text class="ts" x="760" y="142" text-anchor="middle">（頼む必要あり）</text>
+      </g>
+      <g>
+        <circle class="dot" cx="900" cy="70" r="9"/><text class="tb" x="900" y="40" text-anchor="middle">週1回</text>
+        <text class="ts" x="900" y="104" text-anchor="middle">分析</text>
+        <text class="ts" x="900" y="124" text-anchor="middle">改善点と</text>
+        <text class="ts" x="900" y="142" text-anchor="middle">判断待ち</text>
+      </g>
+      <text class="ts" x="60" y="190">作業日の区切りは朝4時。0:00〜3:59 の作業は前日に数え、日報では「翌00:13」のように表示します（docs/log/config.json の dayStartHour）。</text>
+    </svg>
+  </figure>
+  <p>記録されないもの: Web版 Claude Code の会話そのもの（メモの要約だけが残る）、claude.ai で頼み忘れた日の決定、コミットしない作業の時間。</p>
+</section>
+
+<section id="tracked">
+  <h2>日報でわかること</h2>
+  <div class="table-wrap"><table>
+    <thead><tr><th>情報</th><th>細かさ</th><th>確かさ</th><th>補足</th></tr></thead>
+    <tbody>
+      <tr><td>コミットの日時・件名・変更行数</td><td>分単位、1件ごと</td><td><span class="chip hi">高</span></td><td>Git の記録そのもの</td></tr>
+      <tr><td>PR の番号・題名・マージ日時</td><td>1本ごと</td><td><span class="chip hi">高</span></td><td>スカッシュマージは題名の「(#番号)」から</td></tr>
+      <tr><td>作業日・曜日・時間帯</td><td>日・3時間ごと</td><td><span class="chip hi">高</span></td><td>コミットの日時から</td></tr>
+      <tr><td>日報メモの記録率</td><td>日ごと</td><td><span class="chip hi">高</span></td><td>導入日以降、コミットのあった日にメモがあるか</td></tr>
+      <tr><td>決めたこと・次にやること・判断待ち</td><td>メモ1件ごと</td><td><span class="chip mid">中</span></td><td>メモの書き方しだい</td></tr>
+      <tr><td>PR の最初のコミットからマージまで</td><td>1本ごと</td><td><span class="chip mid">中</span></td><td>マージコミットのある PR だけ</td></tr>
+      <tr><td>作業のまとまりと推定時間</td><td>回ごと</td><td><span class="chip lo">低〜中</span></td><td>コミットの間隔が2時間以内なら同じ作業とみなす推定</td></tr>
+      <tr><td>判断待ちが解決したか</td><td>—</td><td><span class="chip lo">低</span></td><td>新しいメモに書かれなくなったら一覧から消える</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section id="install">
+  <h2>導入（初回）</h2>
+  <p>キットを GitHub に置いてから、各リポジトリに配ります。キットを置く作業（手順1）が済んでいれば、手順2から始めます。</p>
+  <ol class="steps">
+    <li>
+      <div class="head">キットを GitHub に置く <span class="place kit">キットのフォルダ</span></div>
+      <p>zip を <code>C:\AllGitRepository</code> に展開し、公開リポジトリとして push します（Web版 Claude Code から設定なしで読めるように公開にします）。</p>
+      <div class="code"><pre>Expand-Archive daily-log-kit-v1.3.0.zip -DestinationPath C:\AllGitRepository
+cd C:\AllGitRepository\daily-log-kit
+node --test
+git init -b main
+git add -A
+git commit -m "daily-log-kit v1.3.0"
+gh repo create Hamm-Coder/daily-log-kit --public --source . --push</pre><button type="button">コピー</button></div>
+    </li>
+    <li>
+      <div class="head">スクリプトの警告を外す（初回だけ） <span class="place kit">キットのフォルダ</span></div>
+      <div class="code"><pre>Unblock-File .\install-all.ps1, .\publish-kit.ps1, .\publish-kit.bat</pre><button type="button">コピー</button></div>
+    </li>
+    <li>
+      <div class="head">各リポジトリへの変更を確認する <span class="place kit">キットのフォルダ</span></div>
+      <p>何も変えずに、リポジトリごとの変更予定を表示します。最後の表に「スキップ」があれば理由を確認します。</p>
+      <div class="code"><pre>.\install-all.ps1 -Backfill</pre><button type="button">コピー</button></div>
+    </li>
+    <li>
+      <div class="head">1つだけ本番で入れる <span class="place kit">キットのフォルダ</span></div>
+      <p>最初は1つで試します。PR が作られるだけで、マージするまで main は変わりません。</p>
+      <div class="code"><pre>.\install-all.ps1 -Repos RPGMZ_prototype -Backfill -Apply -CreatePR</pre><button type="button">コピー</button></div>
+    </li>
+    <li>
+      <div class="head">PR を確認してマージする <span class="place gh">GitHub</span></div>
+      <p>Files changed で <code>docs/log/README.md</code>（日別の一覧）を見ます。マージ後、Actions タブの <code>daily-log</code> が緑になれば導入完了です。</p>
+    </li>
+    <li>
+      <div class="head">手元に取り込む <span class="place repo">各リポジトリ</span></div>
+      <div class="code"><pre>cd C:\AllGitRepository\RPGMZ_prototype
+git pull</pre><button type="button">コピー</button></div>
+    </li>
+    <li>
+      <div class="head">残りのリポジトリにも入れる <span class="place kit">キットのフォルダ</span></div>
+      <p>導入済みのリポジトリは「導入済み（変更なし）」になるだけなので、全体に対して実行して構いません。</p>
+      <div class="code"><pre>.\install-all.ps1 -Backfill -Apply -CreatePR</pre><button type="button">コピー</button></div>
+    </li>
+  </ol>
+  <div class="note"><strong>過去のチャットの決定も入れたいとき</strong>そのリポジトリに対応する claude.ai のプロジェクトで <code>prompts/3-claude-ai-chat-backfill.md</code> を使い、出てきた zip を Web版に「日報メモとして追加して PR にして」と渡します。</div>
+</section>
+
+<section id="daily">
+  <h2>毎日の使い方</h2>
+  <div class="cards four">
+    <div class="card"><span class="place web">Web版 / PC</span><h4>Claude Code で作業する日</h4><p>始めは「前回の続きをして」で通じます（引き継ぎが自動で渡されます）。最後に「日報を書いて」。頼み忘れても Stop フックが1回促します。メモは作業と同じ PR に入ります。</p></div>
+    <div class="card"><span class="place web">claude.ai</span><h4>チャットで決めた日</h4><p>チャットの最後に依頼文4（<code>prompts/4-claude-ai-daily-wrapup.md</code>）を貼り、出てきたメモを Web版に「日報メモとして追加して」と渡します。</p></div>
+    <div class="card"><span class="place repo">各リポジトリ</span><h4>PC で作業を始めるとき</h4><p>最初に <code>git pull</code>。ボットの日報コミットを取り込み、衝突を防ぎます。Unity などのエディタは pull の後で開きます。</p></div>
+    <div class="card"><span class="place web">Web版</span><h4>週に1回</h4><p>「作業を分析して」と頼むと、改善点・判断待ち・次にやることがまとめて返ってきます。</p></div>
+  </div>
+  <h3>日報メモの書き方</h3>
+  <div class="code"><pre>---
+date: 2026-11-13
+time: "09:30"
+source: claude-code-web
+branch: docs/adr-0011-accept
+title: ADR 0011 を採用
+---
+## 決めたこと
+- ADR 0011（日報の仕組み）を採用          <span class="c">← あなたが決めた・承認したことだけ</span>
+## 作ったもの・変えたもの
+- docs/decisions/0011-daily-log.md の状態を変更
+## 次にやること
+- （PC）PR #32 のテストプレイ 項目4〜13    <span class="c">← PC でしかできない作業には（PC）</span>
+## 未解決・判断待ち
+- ボスの名前（ヴォルクは仮）              <span class="c">← Claude の提案で未承認のものもここ</span></pre><button type="button">コピー</button></div>
+</section>
+
+<section id="brief">
+  <h2>セッション開始時の引き継ぎ</h2>
+  <p>Claude Code のセッションを始めると、日報から次の4つが自動で Claude に渡されます。あなたが読む必要はなく、「前回の続きをして」「D4 をやって」と頼むだけで、Claude が準備から始めます。</p>
+  <div class="cards four">
+    <div class="card"><h4>次にやること</h4><p>最新の日報メモから。作業キューの番号（例 D4）があれば、SPEC.md の完了条件と実行場所を添えます。Web版では PC の作業に「この環境ではできない」と付きます。</p></div>
+    <div class="card"><h4>判断待ち</h4><p>直近のメモの「未解決・判断待ち」。最初に出た日と回数つき。</p></div>
+    <div class="card"><h4>始める前の準備</h4><p><code>git pull</code> が要るか、未コミットの変更、<code>node_modules</code> がない、Git LFS がない、作業中のブランチ。次の作業に合わせた準備のルール。</p></div>
+    <div class="card"><h4>効率化の候補</h4><p>同じ準備作業や似た作業の繰り返し、何度も繰り越されている作業、修正が続いているファイル。</p></div>
+  </div>
+  <h3>実際に渡される内容の例（Web版で開いたとき）</h3>
+  <div class="sample">## 日報からの引き継ぎ（daily-log）
+
+前回のメモ: 2026-11-13 09:30「ADR 0011 を採用」（claude-code-web） / この環境: Web版
+
+### 次にやること
+- （PC）PR #32 のテストプレイ 項目4〜13 ← この環境（Web版）ではできない
+- D4 CF_LootTable
+  - SPEC D4: 作業: CF_LootTable（抽選表） / 完了条件: 抽選の単体テストが通る / 実行場所: Web
+- （Web版で今できるのは 1件）
+
+### 判断待ち
+- ボスの名前（ヴォルクは仮）（2026-11-08から、メモに5回）
+
+### 始める前の準備
+- [手順] git pull してから RPG Maker MZ でプロジェクトを開く（PR #32 のテストプレイ 項目4〜13 のため）
+- [確認] （PC）の作業はこの環境ではできない。Web版でできる作業を先に進め、PC作業はまとめて行う
+
+### 効率化の候補（繰り返しの判別）
+- 繰り越し: 「（PC）PR #32 のテストプレイ 項目4〜13」が4回のメモに残っている（2026-11-09から）→ 着手できない理由を確かめる
+- 準備作業の繰り返し: 「登録」を含む作業が3日（例: PCで CF_HeroineStatus を登録）→ 手順を1つのスクリプトか Skill にまとめる</div>
+
+  <h3>リポジトリごとの準備を登録する <span class="place repo">各リポジトリ</span></h3>
+  <p><code>docs/log/config.json</code> に <code>prep</code> を書くと、次にやることの文に合ったときに手順が「始める前の準備」に出ます。Web版に「準備のルールに○○を足して」と頼んでも追加できます。</p>
+  <div class="code"><pre>{
+  "tz": "Asia/Tokyo",
+  "dayStartHour": 4,
+  "prep": [
+    { "when": "テストプレイ", "steps": ["git pull してから RPG Maker MZ でプロジェクトを開く", "game/data を編集する作業は先にエディタを閉じる"] },
+    { "when": "プラグイン管理", "steps": ["プラグイン管理で追加した CF_ プラグインを ON にして保存"] },
+    { "when": "Unity|シーン", "steps": ["git pull してから Unity を開く"] }
+  ]
+}</pre><button type="button">コピー</button></div>
+
+  <h3>効率化の候補が出たら</h3>
+  <div class="table-wrap"><table>
+    <thead><tr><th>候補</th><th>見つけ方</th><th>次にやること</th></tr></thead>
+    <tbody>
+      <tr><td>準備作業の繰り返し</td><td>「登録」「起動」「取り込み」「同期」「ビルド」などが3日以上のメモに出る（対象が違っても数える）</td><td>手順をスクリプト（例 <code>tools/setup.ps1</code>）か Skill に。毎回必要なら上の準備のルールへ</td></tr>
+      <tr><td>似た作業の繰り返し</td><td>似た作業が3日以上に出る（ひらがなの違いや番号の違いは無視）</td><td>Skill（<code>.claude/skills/</code>）か npm スクリプトにまとめる</td></tr>
+      <tr><td>繰り越し</td><td>同じ「次にやること」が3回以上のメモに3日以上残る</td><td>着手できない理由（PC が要る、判断待ち、準備不足）を確かめ、分割するか作業キューに戻す</td></tr>
+      <tr><td>修正の集中</td><td>同じファイルの修正コミットが30日で3回以上</td><td>そのファイルのテストか検査を作業キューに追加する</td></tr>
+    </tbody>
+  </table></div>
+  <p>止めたいときは環境変数 <code>DAILY_LOG_SKIP=1</code>。ネットワークを使わないので、<code>git pull</code> が要るかは「最後に取得した時点」で判断します。</p>
+</section>
+
+<section id="update">
+  <h2>新しい版の反映</h2>
+  <p>キットを改良したときの流れは2通りです。今後は A（Claude Code で直接直す）を基本にします。</p>
+  <figure class="fig">
+    <svg viewBox="0 0 980 270" role="img" aria-label="新しい版を反映する2つの流れ">
+      <defs>
+        <marker id="ah2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path class="head a" d="M0,0 L10,5 L0,10 z"/></marker>
+      </defs>
+      <text class="tb" x="20" y="34">A. Claude Code で直接直す（推奨）</text>
+      <rect class="box web" x="20" y="50" width="190" height="70" rx="8"/><text class="tw" x="34" y="72">Web版</text><text class="t" x="34" y="98">キットを直して PR</text>
+      <rect class="box gh" x="250" y="50" width="190" height="70" rx="8"/><text class="tg" x="264" y="72">GitHub</text><text class="t" x="264" y="98">PR をマージ</text>
+      <rect class="box gh" x="480" y="50" width="190" height="70" rx="8"/><text class="tg" x="494" y="72">kit-release（自動）</text><text class="t" x="494" y="98">テスト → タグ・リリース</text>
+      <path class="arrow a" d="M210 85 H245" marker-end="url(#ah2)"/>
+      <path class="arrow a" d="M440 85 H475" marker-end="url(#ah2)"/>
+      <path class="arrow a" d="M670 85 C700 85 700 150 730 150" marker-end="url(#ah2)"/>
+
+      <text class="tb" x="20" y="174">B. チャットで作った zip を使う</text>
+      <rect class="box kit" x="20" y="190" width="190" height="70" rx="8"/><text class="tk" x="34" y="212">キットのフォルダ</text><text class="t" x="34" y="238">zip を置く</text>
+      <rect class="box kit" x="250" y="190" width="190" height="70" rx="8"/><text class="tk" x="264" y="212">キットのフォルダ</text><text class="t" x="264" y="238">publish-kit.bat</text>
+      <rect class="box gh" x="480" y="190" width="190" height="70" rx="8"/><text class="tg" x="494" y="212">GitHub</text><text class="t" x="494" y="238">コミットとタグ</text>
+      <path class="arrow a" d="M210 225 H245" marker-end="url(#ah2)"/>
+      <path class="arrow a" d="M440 225 H475" marker-end="url(#ah2)"/>
+      <path class="arrow a" d="M670 225 C700 225 700 160 730 160" marker-end="url(#ah2)"/>
+
+      <rect class="box kit" x="735" y="115" width="225" height="80" rx="8"/><text class="tk" x="749" y="137">キットのフォルダ</text><text class="tb" x="749" y="162">install-all.ps1</text><text class="ts" x="749" y="182">各リポジトリに「更新」の PR</text>
+    </svg>
+  </figure>
+
+  <h3>A. Claude Code で直接直す</h3>
+  <ol class="steps">
+    <li><div class="head">直したい内容を頼む <span class="place web">Web版</span></div><p>キットのリポジトリのセッションで、内容と「版を上げて PR にして」と頼みます（手順は <code>CLAUDE.md</code> にあります）。</p></li>
+    <li><div class="head">PR をマージする <span class="place gh">GitHub</span></div><p>Actions の <code>kit-ci</code> が緑であることを確認してからマージします。<code>kit-release</code> がタグとリリースを作ります。</p></li>
+    <li><div class="head">各リポジトリに配る <span class="place kit">キットのフォルダ</span></div>
+      <div class="code"><pre>cd C:\AllGitRepository\daily-log-kit
+git pull
+.\install-all.ps1
+.\install-all.ps1 -Apply -CreatePR</pre><button type="button">コピー</button></div></li>
+  </ol>
+
+  <h3>B. zip を使う（publish-kit）</h3>
+  <ol class="steps">
+    <li><div class="head">zip をキットのフォルダに置く <span class="place kit">キットのフォルダ</span></div><p>ダウンロードフォルダに置いたままでも見つけます（キットのフォルダが優先）。複数あれば版番号の一番大きいものを使います。置いた zip はコミットされません。</p></li>
+    <li><div class="head"><code>publish-kit.bat</code> をダブルクリック <span class="place kit">キットのフォルダ</span></div><p>zip を <code>publish-kit.bat</code> にドラッグ＆ドロップしても同じです。</p></li>
+    <li><div class="head">変更一覧を見て <code>y</code> を押す</div><p>テストが失敗した場合や <code>y</code> 以外を押した場合は、上書き前の状態に戻って止まります。</p></li>
+    <li><div class="head">各リポジトリに配る <span class="place kit">キットのフォルダ</span></div><p>画面の最後に表示されるコマンド（<code>.\install-all.ps1 -Apply -CreatePR</code>）を実行します。</p></li>
+  </ol>
+  <div class="table-wrap"><table>
+    <thead><tr><th>publish-kit が自動で行うこと</th><th>止まる条件</th></tr></thead>
+    <tbody>
+      <tr><td>1. 事前確認と GitHub との同期</td><td>main 以外のブランチ、未コミットの変更がある</td></tr>
+      <tr><td>2. zip の展開と版の確認</td><td>今より新しくない版、公開済みの版</td></tr>
+      <tr><td>3. キットのフォルダへ上書き</td><td>コピーの失敗</td></tr>
+      <tr><td>4. テスト（キットの決まりの検査を含む）</td><td>1件でも失敗（元に戻す）</td></tr>
+      <tr><td>5. 変更一覧の表示と確認</td><td><code>y</code> 以外（元に戻す）</td></tr>
+      <tr><td>6. コミット・タグ・push</td><td>push の失敗（表示された1行を実行）</td></tr>
+      <tr><td>7. 一時フォルダの削除と次の手順の表示</td><td>—</td></tr>
+    </tbody>
+  </table></div>
+  <div class="note warn"><strong>v1.1.x から v1.2.0 以降へ反映するとき</strong>v1.2.0 では RPGMZ_Prototype 専用の <code>extras/</code> を削除しました。publish-kit は zip にないファイルを消さないので、反映の後にキットのフォルダで <code>git rm -r extras</code> → <code>git commit -m "extras を削除"</code> → <code>git push</code> を実行します。</div>
+</section>
+
+<section id="deploy">
+  <h2>各リポジトリへの配布（install-all.ps1）</h2>
+  <p><span class="place kit">キットのフォルダ</span> で実行します。対象は <code>-Root</code>（既定 <code>C:\AllGitRepository</code>）直下の Git リポジトリで、キット自身は除外されます。</p>
+  <div class="table-wrap"><table>
+    <thead><tr><th>オプション</th><th>意味</th></tr></thead>
+    <tbody>
+      <tr><td><em>（なし）</em></td><td>確認のみ。何も変えない</td></tr>
+      <tr><td><code>-Apply</code></td><td>ブランチ <code>chore/daily-log-v&lt;版&gt;</code> にコミットする</td></tr>
+      <tr><td><code>-CreatePR</code></td><td>push して PR を作る（GitHub CLI が必要）。手元の作業用ブランチは消す</td></tr>
+      <tr><td><code>-Backfill</code></td><td>全履歴から過去の日報を作る（初回の導入で使う）</td></tr>
+      <tr><td><code>-Repos A,B</code></td><td>対象を絞る</td></tr>
+      <tr><td><code>-Owner Hamm-Coder</code></td><td>GitHub にあって手元にないリポジトリをクローンしてから対象にする</td></tr>
+      <tr><td><code>-NoWorkflow</code></td><td>Actions を入れない（main にブランチ保護があるリポジトリ）</td></tr>
+      <tr><td><code>-NoAdr</code></td><td>日報の ADR を作らない</td></tr>
+    </tbody>
+  </table></div>
+  <div class="two">
+    <div>
+      <h3>安全のための動き</h3>
+      <div class="table-wrap"><table><tbody>
+        <tr><td>作業フォルダ</td><td>触らない。一時的な別フォルダ（worktree）で作業する</td></tr>
+        <tr><td>未コミットの変更</td><td>そのまま残る</td></tr>
+        <tr><td>LFS の素材</td><td>ダウンロードしない</td></tr>
+        <tr><td>main</td><td>直接 push しない。PR だけ</td></tr>
+        <tr><td>同じ版のブランチ</td><td>既にあれば飛ばす</td></tr>
+      </tbody></table></div>
+    </div>
+    <div>
+      <h3>リポジトリの状態による違い</h3>
+      <div class="table-wrap"><table><tbody>
+        <tr><td><code>CLAUDE.md</code></td><td>あれば末尾に追記、なければ作る</td></tr>
+        <tr><td><code>.claude/settings.json</code></td><td>既存の設定を残してフックを追加（Stop と SessionStart）</td></tr>
+        <tr><td><code>package.json</code></td><td>あればスクリプトを追加、なければ作らない</td></tr>
+        <tr><td><code>docs/decisions/</code></td><td>あれば ADR を「採用」で追加</td></tr>
+        <tr><td>同名の自作ファイル</td><td>上書きせず「スキップ」</td></tr>
+      </tbody></table></div>
+    </div>
+  </div>
+  <h3>昔のリポジトリ（Android/Kotlin など）の過去の日報だけを作る</h3>
+  <p>仕組みは入れずに、キットのツールをそのリポジトリで直接動かします。<span class="place repo">各リポジトリ</span></p>
+  <div class="code"><pre>cd C:\AllGitRepository\&lt;リポジトリ&gt;
+node C:\AllGitRepository\daily-log-kit\files\tools\daily-log.mjs generate --all
+start docs\log\README.md</pre><button type="button">コピー</button></div>
+</section>
+
+<section id="analyze">
+  <h2>分析</h2>
+  <p>日報メモと Git の履歴から、傾向・改善点・判断待ちを一覧にします。数値は自分の作業の傾向をつかむ目安で、成果や生産性の評価には使いません。</p>
+  <div class="two">
+    <div>
+      <h3>1つのリポジトリ <span class="place repo">各リポジトリ</span></h3>
+      <div class="code"><pre>node tools/daily-log-analyze.mjs
+node tools/daily-log-analyze.mjs --out docs/log/analysis/2026-11-13.md</pre><button type="button">コピー</button></div>
+    </div>
+    <div>
+      <h3>複数のリポジトリを比べる <span class="place kit">キットのフォルダ</span></h3>
+      <div class="code"><pre>node files\tools\daily-log-analyze.mjs C:\AllGitRepository\RPGMZ_prototype C:\AllGitRepository\Unity_CharacterTest</pre><button type="button">コピー</button></div>
+    </div>
+  </div>
+  <p>Web版なら「作業を分析して」と頼むだけです。<code>--json</code> を付けると、他のツールに渡せる形で出力します。</p>
+  <h3>出力の例（テスト用の履歴での実行結果の一部）</h3>
+  <div class="sample">## 改善点
+
+- **[注意] 深夜（0〜4時）のコミットが多い**
+  - 根拠: コミットの 29%（9件）が深夜。深夜のコミットはバグを含みやすいという研究がある（Eyolfson et al. 2011）
+  - 次にやること: 深夜に作ったPRは翌朝に差分を見直してからマージする
+- **[注意] 放置されたブランチが 1本**
+  - 根拠: origin/feat/old-idea（23日前）
+  - 次にやること: 不要なら GitHub でブランチを削除する。続けるならPRにして作業キューに戻す
+
+## 判断待ち（直近のメモ）
+
+| 項目                       | 最初に出た日 | メモに出た回数 |
+| ボスの名前（ヴォルクは仮） | 2026-11-08   | 2              |
+| 30日目の強制開始の有無     | 2026-11-13   | 1              |</div>
+  <h3>改善点の判定（13種類）</h3>
+  <div class="table-wrap"><table>
+    <thead><tr><th>改善点</th><th>出る条件（既定）</th><th>次にやること</th></tr></thead>
+    <tbody>
+      <tr><td>日報メモの書き忘れ</td><td>導入後、コミットのあった日のメモが80%未満</td><td>Stop フックの設定を確認、PC作業の日は「日報を書いて」</td></tr>
+      <tr><td>深夜のコミットが多い</td><td>0〜4時が25%以上</td><td>深夜の PR は翌朝見直してからマージ</td></tr>
+      <tr><td>PR がマージまで長い</td><td>中央値3日超</td><td>PR を作業キュー1項目に絞る</td></tr>
+      <tr><td>放置されたブランチ</td><td>未マージで14日以上更新なし</td><td>削除するか PR にする</td></tr>
+      <tr><td>大きなコミット（情報）</td><td>1000行または50ファイル以上</td><td>素材の取り込みなら不要。コードなら分ける</td></tr>
+      <tr><td>修正の割合が高い</td><td>直近14日で30%以上</td><td>テストや検査を作業キューに追加</td></tr>
+      <tr><td>判断待ちの繰り越し</td><td>2回以上のメモに出て7日以上</td><td>次のチャットで決めるか期限を決める</td></tr>
+      <tr><td>PC作業がたまっている</td><td>「（PC）」が5件以上</td><td>PC作業の日を決める</td></tr>
+      <tr><td>作業がない（情報）</td><td>14日以上</td><td>再開時は最新メモの「次にやること」から</td></tr>
+      <tr><td>準備作業の繰り返し（提案）</td><td>同じ種類の準備作業が3日以上</td><td>スクリプトか Skill にまとめる</td></tr>
+      <tr><td>似た作業の繰り返し（提案）</td><td>似た作業が3日以上</td><td>Skill か npm スクリプトにまとめる</td></tr>
+      <tr><td>繰り越し</td><td>同じ「次にやること」が3回以上のメモに残る</td><td>着手できない理由を確かめる</td></tr>
+      <tr><td>修正の集中</td><td>同じファイルの修正が30日で3回以上</td><td>テストか検査を追加</td></tr>
+    </tbody>
+  </table></div>
+  <p>しきい値は <code>docs/log/config.json</code> に <code>"analysis": { "lateNightRatioMax": 0.3 }</code> のように書いて変えられます。</p>
+</section>
+
+<section id="trouble">
+  <h2>困ったとき</h2>
+  <details>
+    <summary>git pull で「untracked working tree files would be overwritten」</summary>
+    <div>
+      <p>手元の未追跡のファイル（Unity の <code>ProjectSettings/ProjectVersion.txt</code> など）と、GitHub 側で追加されたファイルがぶつかっています。エディタを閉じ、手元のファイルを別名に退避してから pull します。<span class="place repo">各リポジトリ</span></p>
+      <div class="code"><pre>git log --oneline HEAD..origin/main -- ProjectSettings/ProjectVersion.txt
+Move-Item ProjectSettings\ProjectVersion.txt ProjectSettings\ProjectVersion.txt.local
+git pull
+fc.exe ProjectSettings\ProjectVersion.txt ProjectSettings\ProjectVersion.txt.local</pre><button type="button">コピー</button></div>
+      <p>中身が同じなら <code>.local</code> を消します。違うなら、どちらの Unity の版で続けるかを決めます。<code>git stash -u</code> や <code>git clean</code> は使いません（Library フォルダなどを巻き込むことがあります）。</p>
+    </div>
+  </details>
+  <details>
+    <summary>install-all.ps1 で「スキップ: リモートに chore/daily-log-v… が既にあります」</summary>
+    <div><p>同じ版の導入 PR が未マージのまま残っています。GitHub でその PR をマージするか閉じてから、もう一度実行します。手元のブランチが原因のときは <code>git branch -D chore/daily-log-v&lt;版&gt;</code> を実行します。</p></div>
+  </details>
+  <details>
+    <summary>install-all.ps1 で「キットが GitHub より N コミット古いです」</summary>
+    <div><p>古い版を配らないための安全装置です。<span class="place kit">キットのフォルダ</span> で <code>git pull</code> してから実行し直します。</p></div>
+  </details>
+  <details>
+    <summary>publish-kit で「中止: …」と表示された</summary>
+    <div>
+      <div class="table-wrap"><table>
+        <thead><tr><th>表示</th><th>対処</th></tr></thead>
+        <tbody>
+          <tr><td>未コミットの変更があります</td><td>キットのフォルダで <code>git status</code> を見て、コミットするか <code>git checkout -- .</code> で戻す</td></tr>
+          <tr><td>zip の版が現在の版より新しくありません</td><td>最新の zip か確認する（公開済みの版は反映しない）</td></tr>
+          <tr><td>テストが失敗したため…元の状態に戻しました</td><td>表示されたテスト名を Claude に伝えて直してもらう</td></tr>
+          <tr><td>zip が見つかりません</td><td>zip をキットのフォルダに置くか、<code>publish-kit.bat</code> にドラッグ＆ドロップ</td></tr>
+          <tr><td>push に失敗しました</td><td>ネットワークを確認し、表示された1行を実行する</td></tr>
+        </tbody>
+      </table></div>
+    </div>
+  </details>
+  <details>
+    <summary>robocopy の終了コードが 1 や 3 になる</summary>
+    <div><p>robocopy は成功しても 0〜7 を返します（1＝コピーあり）。最後の表の「失敗」の列が 0 なら問題ありません。8 以上が失敗です。</p></div>
+  </details>
+  <details>
+    <summary>Actions の daily-log が失敗する</summary>
+    <div><p>Actions タブで失敗した実行を開き、赤いステップのログを見ます。「push に失敗」なら main のブランチ保護が原因なので、そのリポジトリはワークフローを削除し、PR の中で <code>node tools/daily-log.mjs generate</code> する運用にします（仕様書9章）。</p></div>
+  </details>
+  <details>
+    <summary>.ps1 を実行すると「デジタル署名されていません」</summary>
+    <div><p>ダウンロードしたファイルに付く印が原因です。<code>Unblock-File .\install-all.ps1</code> を実行するか、ファイルのプロパティで「許可する」にチェックします。<code>publish-kit.bat</code> は中で実行ポリシーを指定しているので、そのまま動きます。</p></div>
+  </details>
+  <details>
+    <summary>日報に深夜の作業が前日として出る</summary>
+    <div><p>仕様です。作業日の区切りは朝4時です。カレンダーどおりにしたい場合は <code>docs/log/config.json</code> の <code>"dayStartHour"</code> を <code>0</code> にします。</p></div>
+  </details>
+</section>
+
+<section id="files">
+  <h2>ファイル早見表</h2>
+  <div class="two">
+    <div>
+      <h3><span class="place kit">キットのリポジトリ</span></h3>
+<div class="tree"><span class="k">daily-log-kit/</span>
+├─ CLAUDE.md          <span class="m">Claude Code への指示</span>
+├─ SPEC.md            <span class="m">作業キュー</span>
+├─ README.md          <span class="m">概要と変更履歴</span>
+├─ files/             <span class="m">各リポジトリに配る中身</span>
+├─ install.mjs        <span class="m">1リポジトリに導入</span>
+├─ install-all.ps1    <span class="m">一括導入</span>
+├─ publish-kit.bat    <span class="m">zip の反映（ダブルクリック）</span>
+├─ publish-kit.ps1
+├─ bump-version.mjs   <span class="m">版番号の一括変更</span>
+├─ templates/         <span class="m">ADR のひな形</span>
+├─ prompts/           <span class="m">依頼文（1〜4）</span>
+├─ tests/             <span class="m">決まりの検査、Windows の通しテスト</span>
+├─ .github/workflows/ <span class="m">kit-ci、kit-release</span>
+└─ docs/              <span class="m">引き継ぎ資料、ADR、分析の検討、このマニュアル</span></div>
+    </div>
+    <div>
+      <h3><span class="place repo">導入後の各リポジトリ</span></h3>
+<div class="tree"><span class="r">&lt;リポジトリ&gt;/</span>
+├─ CLAUDE.md                 <span class="m">末尾に日報の区間</span>
+├─ tools/
+│  ├─ daily-log.mjs          <span class="m">日報の生成</span>
+│  ├─ daily-log-analyze.mjs  <span class="m">分析</span>
+│  └─ daily-log-brief.mjs    <span class="m">セッション開始時の引き継ぎ</span>
+├─ .claude/
+│  ├─ settings.json          <span class="m">Stop と SessionStart のフック</span>
+│  ├─ hooks/daily-log-reminder.mjs
+│  ├─ hooks/daily-log-session-start.mjs
+│  └─ skills/daily-log/SKILL.md
+├─ .github/workflows/daily-log.yml
+└─ docs/
+   ├─ specs/daily-log.md     <span class="m">仕様</span>
+   ├─ decisions/NNNN-daily-log.md
+   └─ log/
+      ├─ README.md           <span class="m">日別の一覧（自動）</span>
+      ├─ config.json         <span class="m">区切りの時刻、準備のルール</span>
+      ├─ entries/日付/       <span class="m">日報メモ（人・Claude が書く）</span>
+      └─ 2026-11/日付.md     <span class="m">日報（自動）</span></div>
+    </div>
+  </div>
+</section>
+
+<footer>daily-log-kit v1.3.0 のマニュアル。最新の状態は キットのリポジトリの <code>docs/HANDOFF.md</code> と <code>SPEC.md</code> を参照してください。</footer>
+</main>
+</div>
+<script>
+document.querySelectorAll('.code button').forEach(function (btn) {
+  btn.addEventListener('click', function () {
+    var pre = btn.parentElement.querySelector('pre');
+    var text = pre.innerText.replace(/\s+←.*$/gm, '');
+    var done = function () { btn.textContent = 'コピーしました'; setTimeout(function () { btn.textContent = 'コピー'; }, 1600); };
+    var fallback = function () {
+      var r = document.createRange(); r.selectNodeContents(pre);
+      var s = window.getSelection(); s.removeAllRanges(); s.addRange(r);
+      btn.textContent = '選択しました（Ctrl+C）';
+      setTimeout(function () { btn.textContent = 'コピー'; }, 2200);
+    };
+    try { navigator.clipboard.writeText(text).then(done, fallback); } catch (e) { fallback(); }
+  });
+});
+</script>
+</body>
+</html>

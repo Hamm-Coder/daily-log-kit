@@ -1,7 +1,7 @@
 #!/usr/bin/env node
-// daily-log-kit v1.1.2 — キットの版番号をまとめて書き換える
+// daily-log-kit v1.3.0 — キットの版番号をまとめて書き換える
 //   node bump-version.mjs 1.1.0
-// "daily-log-kit vX.Y.Z" の表記と KIT_VERSION を、キット内の全ファイルで置き換える（extras/ と .git/ は対象外）
+// "daily-log-kit vX.Y.Z" の表記と KIT_VERSION を、キット内の全ファイルで置き換える（extras/、キット直下の docs/、.git/ は対象外）
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -14,6 +14,7 @@ if (cur === next) { console.log(`既に v${next} です`); process.exit(0); }
 
 const walk = (d) => fs.readdirSync(d, { withFileTypes: true }).flatMap((e) => {
   if (['.git', 'extras', 'node_modules'].includes(e.name)) return [];
+  if (d === root && e.name === 'docs') return []; // キット直下の docs/ は履歴（引き継ぎ資料・ADR）なので書き換えない
   const p = path.join(d, e.name);
   return e.isDirectory() ? walk(p) : [p];
 });

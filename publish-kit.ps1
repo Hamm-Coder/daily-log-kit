@@ -1,5 +1,5 @@
 ﻿<#
-daily-log-kit v1.1.2 — 新しい版のキット（zip）を GitHub の daily-log-kit リポジトリへ反映する
+daily-log-kit v1.3.0 — 新しい版のキット（zip）を GitHub の daily-log-kit リポジトリへ反映する
 
 ■ 置き場所と実行場所
   このファイルと publish-kit.bat は、キットのフォルダ（例 C:\AllGitRepository\daily-log-kit）の直下に置いて実行する。
@@ -139,7 +139,7 @@ function Restore-Kit {
 # 4. テスト
 Step '4/7 テスト'
 Push-Location $Kit
-try { $testOut = & node --test install.test.mjs files/tools/daily-log.test.mjs 2>&1 | Out-String; $testCode = $LASTEXITCODE }
+try { $testOut = & node --test 2>&1 | Out-String; $testCode = $LASTEXITCODE }  # キットの全テスト（*.test.mjs）
 finally { Pop-Location }
 $summary = ($testOut -split "`n" | Where-Object { $_ -match '^# (tests|pass|fail) ' }) -join ' / '
 Write-Host $summary

@@ -1,0 +1,46 @@
+# daily-log-kit v1.3.0 — main に新しい版が入ったら、タグ v<版> と GitHub のリリースを自動で作る（各リポジトリには配布しない）
+# ・Claude Code がキットのリポジトリを直接直す流れ: 版を上げる PR → マージ → このワークフローがタグとリリースを作る
+# ・publish-kit.ps1 で反映した場合: タグは publish-kit が作るので、リリースだけ作る
+name: kit-release
+
+on:
+  push:
+    branches: [main]
+    paths: ['install.mjs'] # 版番号（KIT_VERSION）は install.mjs にある
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: kit-release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+      - name: テスト（失敗したらタグを作らない）
+        run: node --test
+      - name: タグとリリース
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          v=$(node -e "console.log(/KIT_VERSION = '([\d.]+)'/.exec(require('fs').readFileSync('install.mjs','utf8'))[1])")
+          git fetch --tags --quiet
+          if git rev-parse -q --verify "refs/tags/v$v" >/dev/null; then
+            echo "タグ v$v は作成済み"
+          else
+            git tag "v$v"
+            git push origin "v$v" || git ls-remote --exit-code --tags origin "refs/tags/v$v"
+          fi
+          if gh release view "v$v" >/dev/null 2>&1; then echo "リリース v$v は作成済み"; exit 0; fi
+          note=$(grep -E "^\| $v \|" README.md | head -1 | awk -F'|' '{print $4}' | sed 's/^ *//;s/ *$//')
+          gh release create "v$v" --verify-tag --title "v$v" --notes "${note:-v$v}"

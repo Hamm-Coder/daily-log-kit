@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// daily-log-kit v1.1.2 — 日報の生成ツール（依存パッケージなし。Node.js 18 以上）
+// daily-log-kit v1.3.0 — 日報の生成ツール（依存パッケージなし。Node.js 18 以上）
 // 仕様: docs/specs/daily-log.md
 //
 // 使い方:
@@ -16,7 +16,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 
-export const KIT_VERSION = '1.1.2';
+export const KIT_VERSION = '1.3.0';
 
 export const DEFAULT_CONFIG = {
   tz: 'Asia/Tokyo',
@@ -245,11 +245,11 @@ export function samePath(a, b) {
 
 // ---------- 入出力 ----------
 
-function git(args, cwd) {
+export function git(args, cwd) {
   return execFileSync('git', args, { cwd, encoding: 'utf8', maxBuffer: 256 * 1024 * 1024, stdio: ['ignore', 'pipe', 'pipe'] });
 }
 
-function tryGit(args, cwd) {
+export function tryGit(args, cwd) {
   try { return git(args, cwd).trim(); } catch { return null; }
 }
 
@@ -267,7 +267,7 @@ export function loadConfig(root) {
   }
 }
 
-function readCommits(root, ref, cfg) {
+export function readCommits(root, ref, cfg) {
   if (tryGit(['rev-parse', '--is-shallow-repository'], root) === 'true') {
     console.error('注意: 浅いクローンです。古い日の日報が欠けます（git fetch --unshallow を推奨）');
   }
@@ -276,7 +276,7 @@ function readCommits(root, ref, cfg) {
   return filterCommits(parseGitLog(git(['log', ref, `--pretty=format:${fmt}`], root)), cfg);
 }
 
-function readEntries(root, cfg) {
+export function readEntries(root, cfg) {
   const base = path.join(root, cfg.entriesDir);
   const map = new Map();
   if (!fs.existsSync(base)) return map;
@@ -293,7 +293,7 @@ function readEntries(root, cfg) {
   return map;
 }
 
-function parseArgs(argv) {
+export function parseArgs(argv) {
   const a = { _: [] };
   for (let i = 0; i < argv.length; i++) {
     const t = argv[i];
@@ -361,7 +361,7 @@ export function cmdNewEntry(args, root = repoRoot()) {
   return file;
 }
 
-function findBase(root, cfg, explicit) {
+export function findBase(root, cfg, explicit) {
   const cands = [explicit, cfg.baseBranch,
     tryGit(['symbolic-ref', '--quiet', '--short', 'refs/remotes/origin/HEAD'], root),
     'origin/main', 'origin/master', 'main', 'master'].filter(Boolean);

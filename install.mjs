@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// daily-log-kit v1.1.2 — 1つのリポジトリに日報の仕組みを入れる（何度実行しても同じ結果になる）
+// daily-log-kit v1.3.0 — 1つのリポジトリに日報の仕組みを入れる（何度実行しても同じ結果になる）
 //
 //   node install.mjs <リポジトリのフォルダ> [--backfill] [--dry-run] [--no-workflow] [--no-hook] [--no-adr] [--force]
 //
@@ -22,12 +22,16 @@ import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
-export const KIT_VERSION = '1.1.2';
+export const KIT_VERSION = '1.3.0';
 const KIT_DIR = path.dirname(fileURLToPath(import.meta.url));
 const FILES_DIR = path.join(KIT_DIR, 'files');
 const MARK_START = '<!-- daily-log:start';
 const MARK_END = '<!-- daily-log:end -->';
-const HOOK_FILE = '.claude/hooks/daily-log-reminder.mjs';
+// 登録するフック（イベントとファイル）
+export const HOOKS = [
+  { event: 'Stop', file: '.claude/hooks/daily-log-reminder.mjs' },
+  { event: 'SessionStart', file: '.claude/hooks/daily-log-session-start.mjs' },
+];
 const ADR_DIR = 'docs/decisions';
 const ADR_TEMPLATE = path.join(KIT_DIR, 'templates', 'adr-daily-log.md');
 
@@ -36,6 +40,7 @@ export const CLAUDE_MD_BLOCK = `${MARK_START} (daily-log-kit v${KIT_VERSION}。�
 
 - 作業の最後（PRを作る前）に \`daily-log\` Skill の手順で \`docs/log/entries/<日付>/\` に日報メモを書き、作業ブランチにコミットする
 - 決めたことはユーザーが決めた・承認したことだけを書き、提案は「未解決・判断待ち」に書く。秘密情報は書かない
+- セッションの開始時に「日報からの引き継ぎ」（次にやること・判断待ち・始める前の準備・効率化の候補）が渡される。依頼に関係するときに使い、準備の項目は作業の前に確かめる
 - \`docs/log/YYYY-MM/\` と \`docs/log/README.md\` は自動生成なので手で編集しない
 - 仕様: \`docs/specs/daily-log.md\`
 ${MARK_END}`;
@@ -51,26 +56,32 @@ export function upsertBlock(text, block) {
 }
 
 /** 既存のフックの書き方（$CLAUDE_PROJECT_DIR の有無など）に合わせてコマンドを作る */
-export function hookCommand(settings) {
+export function hookCommand(settings, file = HOOKS[0].file) {
   const cmds = [];
   for (const groups of Object.values(settings?.hooks || {})) {
     for (const g of groups || []) for (const h of g.hooks || []) if (typeof h.command === 'string') cmds.push(h.command);
   }
   for (const c of cmds) {
     const m = /^node\s+("?)(.*?)\.claude\/hooks\/[\w.-]+\.m?js\1\s*$/.exec(c);
-    if (m) return `node ${m[1]}${m[2]}${HOOK_FILE}${m[1]}`;
+    if (m) return `node ${m[1]}${m[2]}${file}${m[1]}`;
   }
-  return `node "$CLAUDE_PROJECT_DIR/${HOOK_FILE}"`;
+  return `node "$CLAUDE_PROJECT_DIR/${file}"`;
 }
 
+/** 日報のフック（Stop と SessionStart）を足す。既存の設定と、既にあるフックはそのまま */
 export function mergeSettings(settings) {
   const s = structuredClone(settings || {});
   s.hooks ??= {};
-  s.hooks.Stop ??= [];
-  const exists = s.hooks.Stop.some((g) => (g.hooks || []).some((h) => String(h.command || '').includes('daily-log-reminder')));
-  if (exists) return { settings: s, changed: false };
-  s.hooks.Stop.push({ hooks: [{ type: 'command', command: hookCommand(settings), timeout: 30 }] });
-  return { settings: s, changed: true };
+  const added = [];
+  for (const { event, file } of HOOKS) {
+    s.hooks[event] ??= [];
+    const name = path.basename(file, '.mjs');
+    const exists = s.hooks[event].some((g) => (g.hooks || []).some((h) => String(h.command || '').includes(name)));
+    if (exists) continue;
+    s.hooks[event].push({ hooks: [{ type: 'command', command: hookCommand(settings, file), timeout: 30 }] });
+    added.push(event);
+  }
+  return { settings: s, changed: added.length > 0, added };
 }
 
 export function mergePackageScripts(pkg) {
@@ -79,7 +90,9 @@ export function mergePackageScripts(pkg) {
   const want = {
     log: 'node tools/daily-log.mjs generate',
     'log:entry': 'node tools/daily-log.mjs new-entry',
-    'test:log': 'node --test tools/daily-log.test.mjs',
+    'log:analyze': 'node tools/daily-log-analyze.mjs',
+    'log:brief': 'node tools/daily-log-brief.mjs',
+    'test:log': 'node --test tools/daily-log.test.mjs tools/daily-log-analyze.test.mjs tools/daily-log-brief.test.mjs',
   };
   const added = [];
   for (const [k, v] of Object.entries(want)) if (!(k in p.scripts)) { p.scripts[k] = v; added.push(k); }
@@ -135,7 +148,7 @@ export function install(target, opt = {}) {
   for (const rel of walk(FILES_DIR)) {
     const relPosix = rel.split(path.sep).join('/');
     if (opt.noWorkflow && relPosix.startsWith('.github/')) continue;
-    if (opt.noHook && relPosix === HOOK_FILE) continue;
+    if (opt.noHook && HOOKS.some((h) => h.file === relPosix)) continue;
     const src = path.join(FILES_DIR, rel);
     const dst = path.join(root, rel);
     const body = fs.readFileSync(src);
@@ -156,8 +169,8 @@ export function install(target, opt = {}) {
     if (fs.existsSync(sp)) {
       try { cur = JSON.parse(fs.readFileSync(sp, 'utf8')); } catch { throw new Error('.claude/settings.json が JSON として読めません。直してから再実行してください'); }
     }
-    const { settings, changed } = mergeSettings(cur);
-    if (changed) act('設定 .claude/settings.json に Stop フックを追加', () => {
+    const { settings, changed, added } = mergeSettings(cur);
+    if (changed) act(`設定 .claude/settings.json に ${added.join('・')} フックを追加`, () => {
       fs.mkdirSync(path.dirname(sp), { recursive: true });
       fs.writeFileSync(sp, JSON.stringify(settings, null, 2) + '\n');
     });

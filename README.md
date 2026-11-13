@@ -1,6 +1,13 @@
-# daily-log-kit v1.1.2
+# daily-log-kit v1.3.0
 
-Claude Code を使うリポジトリに「日報（日毎ログ）」の仕組みを入れるキット。チャット・Claude Code・Git の作業を `docs/log/` に日ごとにまとめる。仕様は `files/docs/specs/daily-log.md`。
+Claude Code を使うリポジトリに「日報（日毎ログ）」の仕組みを入れるキット。チャット・Claude Code・Git の作業を `docs/log/` に日ごとにまとめ、作業の傾向・改善点・判断待ちを分析する。
+
+| 読むもの | 内容 |
+| --- | --- |
+| `docs/manual/index.html` | 図入りのマニュアル（導入、毎日の使い方、更新、分析、トラブル対応）。ブラウザで開く |
+| `files/docs/specs/daily-log.md` | 日報の仕組みの仕様 |
+| `docs/analysis.md` | 日報を情報分析に使えるかの検討と、改善の提案 |
+| `CLAUDE.md` / `SPEC.md` / `docs/HANDOFF.md` | このキットを Claude Code で開発するための指示・作業キュー・引き継ぎ資料 |
 
 ## 中身
 
@@ -9,14 +16,16 @@ Claude Code を使うリポジトリに「日報（日毎ログ）」の仕組�
 | `files/` | リポジトリにそのまま入るファイル（ツール、テスト、フック、Skill、Actions、仕様、手順、設定） |
 | `install.mjs` | 1つのリポジトリに導入する。何度実行しても同じ結果。既存の設定は保持して追記だけ |
 | `install-all.ps1` | `C:\AllGitRepository` 配下の複数リポジトリへ一括導入（既定は確認のみ） |
-| `install.test.mjs` | 導入スクリプトのテスト（`node --test install.test.mjs`） |
+| `files/tools/daily-log-analyze.mjs` | 分析ツール（各リポジトリに配られる）。傾向・改善点・判断待ちの一覧 |
+| `files/tools/daily-log-brief.mjs` | セッション開始時の引き継ぎ（次にやること・判断待ち・準備・効率化の候補）。SessionStart フックが使う |
+| `install.test.mjs`、`tests/` | テスト。`node --test` で全部（キットの決まりの検査を含む）。`tests/e2e.ps1` は Windows の通しテスト |
+| `.github/workflows/` | キット自体の CI（`kit-ci.yml`）と自動リリース（`kit-release.yml`）。各リポジトリには配らない |
 | `templates/adr-daily-log.md` | 導入時に作る ADR のひな形（状態: 採用。導入PRのマージで採用とする） |
 | `publish-kit.bat` / `publish-kit.ps1` | 新しい版の zip をキットのリポジトリに反映（展開・上書き・テスト・コミット・タグ・push）。キットのフォルダで実行 |
 | `bump-version.mjs` | キットの版番号を全ファイルで一括変更（`node bump-version.mjs 1.1.0`） |
 | `prompts/` | Claude Code・claude.ai に貼る依頼文（導入、仕様からの実装、過去チャットからの補完、チャットの締め） |
-| `extras/RPGMZ_Prototype/` | RPGMZ_Prototype 専用: ADR 0011、過去チャット分の日報メモ |
 
-必要なもの: Git、Node.js 18 以上。PRまで一括で作るなら GitHub CLI（`gh`）。
+必要なもの: Git、Node.js（22 と 24 で確認。18 以上で動く設計）。PRまで一括で作るなら GitHub CLI（`gh`）。
 
 ## 使い方は3通り（推奨は B）
 
@@ -37,9 +46,9 @@ cd C:\AllGitRepository\RPGMZ_prototype
 git switch -c chore/daily-log
 node ..\daily-log-kit\install.mjs . --dry-run     # 変更予定の確認
 node ..\daily-log-kit\install.mjs . --backfill    # 導入＋過去の日報
-node --test tools/daily-log.test.mjs
+node --test tools/daily-log.test.mjs tools/daily-log-analyze.test.mjs tools/daily-log-brief.test.mjs
 git add -A
-git commit -m "chore: 日報の仕組みを導入（daily-log-kit v1.1.2）"
+git commit -m "chore: 日報の仕組みを導入（daily-log-kit v1.3.0）"
 git push -u origin chore/daily-log
 gh pr create --fill
 ```
@@ -102,10 +111,10 @@ Hamm-Coder/daily-log-kit（公開）   ← キットの正本。改良はここ�
 
 ```powershell
 cd C:\AllGitRepository\daily-log-kit
-node --test install.test.mjs files/tools/daily-log.test.mjs
+node --test
 git init -b main
 git add -A
-git commit -m "daily-log-kit v1.1.2"
+git commit -m "daily-log-kit v1.3.0"
 gh repo create Hamm-Coder/daily-log-kit --public --source . --push
 git tag v1.0.0
 git push origin v1.0.0
@@ -154,20 +163,20 @@ Web 版だけで入れる場合は、各リポジトリのセッションに `pr
 
 途中で止まった場合、キットのフォルダは上書き前の状態に戻る（push の失敗だけは、コミットとタグが手元に残るので表示された1行を実行する）。
 
-### 6. キットを自分で改良して配る
+### 6. キットを改良して配る（Claude Code で直接直す。推奨）
+
+1. キットのリポジトリ（`Hamm-Coder/daily-log-kit`）で Claude Code Web のセッションを開き、直したい内容と「版を上げてPRにして」を頼む（手順は `CLAUDE.md` にある）
+2. PR の差分を見てマージする。`kit-release.yml` がテストを通してから、タグ `v<版>` とリリースを自動で作る
+3. PC で配る:
 
 ```powershell
 cd C:\AllGitRepository\daily-log-kit
 git pull
-# files/ などを修正（Claude Code に頼んでもよい）
-node --test install.test.mjs files/tools/daily-log.test.mjs
-node bump-version.mjs 1.1.0          # 全ファイルの版番号を一括で書き換え
-# README.md の「変更履歴」に1行追記
-git commit -am "v1.1.0: <変更内容>"
-git tag v1.1.0
-git push origin main --tags
+.\install-all.ps1                    # 確認のみ
 .\install-all.ps1 -Apply -CreatePR   # 導入済みの全リポジトリに「更新」のPR
 ```
+
+チャットで作った zip を使う場合は「5. 新しい版の zip を受け取ったとき」（publish-kit）。PC で手作業で直す場合は、`node --test` → `node bump-version.mjs <版>` → 変更履歴に1行 → コミット → push（タグは `kit-release.yml` が作る）。
 
 - 更新されるのはキットのファイル（先頭付近に `daily-log-kit v` の印があるもの）と CLAUDE.md の日報の区間だけ。日報メモ、生成済みの日報、`docs/log/config.json` は変わらない
 - 手元のキットが GitHub より古いと、一括導入は警告して止まる（古い版を配らないため）
@@ -177,6 +186,8 @@ git push origin main --tags
 
 | 版 | 日付 | 内容 |
 | --- | --- | --- |
+| 1.3.0 | 2026-11-13 | セッション開始時の引き継ぎ（次にやること＋作業キュー、判断待ち、始める前の準備、効率化の候補）。繰り返しの判別（準備作業・似た作業・繰り越し・修正の集中）を分析にも追加。準備のルール（config.json の prep） |
+| 1.2.0 | 2026-11-13 | 分析ツール（傾向・改善点・判断待ち、複数リポジトリ対応）。キットの決まりの検査、Windows の通しテストと CI、自動リリース。引き継ぎ資料（CLAUDE.md・SPEC.md・HANDOFF.md・ADR）とマニュアル。`publish-kit.bat` の改行を CRLF に修正。`extras/` を削除 |
 | 1.1.2 | 2026-11-13 | `publish-kit` の zip をキットのフォルダから優先して探す（次にダウンロードフォルダ）。版番号が最大の zip を使う。`.gitignore` で zip をコミット対象から除外 |
 | 1.1.1 | 2026-11-13 | `publish-kit.bat` / `publish-kit.ps1` を追加（新しい版の zip を GitHub に反映する作業を1回の実行にまとめる） |
 | 1.1.0 | 2026-11-13 | `docs/decisions/` があるリポジトリに、日報の ADR を「採用」で自動作成（既にあれば作らない。`--no-adr` / `-NoAdr` で無効） |
@@ -197,9 +208,10 @@ git push origin main --tags
 
 `tools/daily-log*.mjs`、`.claude/hooks/daily-log-reminder.mjs`、`.claude/skills/daily-log/`、`.github/workflows/daily-log.yml`、`docs/specs/daily-log.md`、`docs/procedures/daily-log.md` を削除し、`.claude/settings.json` の Stop フック1件と `CLAUDE.md` の日報の区間を消す。`docs/log/` は残してよい。
 
-## 確認済みの範囲（このキットの作成時）
+## 確認済みの範囲
 
-- 単体テスト: ツール12件、導入スクリプト5件が成功（Node.js 22）
-- テスト用リポジトリ2つ（既存の CLAUDE.md・フック・package.json あり／なし、未コミットの変更あり）で `install-all.ps1` を PowerShell 7.4 で実行し、確認のみ→本番→再実行（変更なし）を確認。作業フォルダの未コミット変更と現在のブランチが保たれることを確認
-- Stop フック: 差分ありメモなしで1回だけ促し、2回目と `stop_hook_active` のときは通すことを確認
-- 未確認: Windows PowerShell 5.1 と実際の Windows 環境での実行、GitHub 上での Actions の実行、`-CreatePR`（gh の認証が必要なため）。初回は1つのリポジトリで試してから一括にする
+最新の状況は `docs/HANDOFF.md` の「確認済みの範囲」を見る。要点:
+
+- 単体テストとキットの決まりの検査: `node --test` で39件成功（Node.js 22）
+- 一括導入と反映の通しテスト（`tests/e2e.ps1`）: PowerShell 7.4 で成功。Windows PowerShell 5.1 と実際の robocopy は `kit-ci.yml` で確認する
+- GitHub 上の Actions と `-CreatePR` は、最初の実行で確認する（`SPEC.md` の K1〜K4）

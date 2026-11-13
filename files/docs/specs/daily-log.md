@@ -1,6 +1,6 @@
 # 日報（日毎ログ）の仕様
 
-- キット: daily-log-kit v1.3.0（どのリポジトリでも同じ内容。作品・製品ごとの差は `docs/log/config.json` だけで吸収する）
+- キット: daily-log-kit v1.3.1（どのリポジトリでも同じ内容。作品・製品ごとの差は `docs/log/config.json` だけで吸収する）
 - 更新日: 2026-11-10
 
 ## 1. 目的
@@ -127,9 +127,9 @@ GitHub Actions のボットが main に push できない場合は、次のど�
 - 日報ファイルの手修正は次の生成で消える。直したい内容はメモに書く
 - Stop フックは判定できないときとエラー時に何もしない（作業を止めない）
 
-## 11. 他のリポジトリへの導入
+## 11. 導入・更新・再適用・取り外し
 
-`daily-log-kit` の `install.mjs`（1リポジトリ）または `install-all.ps1`（一括）を使う。手順は `docs/procedures/daily-log.md`。
+手順は `docs/procedures/daily-log-kit.md`。キットのリポジトリは `Hamm-Coder/daily-log-kit`、マニュアルはその `docs/MANUAL.md`。
 
 ## 12. 分析（`tools/daily-log-analyze.mjs`）
 

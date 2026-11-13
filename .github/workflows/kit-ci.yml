@@ -1,4 +1,4 @@
-# daily-log-kit v1.3.0 — キット自体の検証（このワークフローは各リポジトリには配布しない）
+# daily-log-kit v1.3.1 — キット自体の検証（このワークフローは各リポジトリには配布しない）
 # ・unit: Node.js の単体テストとキットの決まりの検査（Linux と Windows、Node 22 と 24）
 # ・e2e-windows: Windows PowerShell 5.1 と PowerShell 7 で install-all.ps1 / publish-kit.ps1 を通しで実行
 name: kit-ci

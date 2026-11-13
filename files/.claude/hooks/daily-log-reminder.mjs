@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// daily-log-kit v1.3.0 — Stop フック: 作業の差分があるのに日報メモがなければ、1回だけ記録を促す
+// daily-log-kit v1.3.1 — Stop フック: 作業の差分があるのに日報メモがなければ、1回だけ記録を促す
 // 止め方: 環境変数 DAILY_LOG_SKIP=1。判定できないとき・エラー時は何もしない（作業を止めない）
 import { execFileSync, spawnSync } from 'node:child_process';
 import fs from 'node:fs';

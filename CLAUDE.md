@@ -24,7 +24,7 @@ Claude Code を使う各リポジトリに「日報（日毎ログ）」の仕�
 | `.github/workflows/` | キット自体の CI（`kit-ci.yml`）と自動リリース（`kit-release.yml`） | 配らない |
 | `docs/` | このキットの引き継ぎ資料、ADR、分析の検討、マニュアル | 配らない |
 
-`files/docs/` は各リポジトリに配る文書、キット直下の `docs/` はキット自体の文書。混同しない。
+`files/docs/` は各リポジトリに配る文書、キット直下の `docs/` はキット自体の文書。混同しない。手順を変えたら `docs/MANUAL.md`（テキスト版）と `docs/manual/index.html`（図入り）と `files/docs/procedures/daily-log-kit.md` をそろえて直す。
 
 ## 開発の決まり
 

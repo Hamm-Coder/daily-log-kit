@@ -1,10 +1,11 @@
-# daily-log-kit v1.3.0
+# daily-log-kit v1.3.1
 
 Claude Code を使うリポジトリに「日報（日毎ログ）」の仕組みを入れるキット。チャット・Claude Code・Git の作業を `docs/log/` に日ごとにまとめ、作業の傾向・改善点・判断待ちを分析する。
 
 | 読むもの | 内容 |
 | --- | --- |
-| `docs/manual/index.html` | 図入りのマニュアル（導入、毎日の使い方、更新、分析、トラブル対応）。ブラウザで開く |
+| `docs/MANUAL.md` | マニュアルのテキスト版（GitHub 上でそのまま読める） |
+| `docs/manual/index.html` | 図入りのマニュアル（導入、毎日の使い方、更新、分析、トラブル対応）。ダウンロードしてブラウザで開く |
 | `files/docs/specs/daily-log.md` | 日報の仕組みの仕様 |
 | `docs/analysis.md` | 日報を情報分析に使えるかの検討と、改善の提案 |
 | `CLAUDE.md` / `SPEC.md` / `docs/HANDOFF.md` | このキットを Claude Code で開発するための指示・作業キュー・引き継ぎ資料 |
@@ -48,7 +49,7 @@ node ..\daily-log-kit\install.mjs . --dry-run     # 変更予定の確認
 node ..\daily-log-kit\install.mjs . --backfill    # 導入＋過去の日報
 node --test tools/daily-log.test.mjs tools/daily-log-analyze.test.mjs tools/daily-log-brief.test.mjs
 git add -A
-git commit -m "chore: 日報の仕組みを導入（daily-log-kit v1.3.0）"
+git commit -m "chore: 日報の仕組みを導入（daily-log-kit v1.3.1）"
 git push -u origin chore/daily-log
 gh pr create --fill
 ```
@@ -114,7 +115,7 @@ cd C:\AllGitRepository\daily-log-kit
 node --test
 git init -b main
 git add -A
-git commit -m "daily-log-kit v1.3.0"
+git commit -m "daily-log-kit v1.3.1"
 gh repo create Hamm-Coder/daily-log-kit --public --source . --push
 git tag v1.0.0
 git push origin v1.0.0
@@ -186,6 +187,7 @@ git pull
 
 | 版 | 日付 | 内容 |
 | --- | --- | --- |
+| 1.3.1 | 2026-11-13 | 各リポジトリに導入・更新・再適用・取り外しの手順（`docs/procedures/daily-log-kit.md`）を配る。マニュアルのテキスト版（`docs/MANUAL.md`）。仕様書11章の案内先の食い違いを修正 |
 | 1.3.0 | 2026-11-13 | セッション開始時の引き継ぎ（次にやること＋作業キュー、判断待ち、始める前の準備、効率化の候補）。繰り返しの判別（準備作業・似た作業・繰り越し・修正の集中）を分析にも追加。準備のルール（config.json の prep） |
 | 1.2.0 | 2026-11-13 | 分析ツール（傾向・改善点・判断待ち、複数リポジトリ対応）。キットの決まりの検査、Windows の通しテストと CI、自動リリース。引き継ぎ資料（CLAUDE.md・SPEC.md・HANDOFF.md・ADR）とマニュアル。`publish-kit.bat` の改行を CRLF に修正。`extras/` を削除 |
 | 1.1.2 | 2026-11-13 | `publish-kit` の zip をキットのフォルダから優先して探す（次にダウンロードフォルダ）。版番号が最大の zip を使う。`.gitignore` で zip をコミット対象から除外 |

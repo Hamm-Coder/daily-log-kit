@@ -1,4 +1,4 @@
-# daily-log-kit v1.3.3
+# daily-log-kit v1.4.0
 
 Claude Code を使うリポジトリに「日報（日毎ログ）」の仕組みを入れるキット。チャット・Claude Code・Git の作業を `docs/log/` に日ごとにまとめ、作業の傾向・改善点・判断待ちを分析する。
 
@@ -17,6 +17,7 @@ Claude Code を使うリポジトリに「日報（日毎ログ）」の仕組�
 | `files/` | リポジトリにそのまま入るファイル（ツール、テスト、フック、Skill、Actions、仕様、手順、設定） |
 | `install.mjs` | 1つのリポジトリに導入する。何度実行しても同じ結果。既存の設定は保持して追記だけ |
 | `install-all.ps1` | `C:\AllGitRepository` 配下の複数リポジトリへ一括導入（既定は確認のみ） |
+| `pull-all.ps1` | 日報の仕組みを入れたリポジトリとキットを、まとめて `git pull` する（入れていないリポジトリは対象外） |
 | `files/tools/daily-log-analyze.mjs` | 分析ツール（各リポジトリに配られる）。傾向・改善点・判断待ちの一覧 |
 | `files/tools/daily-log-brief.mjs` | セッション開始時の引き継ぎ（次にやること・判断待ち・準備・効率化の候補）。SessionStart フックが使う |
 | `install.test.mjs`、`tests/` | テスト。`node --test` で全部（キットの決まりの検査を含む）。`tests/e2e.ps1` は Windows の通しテスト |
@@ -49,7 +50,7 @@ node ..\daily-log-kit\install.mjs . --dry-run     # 変更予定の確認
 node ..\daily-log-kit\install.mjs . --backfill    # 導入＋過去の日報
 node --test tools/daily-log.test.mjs tools/daily-log-analyze.test.mjs tools/daily-log-brief.test.mjs
 git add -A
-git commit -m "chore: 日報の仕組みを導入（daily-log-kit v1.3.3）"
+git commit -m "chore: 日報の仕組みを導入（daily-log-kit v1.4.0）"
 git push -u origin chore/daily-log
 gh pr create --fill
 ```
@@ -115,7 +116,7 @@ cd C:\AllGitRepository\daily-log-kit
 node --test
 git init -b main
 git add -A
-git commit -m "daily-log-kit v1.3.3"
+git commit -m "daily-log-kit v1.4.0"
 gh repo create Hamm-Coder/daily-log-kit --public --source . --push
 git tag v1.0.0
 git push origin v1.0.0
@@ -143,7 +144,7 @@ Web 版だけで入れる場合は、各リポジトリのセッションに `pr
 | --- | --- |
 | Claude Code で作業 | 最後に日報メモを書いて同じPRに入れる（CLAUDE.md の指示と Stop フック） |
 | PRをマージ | Actions が日報と一覧を作り直してコミット |
-| PC で作業を始める | `git pull`（ボットの日報コミットを取り込む） |
+| PC で作業を始める | `git pull`（ボットの日報コミットを取り込む）。まとめて行うならキットのフォルダで `.\pull-all.ps1` |
 
 ### 4. 新しいリポジトリを作ったとき
 
@@ -187,6 +188,7 @@ git pull
 
 | 版 | 日付 | 内容 |
 | --- | --- | --- |
+| 1.4.0 | 2026-11-14 | `pull-all.ps1` を追加（日報の仕組みを入れたリポジトリとキットを、まとめて `git pull --ff-only`。入れていないリポジトリは対象外。`-Repos`・`-Exclude`・`-All`・`-NoKit`）。各リポジトリに配るファイルは手順書の1行だけ変更 |
 | 1.3.3 | 2026-11-14 | 既定のブランチが main・master 以外のリポジトリで、日報が自動で更新されなかった不具合を修正（`daily-log.yml` を「既定のブランチへの push」で動くように変更。ほかのブランチへの push は skipped と表示される）。更新の PR 本文の言い回しを修正（「v<版> に更新します」） |
 | 1.3.2 | 2026-11-14 | キットの CI と自動リリースが初回から失敗していた不具合を修正（テスト用の GitHub 役リポジトリの既定ブランチを main に固定。`publish-kit.bat` を CRLF で保存し、`.gitattributes` で改行の変換を止める）。キットの改良を頼む依頼文（`prompts/5-claude-code-kit-improve.md`）を追加。各リポジトリに配るファイルの動作は変わらない |
 | 1.3.1 | 2026-11-13 | 各リポジトリに導入・更新・再適用・取り外しの手順（`docs/procedures/daily-log-kit.md`）を配る。マニュアルのテキスト版（`docs/MANUAL.md`）。仕様書11章の案内先の食い違いを修正 |

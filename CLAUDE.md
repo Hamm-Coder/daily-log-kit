@@ -16,6 +16,7 @@ Claude Code を使う各リポジトリに「日報（日毎ログ）」の仕�
 | `files/` | 各リポジトリにそのままコピーされるファイル（生成・分析・引き継ぎのツール、テスト、Stop と SessionStart のフック、Skill、Actions、仕様、手順、設定） | 配る |
 | `install.mjs` | 1リポジトリへの導入・更新。既存の設定は保持して追記だけ | 配らない |
 | `install-all.ps1` | `C:\AllGitRepository` 配下へ一括導入（worktree で作業し PR にする） | 配らない |
+| `pull-all.ps1` | 日報の仕組みを入れたリポジトリとキットを、まとめて `git pull` する（`--ff-only`。入れていないリポジトリは対象外） | 配らない |
 | `publish-kit.bat` / `publish-kit.ps1` | 新しい版の zip をこのリポジトリへ反映（チャットで作った zip を使う場合） | 配らない |
 | `bump-version.mjs` | 版番号の一括変更 | 配らない |
 | `templates/` | 導入時に作る ADR のひな形 | 配らない（中身から ADR を作る） |

@@ -1,6 +1,6 @@
 # 日報（日毎ログ）の仕様
 
-- キット: daily-log-kit v1.6.0（どのリポジトリでも同じ内容。作品・製品ごとの差は `docs/log/config.json` だけで吸収する）
+- キット: daily-log-kit v1.7.0（どのリポジトリでも同じ内容。作品・製品ごとの差は `docs/log/config.json` だけで吸収する）
 - 更新日: 2026-11-10
 
 ## 1. 目的
@@ -28,6 +28,7 @@
 | 既定のブランチ（main など）への push（PRのマージ） | GitHub Actions `.github/workflows/daily-log.yml` | 直近14日分の日報と一覧を作り直し、変更があればボットがコミット |
 | 導入直後に1回 | `generate --all` | 全履歴から過去の日報を作る |
 | 好きなとき（週1回を推奨） | `node tools/daily-log-analyze.mjs` | 傾向・改善点・判断待ちの一覧を表示（12章） |
+| 毎週月曜の朝（`weeklyIssue` が `true` のときだけ） | GitHub Actions `.github/workflows/daily-log-weekly.yml` | 分析を Issue にする。同じ週なら更新し、前の週の分析の Issue は閉じる（12.5） |
 
 使わないタイミング: Claude Code の `SessionEnd` フックは、セッションを止められず実行時間も短い（既定1.5秒）ため、Claude にメモを書かせる用途には使えない。書き忘れの防止は `Stop` フックで行う。
 
@@ -97,6 +98,7 @@ title: 奥の手の設計確定
 | `excludeAuthors` | `["github-actions[bot]"]` | 除外する作者 |
 | `excludeSubjectPattern` | `^docs\(log\): 日報を更新` | 除外する件名（正規表現） |
 | `defaultDays` | `14` | `generate` で作り直す日数 |
+| `weeklyIssue` | `false` | `true` にすると、週1回の分析を Issue にする（12.5） |
 
 導入スクリプトは既存の設定ファイルを上書きしない。
 
@@ -195,6 +197,25 @@ GitHub Actions のボットが main に push できない場合は、次のど�
 
 - 数値は自分の作業の傾向をつかむためのもので、成果や生産性の評価には使わない。件数は増やそうとすると中身が薄くなる（SPACE フレームワーク: 活動量の指標を単独で使わない）
 - 改善点は「確認のきっかけ」。素材の一括取り込みの大きなコミットのように、理由があれば対応しなくてよい
+
+### 12.5 週1回の分析を Issue にする（`weeklyIssue`）
+
+`docs/log/config.json` に `"weeklyIssue": true` を書くと、GitHub Actions（`.github/workflows/daily-log-weekly.yml`）が毎週月曜の朝（日本時間 8:17ごろ）に分析を実行し、結果を Issue にする。見に行かなくても、改善点と判断待ちが届く。
+
+| 項目 | 内容 |
+| --- | --- |
+| 件名 | `日報の分析（<その週の月曜日> の週）` |
+| 本文 | 読み方（12.4）と止め方、分析のレポート（6万文字を超えたら末尾を切る） |
+| ラベル | `daily-log-analysis`（作れなければラベルなし） |
+| 同じ週にもう一度動いたとき | 新しく作らず、本文を更新する |
+| 前の週までの分析の Issue | 「新しい分析 #N に移しました」と書いて閉じる。開いているのは最新の1件だけ |
+| 手動の実行 | Actions の画面の「Run workflow」。設定にかかわらず作る（試すとき用） |
+| 費用 | 無効のときは設定を読むだけで数秒、有効でも1回数十秒（Actions の無料枠の範囲） |
+
+- 既定は無効（既存のリポジトリも、設定を書くまでは何もしない）
+- GitHub は、60日間 push がないリポジトリの定期実行を止める。Actions の画面から再開できる
+- 公開リポジトリでは Issue も公開される（日報と同じ）。秘密情報を日報メモに書かない決まりは変わらない
+- `--no-workflow` で導入したリポジトリには入らない
 
 ## 13. セッション開始時の引き継ぎ（`tools/daily-log-brief.mjs`）
 

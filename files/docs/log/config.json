@@ -6,5 +6,6 @@
   "baseBranch": "",
   "excludeAuthors": ["github-actions[bot]"],
   "excludeSubjectPattern": "^docs\\(log\\): 日報を更新",
-  "defaultDays": 14
+  "defaultDays": 14,
+  "weeklyIssue": false
 }

@@ -1,6 +1,6 @@
 # 日報キットの導入・更新・再適用・取り外し
 
-- 目的: このリポジトリの日報の仕組み（daily-log-kit v1.6.0）を、新しい版に更新する・壊れたときに戻す・外す
+- 目的: このリポジトリの日報の仕組み（daily-log-kit v1.7.0）を、新しい版に更新する・壊れたときに戻す・外す
 - 前提: キットのリポジトリ `Hamm-Coder/daily-log-kit` を `C:\AllGitRepository\daily-log-kit` にクローン済み。Git、Node.js、GitHub CLI（`gh`）
 - 詳しいマニュアル: https://github.com/Hamm-Coder/daily-log-kit/blob/main/docs/MANUAL.md
 - 毎日の使い方: `docs/procedures/daily-log.md`、仕様: `docs/specs/daily-log.md`
@@ -50,7 +50,7 @@ node /tmp/daily-log-kit/install.mjs . で日報の仕組みを最新版に更新
 
 - `tools/daily-log*.mjs`
 - `.claude/hooks/daily-log-reminder.mjs`、`.claude/hooks/daily-log-session-start.mjs`、`.claude/skills/daily-log/`
-- `.github/workflows/daily-log.yml`
+- `.github/workflows/daily-log.yml`、`.github/workflows/daily-log-weekly.yml`
 - `docs/specs/daily-log.md`、`docs/procedures/daily-log.md`、このファイル
 - `.claude/settings.json` の Stop と SessionStart の日報のフック（`daily-log` を含む行）
 - `CLAUDE.md` の `<!-- daily-log:start` から `<!-- daily-log:end -->` まで

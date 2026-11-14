@@ -40,7 +40,7 @@ Hamm-Coder/daily-log-kit（公開。キットの正本）
 | PR を作る前 | `daily-log` Skill | 日報メモを書いて同じ PR に入れる |
 | マージ | GitHub Actions | 日報と一覧を作り直す |
 | チャットで決めた日の終わり | 依頼文4（`prompts/4-claude-ai-daily-wrapup.md`） | 日報メモにして Web版に渡す（頼む必要あり） |
-| 週1回 | 分析ツール | 改善点・繰り返し・判断待ちの一覧 |
+| 週1回 | 分析ツール | 改善点・繰り返し・判断待ちの一覧。`config.json` に `"weeklyIssue": true` を書くと、毎週月曜の朝に Issue で届く |
 
 作業日の区切りは朝4時（`docs/log/config.json` の `dayStartHour`）。0:00〜3:59 の作業は前日に数え、日報では「翌00:13」のように表示する。
 
@@ -75,6 +75,10 @@ Hamm-Coder/daily-log-kit（公開。キットの正本）
 日報メモの見出しは「決めたこと／作ったもの・変えたもの／次にやること／未解決・判断待ち」。「決めたこと」はあなたが決めた・承認したことだけ。PC でしかできない作業には「（PC）」を付ける。
 
 判断待ちを決めたら、「決めたこと」に `解決: <判断待ちの項目> → <決めた内容>` と書く（例 `- 解決: ボスの名前 → ヴォルクに決定`）。判断待ちの一覧から外れ、分析では「解決した判断待ち」に出る。Claude に「ボスの名前はヴォルクに決めた。日報に書いて」と頼めば、この形で書く。
+
+### 週1回の分析を Issue で受け取る（任意）
+
+各リポジトリの `docs/log/config.json` に `"weeklyIssue": true` を足して PR にする（Web版に「週1回の分析を Issue にする設定を入れて」と頼めばよい）。マージすると、毎週月曜の朝（8:17ごろ）に「日報の分析（<月曜日> の週）」という Issue ができる。前の週の分析の Issue は自動で閉じる。試すときは、GitHub の Actions の画面で `daily-log-weekly` を選び「Run workflow」。止めるときは `false` に戻す。
 
 ## 6. セッション開始時の引き継ぎ
 
@@ -283,6 +287,7 @@ daily-log-kit/
 ├─ .claude/settings.json            Stop と SessionStart のフック
 ├─ .claude/hooks/  .claude/skills/daily-log/
 ├─ .github/workflows/daily-log.yml
+├─ .github/workflows/daily-log-weekly.yml   （週1回の分析を Issue に。既定は無効）
 └─ docs/
    ├─ specs/daily-log.md            仕様
    ├─ procedures/daily-log.md       毎日・週1回の運用

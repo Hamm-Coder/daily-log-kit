@@ -1,0 +1,75 @@
+# daily-log-kit v1.7.0 — 週に1回、日報の分析（tools/daily-log-analyze.mjs）を Issue にする
+# ・既定は無効。docs/log/config.json に "weeklyIssue": true を書くと有効になる（無効のときは数秒で終わる）
+# ・同じ週の Issue があれば本文を更新し、前の週までの分析の Issue は閉じる（開いているのは常に最新の1件）
+# ・Actions の画面の「Run workflow」で手動で動かすと、設定にかかわらず作る（試すとき用）
+# ・リポジトリに60日間 push がないと、GitHub が定期実行を止める（Actions の画面から再開できる）
+name: daily-log-weekly
+
+on:
+  schedule:
+    - cron: '17 23 * * 0' # 毎週月曜 8:17（日本時間）。GitHub の混雑で遅れることがある
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: daily-log-weekly
+  cancel-in-progress: false
+
+jobs:
+  issue:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0 # 分析に全履歴が必要
+          lfs: false # 画像などの LFS 素材は取得しない
+      - name: 有効か確かめる
+        id: cfg
+        run: |
+          on=$(node --input-type=module -e "
+            import fs from 'node:fs';
+            import { weeklyIssueEnabled } from './tools/daily-log-analyze.mjs';
+            let c = {};
+            try { c = JSON.parse(fs.readFileSync('docs/log/config.json', 'utf8')); } catch {}
+            process.stdout.write(String(weeklyIssueEnabled(c)));
+          ")
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then on=true; fi
+          echo "enabled=$on" >> "$GITHUB_OUTPUT"
+          if [ "$on" != true ]; then echo '週1回の Issue は無効です（docs/log/config.json に "weeklyIssue": true を書くと有効になります）'; fi
+      - name: 分析
+        if: steps.cfg.outputs.enabled == 'true'
+        run: node tools/daily-log-analyze.mjs --issue --out "$RUNNER_TEMP/body.md" --title-out "$RUNNER_TEMP/title.txt"
+      - name: Issue を作る（同じ週なら更新）
+        if: steps.cfg.outputs.enabled == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          title=$(head -1 "$RUNNER_TEMP/title.txt")
+          label=daily-log-analysis
+          gh label create "$label" --color 0E8A16 --description '日報の分析（daily-log-weekly）' >/dev/null 2>&1 || true
+          gh issue list --state open --limit 100 --json number,title > "$RUNNER_TEMP/open.json"
+          # 件名で探す（日本語とかっこを含むので、絞り込みは node で行う）
+          read_nums() { node -e "
+            const list = JSON.parse(require('fs').readFileSync(process.argv[1], 'utf8'));
+            const [mode, title] = [process.argv[2], process.argv[3]];
+            const hit = list.filter((i) => mode === 'same' ? i.title === title : i.title.startsWith('日報の分析（') && i.title !== title);
+            console.log(hit.map((i) => i.number).join(' '));
+          " "$RUNNER_TEMP/open.json" "$1" "$title"; }
+          same=$(read_nums same | awk '{print $1}')
+          if [ -n "$same" ]; then
+            gh issue edit "$same" --body-file "$RUNNER_TEMP/body.md"
+            num=$same
+            echo "更新: #$num $title"
+          else
+            url=$(gh issue create --title "$title" --body-file "$RUNNER_TEMP/body.md" --label "$label" 2>/dev/null \
+              || gh issue create --title "$title" --body-file "$RUNNER_TEMP/body.md")
+            num=${url##*/}
+            echo "作成: #$num $title"
+          fi
+          for old in $(read_nums old); do
+            gh issue close "$old" --comment "新しい分析 #$num に移しました" || true
+          done

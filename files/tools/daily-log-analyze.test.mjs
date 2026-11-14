@@ -1,8 +1,9 @@
-// daily-log-kit v1.6.0 — 実行: node --test tools/daily-log-analyze.test.mjs
+// daily-log-kit v1.7.0 — 実行: node --test tools/daily-log-analyze.test.mjs
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  buildSessions, median, extractSections, pendingItems, resolvedItems, parseResolution, matchesPending, isFixCommit, hourBuckets, weekdayCounts,
+  buildSessions, median, extractSections, pendingItems, resolvedItems, parseResolution, matchesPending,
+  weekStart, issueTitle, issueBody, weeklyIssueEnabled, ISSUE_TITLE_PREFIX, isFixCommit, hourBuckets, weekdayCounts,
   lateNightRatio, weeklySeries, detectFindings, renderReport, parseAnalyzeArgs, ANALYSIS_DEFAULTS, daysBetween, formatDuration,
 } from './daily-log-analyze.mjs';
 
@@ -154,4 +155,29 @@ test('期間の表示は短ければ時間で', () => {
   assert.equal(formatDuration(0.5), '約12時間');
   assert.equal(formatDuration(3.25), '約3.3日');
   assert.equal(formatDuration(null), '—');
+});
+
+test('週1回の Issue: 件名は週の月曜日で決まり、同じ週なら同じ件名', () => {
+  assert.equal(weekStart('2026-11-16'), '2026-11-16'); // 月曜
+  assert.equal(weekStart('2026-11-22'), '2026-11-16'); // 日曜
+  assert.equal(weekStart('2026-11-14'), '2026-11-09'); // 土曜
+  assert.equal(issueTitle('2026-11-18'), issueTitle('2026-11-16'));
+  assert.ok(issueTitle('2026-11-18').startsWith(ISSUE_TITLE_PREFIX));
+  assert.equal(issueTitle('2026-11-18'), '日報の分析（2026-11-16 の週）');
+});
+
+test('週1回の Issue: 本文に読み方と止め方を書き、長すぎれば切る', () => {
+  const b = issueBody('# 分析\n本文\n', { today: '2026-11-16' });
+  assert.match(b, /成果や生産性の評価には使わない/);
+  assert.match(b, /"weeklyIssue"/);
+  assert.match(b, /# 分析\n本文/);
+  const long = issueBody('あ'.repeat(70000), { today: '2026-11-16' });
+  assert.ok(long.length < 65536);
+  assert.match(long, /ここで切りました/);
+});
+
+test('週1回の Issue: config.json の weeklyIssue が true のときだけ有効', () => {
+  assert.equal(weeklyIssueEnabled({}), false);
+  assert.equal(weeklyIssueEnabled({ weeklyIssue: 'true' }), false);
+  assert.equal(weeklyIssueEnabled({ weeklyIssue: true }), true);
 });

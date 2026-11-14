@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// daily-log-kit v1.7.0 — セッション開始時の引き継ぎ（次にやること・判断待ち・始める前の準備・効率化の候補）
+// daily-log-kit v1.8.0 — セッション開始時の引き継ぎ（次にやること・判断待ち・始める前の準備・効率化の候補）
 // 仕様: docs/specs/daily-log.md の「13. セッション開始時の引き継ぎ」
 //
 // 使い方:
@@ -92,7 +92,8 @@ export function prepFromState(state, env) {
 
 export function renderBrief(b) {
   const lines = [];
-  const has = b.next.length || b.pending.length || b.prep.length || b.efficiency.length;
+  const blockers = b.blockers || [];
+  const has = b.next.length || b.pending.length || b.prep.length || b.efficiency.length || blockers.length;
   if (!has) return '';
   lines.push('## 日報からの引き継ぎ（daily-log）', '');
   lines.push('この情報は、ユーザーの依頼に関係するときに使う。最初の返答で全部を繰り返さない。');
@@ -106,6 +107,10 @@ export function renderBrief(b) {
     }
     const web = b.next.filter((n) => !(n.place === 'pc' && b.env === 'web'));
     if (b.env === 'web' && web.length && web.length < b.next.length) lines.push(`- （Web版で今できるのは ${web.length}件）`);
+  }
+  if (blockers.length) {
+    lines.push('', '### 前回詰まったこと');
+    for (const t of blockers) lines.push(`- ${t}`);
   }
   if (b.pending.length) {
     lines.push('', '### 判断待ち');
@@ -180,7 +185,8 @@ export function buildBrief(root, opts = {}) {
   ];
   return {
     env, latest: latest ? { day: latest.day, time: latest.meta.time, title: latest.meta.title, source: latest.meta.source } : null,
-    next, pending: pendingItems(memos, today, a.pendingWindowDays).slice(0, 5), prep, efficiency,
+    next, blockers: (latest?.sections.blockers || []).slice(0, 5),
+    pending: pendingItems(memos, today, a.pendingWindowDays).slice(0, 5), prep, efficiency,
   };
 }
 

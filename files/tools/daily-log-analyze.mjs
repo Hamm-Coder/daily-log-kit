@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// daily-log-kit v1.7.0 — 日報と Git 履歴の分析（作業の傾向、改善点、判断待ちの一覧）
+// daily-log-kit v1.8.0 — 日報と Git 履歴の分析（作業の傾向、改善点、判断待ちの一覧）
 // 仕様: docs/specs/daily-log.md の「12. 分析」
 //
 // 使い方:
@@ -34,6 +34,9 @@ export const ANALYSIS_DEFAULTS = {
   pcTasksMax: 5,
   inactiveDays: 14,
   recentDays: 14,
+  lowFeelAvg: 2.5, // 直近の手応えの平均がこれ以下なら知らせる
+  lowFeelMinMemos: 3, // 手応えが書かれたメモがこれ未満なら判定しない
+  blockerRepeatDays: 2, // 同じ「詰まったこと」が何日に出たら知らせるか
   pendingWindowDays: 7, // 判断待ちは直近7日のメモに書かれた項目（「決めたこと」の「解決: <項目>」で外れる）
   similarity: 0.5, // 似た作業とみなす文字の重なり（2文字ずつの組の一致率）
   repeatMinDays: 3, // 同じ作業が何日に出たら「繰り返し」とみなすか
@@ -56,6 +59,8 @@ const SECTION_KEYS = {
   '作ったもの・変えたもの': 'changes',
   次にやること: 'next',
   '未解決・判断待ち': 'pending',
+  詰まったこと: 'blockers', // 任意（仕様 4.2）
+  手応え: 'feel', // 任意。最初の箇条書きの先頭に 1〜5（仕様 4.2）
 };
 
 // ---------- 中核（純粋関数） ----------
@@ -85,7 +90,7 @@ export function median(nums) {
 
 /** 日報メモの本文から4つの見出しの箇条書きを取り出す */
 export function extractSections(body) {
-  const out = { decisions: [], changes: [], next: [], pending: [] };
+  const out = { decisions: [], changes: [], next: [], pending: [], blockers: [], feel: [] };
   let key = null;
   let inFence = false;
   for (const raw of String(body || '').split('\n')) {
@@ -93,7 +98,8 @@ export function extractSections(body) {
     if (/^```/.test(line.trim())) { inFence = !inFence; continue; }
     if (inFence) continue;
     const h = /^#{1,6}\s+(.+?)\s*$/.exec(line);
-    if (h) { key = SECTION_KEYS[h[1].trim()] || null; continue; }
+    // 「手応え（1〜5。任意）」のような補足のかっこは外して見る
+    if (h) { key = SECTION_KEYS[h[1].trim().replace(/\s*[（(].*$/, '')] || null; continue; }
     const b = /^\s*[-*]\s+(.+)$/.exec(line);
     if (key && b && b[1].trim()) out[key].push(b[1].trim());
   }
@@ -171,6 +177,37 @@ export function resolvedItems(memos, today, recentDays = 14) {
   return trackPending(memos).filter((x) => x.resolvedDay && x.resolvedDay >= since)
     .map((x) => ({ text: x.text, firstDay: x.firstDay, resolvedDay: x.resolvedDay, outcome: x.outcome || '', waitedDays: daysBetween(x.firstDay, x.resolvedDay) }))
     .sort((a, b) => a.resolvedDay.localeCompare(b.resolvedDay) || a.text.localeCompare(b.text));
+}
+
+/** 「手応え」の最初の箇条書きの先頭の 1〜5（「4」「4/5」「４（だいたい進んだ）」）。書かれていなければ null */
+export function parseFeel(items = []) {
+  const first = String(items[0] || '').trim().replace(/[１-５]/g, (c) => String(c.charCodeAt(0) - 0xff10));
+  const m = /^([1-5])(?:\s*\/\s*5)?(?![0-9.])/.exec(first);
+  return m ? Number(m[1]) : null;
+}
+
+/** 手応えのまとめ: 直近 recentDays 日の平均と件数、週ごと（月曜始まり）の平均 */
+export function feelSummary(memos, today, recentDays = 14) {
+  const since = addDays(today, -recentDays);
+  const all = memos.map((m) => ({ day: m.day, feel: parseFeel(m.sections.feel) })).filter((x) => x.feel !== null);
+  const avg = (xs) => (xs.length ? Math.round((xs.reduce((s, x) => s + x.feel, 0) / xs.length) * 10) / 10 : null);
+  const recent = all.filter((x) => x.day >= since);
+  const weeks = new Map();
+  for (const x of all) { const w = weekStart(x.day); weeks.set(w, [...(weeks.get(w) || []), x]); }
+  return {
+    recent: { count: recent.length, avg: avg(recent), low: recent.filter((x) => x.feel <= 2).map((x) => x.day) },
+    weekly: [...weeks].sort(([a], [b]) => a.localeCompare(b)).map(([week, xs]) => ({ week, avg: avg(xs), count: xs.length })),
+  };
+}
+
+/** 詰まったことのまとめ: 直近 recentDays 日の一覧と、windowDays 日のうち似た内容が minDays 日以上に出たもの */
+export function blockerSummary(memos, today, { recentDays = 14, windowDays = 60, minDays = 2, threshold = 0.5 } = {}) {
+  const items = (since) => memos.filter((m) => m.day >= since).flatMap((m) => (m.sections.blockers || []).map((text) => ({ text, day: m.day })));
+  return {
+    recent: items(addDays(today, -recentDays)).sort((a, b) => a.day.localeCompare(b.day)),
+    repeated: clusterItems(items(addDays(today, -windowDays)), threshold).filter((c) => c.days.length >= minDays)
+      .sort((x, y) => y.days.length - x.days.length || y.count - x.count),
+  };
 }
 
 /** addDays の再公開（daily-log-brief.mjs から使う） */
@@ -283,6 +320,18 @@ export function detectFindings(m, a = ANALYSIS_DEFAULTS) {
     f.push({ id: 'fix-hotspot', level: '注意', title: `同じファイルの修正が続いている（${rep.fixHotspots.length}件）`,
       evidence: rep.fixHotspots.slice(0, 3).map((h) => `${h.file}（直近${a.hotspotDays}日で修正${h.fixes}回）`).join('、'),
       action: 'そのファイルの単体テストか検査を作業キューに追加する' });
+  }
+  const feel = m.feel?.recent;
+  if (feel && feel.count >= a.lowFeelMinMemos && feel.avg !== null && feel.avg <= a.lowFeelAvg) {
+    f.push({ id: 'low-feel', level: '注意', title: '手応えが低めの日が続いている',
+      evidence: `直近${a.recentDays}日の手応えの平均 ${feel.avg}（${feel.count}件。2以下の日: ${feel.low.slice(-5).join('、') || 'なし'}）。自分で付けた目安で、評価には使わない`,
+      action: '「詰まったこと」を見直し、作業を小さく分けるか、準備・進め方・休み方を変える' });
+  }
+  const blk = m.blockers?.repeated || [];
+  if (blk.length) {
+    f.push({ id: 'repeated-blocker', level: '注意', title: `同じことで何度も詰まっている（${blk.length}件）`,
+      evidence: blk.slice(0, 3).map((b) => `「${b.text}」（${b.days.length}日、${b.firstDay}から）`).join('、'),
+      action: '対処（手順書、スクリプト、調べもの、相談）を作業キューに1件入れる' });
   }
   if (m.lastActiveDay && m.daysSinceActive >= a.inactiveDays) {
     f.push({ id: 'inactive', level: '情報', title: `${m.daysSinceActive}日間作業がない`,
@@ -464,6 +513,18 @@ export function renderReport(results, { today, generatedFor } = {}) {
       out.push(`${h} 解決した判断待ち（直近のメモ）`, '', '| 項目 | 決めた内容 | 最初に出た日 | 解決した日 |', '| --- | --- | --- | --- |');
       for (const p of m.resolved) out.push(`| ${p.text.replace(/\|/g, '｜')} | ${(p.outcome || '—').replace(/\|/g, '｜')} | ${p.firstDay} | ${p.resolvedDay} |`);
       out.push('');
+    }
+    if (m.feel?.recent.count || m.blockers?.recent.length) {
+      out.push(`${h} 手応えと詰まったこと（直近のメモ）`, '');
+      if (m.feel?.recent.count) {
+        out.push(`手応えの平均 ${m.feel.recent.avg}（${m.feel.recent.count}件、1〜5）。自分で付けた目安で、比べたり評価したりしない`, '');
+        if (m.feel.weekly.length > 1) {
+          out.push('| 週（月曜） | 手応えの平均 | 件数 |', '| --- | ---: | ---: |');
+          for (const w of m.feel.weekly.slice(-8)) out.push(`| ${w.week} | ${w.avg} | ${w.count} |`);
+          out.push('');
+        }
+      }
+      if (m.blockers?.recent.length) out.push(...m.blockers.recent.map((b) => `- ${b.day} ${b.text}`), '');
     }
     out.push(`${h} 次にやること（最新のメモ）`, '');
     if (!m.latestNext.items.length) out.push('なし', '');
@@ -673,6 +734,8 @@ export function analyzeRepo(root, opts = {}) {
     recent: { commits: recentCommits.length, fixRatio: recentCommits.length ? recentCommits.filter((c) => isFixCommit(c.subject)).length / recentCommits.length : 0 },
     pending: pendingItems(memos, today, a.pendingWindowDays),
     resolved: resolvedItems(memos, today, a.pendingWindowDays),
+    feel: feelSummary(memos, today, a.recentDays),
+    blockers: blockerSummary(memos, today, { recentDays: a.recentDays, windowDays: a.repeatWindowDays, minDays: a.blockerRepeatDays, threshold: a.similarity }),
     latestNext: { day: latestMemo?.day || null, items: latestMemo?.sections.next || [] },
     pcTasks: pcUnique,
     repetition,

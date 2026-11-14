@@ -1,9 +1,9 @@
-// daily-log-kit v1.7.0 — 実行: node --test tools/daily-log-analyze.test.mjs
+// daily-log-kit v1.8.0 — 実行: node --test tools/daily-log-analyze.test.mjs
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   buildSessions, median, extractSections, pendingItems, resolvedItems, parseResolution, matchesPending,
-  weekStart, issueTitle, issueBody, weeklyIssueEnabled, ISSUE_TITLE_PREFIX, isFixCommit, hourBuckets, weekdayCounts,
+  weekStart, issueTitle, issueBody, weeklyIssueEnabled, ISSUE_TITLE_PREFIX, parseFeel, feelSummary, blockerSummary, isFixCommit, hourBuckets, weekdayCounts,
   lateNightRatio, weeklySeries, detectFindings, renderReport, parseAnalyzeArgs, ANALYSIS_DEFAULTS, daysBetween, formatDuration,
 } from './daily-log-analyze.mjs';
 
@@ -25,7 +25,7 @@ test('中央値と日数', () => {
 
 test('日報メモの4つの見出しを取り出す', () => {
   const s = extractSections('（日付は推定）\n## 決めたこと\n- パターンB\n- \n## 次にやること\n- （PC）テスト\n```\n## 決めたこと\n- コード内\n```\n## 未解決・判断待ち\n- ボスの名前\n');
-  assert.deepEqual(s, { decisions: ['パターンB'], changes: [], next: ['（PC）テスト'], pending: ['ボスの名前'] });
+  assert.deepEqual(s, { decisions: ['パターンB'], changes: [], next: ['（PC）テスト'], pending: ['ボスの名前'], blockers: [], feel: [] });
 });
 
 test('判断待ちの解決: 「解決: <項目>」を読む（矢印の後ろは決めた内容）', () => {
@@ -180,4 +180,46 @@ test('週1回の Issue: config.json の weeklyIssue が true のときだけ有�
   assert.equal(weeklyIssueEnabled({}), false);
   assert.equal(weeklyIssueEnabled({ weeklyIssue: 'true' }), false);
   assert.equal(weeklyIssueEnabled({ weeklyIssue: true }), true);
+});
+
+test('手応えと詰まったこと: 任意の見出しを読む（見出しの補足のかっこは無視）', () => {
+  const s = extractSections('## 詰まったこと\n- プラグイン管理の並び順が分からない\n## 手応え（1〜5。任意）\n- 4（だいたい進んだ）\n');
+  assert.deepEqual(s.blockers, ['プラグイン管理の並び順が分からない']);
+  assert.deepEqual(s.feel, ['4（だいたい進んだ）']);
+});
+
+test('手応え: 最初の箇条書きの先頭の 1〜5 だけを数える', () => {
+  assert.equal(parseFeel(['4（だいたい進んだ）']), 4);
+  assert.equal(parseFeel(['2/5 環境構築で止まった']), 2);
+  assert.equal(parseFeel(['５']), 5);
+  assert.equal(parseFeel(['6']), null);
+  assert.equal(parseFeel(['3.5']), null);
+  assert.equal(parseFeel(['まあまあ']), null);
+  assert.equal(parseFeel([]), null);
+});
+
+test('手応えと詰まったこと: 平均・週ごと・繰り返しをまとめ、改善点に出す', () => {
+  const memo = (day, feel, blockers = []) => ({ day, sections: { decisions: [], changes: [], next: [], pending: [], blockers, feel: feel ? [feel] : [] } });
+  const memos = [
+    memo('2026-11-02', '4'),
+    memo('2026-11-09', '2', ['Unity のバージョンが合わず開けない']),
+    memo('2026-11-11', '1', ['Unity のバージョンが合わない']),
+    memo('2026-11-12', '3（少し進んだ）'),
+    memo('2026-11-13', null, ['別の件']),
+  ];
+  const f = feelSummary(memos, '2026-11-14', 14);
+  assert.deepEqual(f.recent, { count: 4, avg: 2.5, low: ['2026-11-09', '2026-11-11'] });
+  assert.deepEqual(f.weekly, [{ week: '2026-11-02', avg: 4, count: 1 }, { week: '2026-11-09', avg: 2, count: 3 }]);
+  const b = blockerSummary(memos, '2026-11-14', { recentDays: 14, windowDays: 60, minDays: 2, threshold: 0.5 });
+  assert.equal(b.recent.length, 3);
+  assert.equal(b.repeated.length, 1);
+  assert.deepEqual(b.repeated[0].days, ['2026-11-09', '2026-11-11']);
+  const base = {
+    memoCoverage: null, commits: 0, lateNight: { ratio: 0, count: 0 }, prLeadTime: { count: 0, medianDays: null }, staleBranches: [], largeCommits: [],
+    recent: { commits: 0, fixRatio: 0 }, pending: [], pcTasks: [], lastActiveDay: '2026-11-13', daysSinceActive: 1,
+  };
+  const ids = detectFindings({ ...base, feel: f, blockers: b }).map((x) => x.id);
+  assert.deepEqual(ids, ['low-feel', 'repeated-blocker']);
+  // 書かれていなければ何も出さない（既存のメモだけのリポジトリ）
+  assert.deepEqual(detectFindings(base).map((x) => x.id), []);
 });

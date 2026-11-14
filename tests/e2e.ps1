@@ -117,7 +117,8 @@ Check ($r.Code -ne 0 -and $r.Out -match '新しくありません') '同じ版�
 Write-Host ''
 Write-Host '== 5. pull-all.ps1（日報の仕組みを入れたリポジトリだけ、まとめて git pull）'
 # 導入のブランチを GitHub 役の main に入れる（PR のマージの代わり）。手元の main は1コミット遅れた状態になる
-& git --git-dir=$gameRemote update-ref refs/heads/main (G $game rev-parse $branch)
+G $game push -q origin "${branch}:main" | Out-Null
+Check ((& git --git-dir=$gameRemote rev-parse refs/heads/main) -eq (G $game rev-parse $branch)) '準備: GitHub 役の main に導入のコミットが入った'
 # 日報の仕組みを入れていないリポジトリ（対象外になること）
 $other = Join-Path $Root 'repos\other'
 New-Item -ItemType Directory -Path $other -Force | Out-Null

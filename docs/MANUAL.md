@@ -100,7 +100,7 @@ Hamm-Coder/daily-log-kit（公開。キットの正本）
 
 ### A. Claude Code で直接直す（推奨）
 
-1. キットのリポジトリの Web版セッションで、直したい内容と「版を上げて PR にして」と頼む（手順は `CLAUDE.md`）
+1. キットのリポジトリの Web版セッションで、直したい内容と「版を上げて PR にして」と頼む（手順は `CLAUDE.md`、依頼文は `prompts/5-claude-code-kit-improve.md`）
 2. GitHub で `kit-ci` が緑なのを確認してマージ。`kit-release` がタグとリリースを作る
 3. キットのフォルダで `git pull` → 8章の更新へ
 

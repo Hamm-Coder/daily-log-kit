@@ -1,8 +1,8 @@
 # 引き継ぎ資料（daily-log-kit）
 
-- 作成日: 2026-11-13
+- 作成日: 2026-11-13（最終更新: 2026-11-14）
 - 対象: このキットの開発を Claude Code（Web版・PC版）で続けるための資料
-- キットの版: `install.mjs` の `KIT_VERSION` を見る（この資料の作成時点は v1.2.0）
+- キットの版: `install.mjs` の `KIT_VERSION` を見る（最終更新の時点は v1.3.2）
 
 ## 1. このキットは何か
 
@@ -45,18 +45,24 @@ Hamm-Coder/daily-log-kit（公開）          ← このリポジトリ。キッ
 | 11/13 | Unity_CharacterTest で `git pull` が `ProjectVersion.txt`（未追跡）と衝突。退避して pull する手順で対応（キットの不具合ではない） |
 | 11/13 | v1.2.0: 分析ツール、キットの決まりの検査、Windows の通しテストと CI、自動リリース、引き継ぎ資料、マニュアル。検査で `publish-kit.bat` の改行が LF になっていた不具合を発見し CRLF に修正 |
 | 11/13 | v1.3.0: セッション開始時の引き継ぎ（次にやること＋作業キュー、判断待ち、始める前の準備、効率化の候補）と、繰り返しの判別（準備作業・似た作業・繰り越し・修正の集中）。ADR 0008 |
+| 11/13 | v1.3.1: 各リポジトリに導入・更新・再適用・取り外しの手順（`docs/procedures/daily-log-kit.md`）を配る。マニュアルのテキスト版（`docs/MANUAL.md`）。仕様書11章の案内先の食い違いを修正。`extras/` を削除（RPGMZ_Prototype に反映済み） |
+| 11/13 | v1.3.0 と v1.3.1 を publish-kit で GitHub に反映（タグ v1.3.0・v1.3.1）。これが Actions の初めての実行になり、`kit-ci` は3回、`kit-release` は2回、すべて失敗。リリースは1件もできなかった（この時点では気づいていない） |
+| 11/14 | 開発を claude.ai のチャットから Claude Code に引き継ぎ。Actions のログから失敗の原因2件を特定し、SPEC の K1〜K5 に結果を記録。①テスト用の GitHub 役（bare リポジトリ）の既定ブランチが環境まかせで `git remote set-head origin --auto` が失敗 ②`publish-kit.bat` がリポジトリに LF で入っていた（v1.2.0 で手元だけ CRLF に直り、Windows の autocrlf がコミット時に LF へ戻していた） |
+| 11/14 | v1.3.2: 上の2件を修正（bare リポジトリを `-b main` で作る。`.bat` を CRLF で保存し `.gitattributes` の `*.bat -text` で変換を止める。検査を1件追加）。キットの改良を頼む依頼文（`prompts/5-claude-code-kit-improve.md`）と、`CLAUDE.md` の「PR を作った後」の手順を追加。初めて PR 経由で反映する |
 
 ## 4. 確認済みの範囲
 
 | 対象 | 状態 | 方法 |
 | --- | --- | --- |
-| 単体テスト・結合テスト（ツール・分析・引き継ぎ・導入・キットの決まり・フック） | 55件成功 | Node.js 22（Linux） |
+| 単体テスト・結合テスト（ツール・分析・引き継ぎ・導入・キットの決まり・フック） | 56件成功 | Node.js 22（Linux、Claude Code Web）。GitHub の Actions では v1.3.1 まで失敗（SPEC K1）、v1.3.2 で修正 |
 | セッション開始時の引き継ぎ | 成功 | RPGMZ_Prototype に似せた履歴で、Web版として実行。PC作業の印、作業キューの行、準備のルール、繰り越しの検出を確認 |
 | `install-all.ps1` / `publish-kit.ps1` の通し | 成功 | `tests/e2e.ps1` を PowerShell 7.4（Linux、robocopy は代替）で実行。GitHub は bare リポジトリで代用 |
 | 分析ツール | 成功 | RPGMZ_Prototype に似せた履歴（46コミット、15 PR、深夜作業、放置ブランチ、大きな取り込み）と、1,500コミットの古い Android 風リポジトリ |
 | RPGMZ_Prototype への導入 | PR の内容を利用者が確認（件数が Git 履歴と一致） | 実機 |
-| Windows PowerShell 5.1・実際の robocopy | **未確認** | `kit-ci.yml` の e2e-windows で確認する（SPEC K1） |
-| GitHub 上の Actions（daily-log・kit-ci・kit-release） | **未確認** | SPEC K1〜K3 |
+| Windows PowerShell 5.1 での `install-all.ps1`（確認のみ・本番）と分析ツール | 成功 | `kit-ci` の e2e-windows（v1.3.1、Windows PowerShell 5.1.26100）。通しテストの 1〜3 |
+| Windows PowerShell 5.1 での `publish-kit.ps1`（実際の robocopy）、PowerShell 7 の通し | **CI では未確認**（v1.3.1 まではテストの不具合の巻き添えで失敗・未実行） | v1.3.2 の PR の `kit-ci` で確認する（SPEC K1）。利用者の PC では publish-kit で v1.3.0・v1.3.1 を反映できている |
+| GitHub 上の Actions（kit-ci・kit-release） | **失敗 → v1.3.2 で修正、確認待ち** | SPEC K1・K2 |
+| GitHub 上の Actions（各リポジトリの daily-log） | **未確認** | SPEC K3 |
 | `-CreatePR`（gh） | **未確認**（偽の gh でコマンドの中身だけ確認） | SPEC K4 |
 
 ## 5. 設計の要点（詳細は `docs/decisions/`）
@@ -83,9 +89,10 @@ Hamm-Coder/daily-log-kit（公開）          ← このリポジトリ。キッ
 
 ## 7. 次の一手（推奨順）
 
-1. SPEC K1: このリポジトリに push した後、Actions の `kit-ci` を確認する。Windows PowerShell 5.1 での初めての実行になる
-2. SPEC K3: RPGMZ_Prototype の `daily-log` Actions が成功しているか確認する
-3. SPEC M8: RPGMZ_Prototype の `config.json` に準備のルールを書く（テストプレイ、プラグイン登録の手順）
+1. SPEC K1・K2: v1.3.2 の PR の `kit-ci` が緑なのを確認してマージし、`kit-release` がタグ v1.3.2 とリリースを作ったことを確認する
+2. SPEC K5: PC のキットのフォルダで `git pull` し、`.\install-all.ps1 -Apply -CreatePR` で各リポジトリに配る（K4 の確認を兼ねる）
+3. SPEC K3: RPGMZ_Prototype の `daily-log` Actions が成功しているか確認する
+4. SPEC M8: RPGMZ_Prototype の `config.json` に準備のルールを書く（テストプレイ、プラグイン登録の手順）
 
 ## 8. 新しいセッションでの始め方（Claude Code に貼る）
 
@@ -94,3 +101,5 @@ Hamm-Coder/daily-log-kit（公開）          ← このリポジトリ。キッ
 今の状態と次にやること（SPEC の作業キュー）を3行で要約してから、私が指定した作業キューの項目に着手してください。
 作業の終わりに SPEC.md の状態と docs/HANDOFF.md の経緯を更新してください。
 ```
+
+改良を頼むだけなら `prompts/5-claude-code-kit-improve.md` の依頼文（「直して、版を上げて PR にして」）を使う。

@@ -1,4 +1,4 @@
-// daily-log-kit v1.3.1 — フックの結合テスト（一時的な Git リポジトリに導入して、実際にフックを動かす）
+// daily-log-kit v1.3.2 — フックの結合テスト（一時的な Git リポジトリに導入して、実際にフックを動かす）
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -76,7 +76,7 @@ test('SessionStart フック: 止める設定とツールがない場合は何�
 test('Stop フック: 作業の差分があってメモがなければ1回だけ促し、2回目と stop_hook_active では通す', () => {
   const dir = makeRepo();
   const remote = fs.mkdtempSync(path.join(os.tmpdir(), 'dlk-remote-'));
-  git(remote, 'init', '-q', '--bare');
+  git(remote, 'init', '-q', '--bare', '-b', 'main'); // -b main: 既定のブランチ名（init.defaultBranch）が環境で違っても origin/HEAD が決まる
   git(dir, 'remote', 'add', 'origin', remote);
   git(dir, 'push', '-q', '-u', 'origin', 'main');
   git(dir, 'remote', 'set-head', 'origin', '--auto');

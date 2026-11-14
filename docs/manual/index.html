@@ -484,7 +484,7 @@ title: ADR 0011 を採用
 
   <h3>A. Claude Code で直接直す</h3>
   <ol class="steps">
-    <li><div class="head">直したい内容を頼む <span class="place web">Web版</span></div><p>キットのリポジトリのセッションで、内容と「版を上げて PR にして」と頼みます（手順は <code>CLAUDE.md</code> にあります）。</p></li>
+    <li><div class="head">直したい内容を頼む <span class="place web">Web版</span></div><p>キットのリポジトリのセッションで、内容と「版を上げて PR にして」と頼みます（手順は <code>CLAUDE.md</code>、貼り付ける依頼文は <code>prompts/5-claude-code-kit-improve.md</code> にあります）。</p></li>
     <li><div class="head">PR をマージする <span class="place gh">GitHub</span></div><p>Actions の <code>kit-ci</code> が緑であることを確認してからマージします。<code>kit-release</code> がタグとリリースを作ります。</p></li>
     <li><div class="head">各リポジトリに配る <span class="place kit">キットのフォルダ</span></div>
       <div class="code"><pre>cd C:\AllGitRepository\daily-log-kit

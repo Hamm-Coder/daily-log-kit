@@ -1,5 +1,5 @@
 ﻿<#
-daily-log-kit v1.3.1 — 一括導入（install-all.ps1）と反映（publish-kit.ps1）の通しテスト
+daily-log-kit v1.3.2 — 一括導入（install-all.ps1）と反映（publish-kit.ps1）の通しテスト
 
 ・GitHub の代わりに一時フォルダの bare リポジトリを使う。本物の GitHub やあなたのリポジトリには触れない
 ・CI（.github/workflows/kit-ci.yml）が Windows の Windows PowerShell 5.1 と PowerShell 7 で実行する
@@ -35,7 +35,7 @@ New-Item -ItemType Directory -Path (Join-Path $Root 'repos') -Force | Out-Null
 # --- 準備: ゲーム役のリポジトリ（未コミットの変更あり）と、キットのリポジトリ
 $gameRemote = Join-Path $Root 'remote\game.git'
 $game = Join-Path $Root 'repos\game'
-& git init -q --bare $gameRemote
+& git init -q --bare -b main $gameRemote
 & git clone -q $gameRemote $game 2>&1 | Out-Null
 G $game switch -q -c main | Out-Null
 Set-Content -Path (Join-Path $game 'a.txt') -Value 'a' -Encoding ASCII
@@ -48,7 +48,7 @@ Add-Content -Path (Join-Path $game 'a.txt') -Value 'dirty'   # 作業中の変�
 
 $kitRemote = Join-Path $Root 'remote\daily-log-kit.git'
 $kit = Join-Path $Root 'repos\daily-log-kit'
-& git init -q --bare $kitRemote
+& git init -q --bare -b main $kitRemote
 Copy-Tree $KitSrc $kit
 G $kit init -q | Out-Null
 G $kit switch -q -c main | Out-Null

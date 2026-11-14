@@ -19,7 +19,7 @@ Claude Code を使う各リポジトリに「日報（日毎ログ）」の仕�
 | `publish-kit.bat` / `publish-kit.ps1` | 新しい版の zip をこのリポジトリへ反映（チャットで作った zip を使う場合） | 配らない |
 | `bump-version.mjs` | 版番号の一括変更 | 配らない |
 | `templates/` | 導入時に作る ADR のひな形 | 配らない（中身から ADR を作る） |
-| `prompts/` | Claude Code・claude.ai に貼る依頼文 | 配らない |
+| `prompts/` | Claude Code・claude.ai に貼る依頼文（1〜4 は各リポジトリ用、5 はこのキットの改良用） | 配らない |
 | `tests/` | キットの決まりの検査（`kit.test.mjs`）と Windows の通しテスト（`e2e.ps1`） | 配らない |
 | `.github/workflows/` | キット自体の CI（`kit-ci.yml`）と自動リリース（`kit-release.yml`） | 配らない |
 | `docs/` | このキットの引き継ぎ資料、ADR、分析の検討、マニュアル | 配らない |
@@ -57,6 +57,14 @@ powershell -NoProfile -ExecutionPolicy Bypass -File tests\e2e.ps1
 3. `README.md` の「変更履歴」の表の先頭に1行追加する（`tests/kit.test.mjs` が確認する）
 4. PR を作る。マージすると `kit-release.yml` がタグ `v<版>` とリリースを作る
 5. 利用者が PC で `.\install-all.ps1 -Apply -CreatePR` を実行し、各リポジトリに更新の PR を配る
+
+「直して、版を上げて PR にして」と頼まれたら、1〜4 を確認なしで最後まで進める（依頼文は `prompts/5-claude-code-kit-improve.md`）。
+
+- 1つの PR で上げる版は1つ。変更履歴の日付は日本時間の今日
+- PR を作った後、Actions の `kit-ci`（unit 4通りと e2e-windows）の結果を読む。失敗していたらログから原因を直して同じブランチに push する。テストを飛ばしたり無効にしたりして緑にしない
+- 手元で確認できないもの（Windows PowerShell 5.1、実物の robocopy）は `kit-ci` の結果で確かめる。`kit-ci` は PR と main への push でしか動かない
+- マージは利用者が行う。マージ後は、`kit-release` が成功してタグとリリースができたかを確認して伝える
+- `.bat` を直したときは CRLF のまま保存されているか確認する（`.gitattributes` の `*.bat -text` で変換は止めてある）
 
 ## 作業の終わりに
 

@@ -1,4 +1,4 @@
-# daily-log-kit v1.3.1 — main への push ごとに日報を作り直してコミットする
+# daily-log-kit v1.3.2 — main への push ごとに日報を作り直してコミットする
 # GITHUB_TOKEN による push は別のワークフローを起動しないので、ループしない
 name: daily-log
 

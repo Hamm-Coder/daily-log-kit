@@ -1,4 +1,4 @@
-# daily-log-kit v1.3.1
+# daily-log-kit v1.3.2
 
 Claude Code を使うリポジトリに「日報（日毎ログ）」の仕組みを入れるキット。チャット・Claude Code・Git の作業を `docs/log/` に日ごとにまとめ、作業の傾向・改善点・判断待ちを分析する。
 
@@ -24,7 +24,7 @@ Claude Code を使うリポジトリに「日報（日毎ログ）」の仕組�
 | `templates/adr-daily-log.md` | 導入時に作る ADR のひな形（状態: 採用。導入PRのマージで採用とする） |
 | `publish-kit.bat` / `publish-kit.ps1` | 新しい版の zip をキットのリポジトリに反映（展開・上書き・テスト・コミット・タグ・push）。キットのフォルダで実行 |
 | `bump-version.mjs` | キットの版番号を全ファイルで一括変更（`node bump-version.mjs 1.1.0`） |
-| `prompts/` | Claude Code・claude.ai に貼る依頼文（導入、仕様からの実装、過去チャットからの補完、チャットの締め） |
+| `prompts/` | Claude Code・claude.ai に貼る依頼文（導入、仕様からの実装、過去チャットからの補完、チャットの締め、キットの改良） |
 
 必要なもの: Git、Node.js（22 と 24 で確認。18 以上で動く設計）。PRまで一括で作るなら GitHub CLI（`gh`）。
 
@@ -49,7 +49,7 @@ node ..\daily-log-kit\install.mjs . --dry-run     # 変更予定の確認
 node ..\daily-log-kit\install.mjs . --backfill    # 導入＋過去の日報
 node --test tools/daily-log.test.mjs tools/daily-log-analyze.test.mjs tools/daily-log-brief.test.mjs
 git add -A
-git commit -m "chore: 日報の仕組みを導入（daily-log-kit v1.3.1）"
+git commit -m "chore: 日報の仕組みを導入（daily-log-kit v1.3.2）"
 git push -u origin chore/daily-log
 gh pr create --fill
 ```
@@ -115,7 +115,7 @@ cd C:\AllGitRepository\daily-log-kit
 node --test
 git init -b main
 git add -A
-git commit -m "daily-log-kit v1.3.1"
+git commit -m "daily-log-kit v1.3.2"
 gh repo create Hamm-Coder/daily-log-kit --public --source . --push
 git tag v1.0.0
 git push origin v1.0.0
@@ -166,7 +166,7 @@ Web 版だけで入れる場合は、各リポジトリのセッションに `pr
 
 ### 6. キットを改良して配る（Claude Code で直接直す。推奨）
 
-1. キットのリポジトリ（`Hamm-Coder/daily-log-kit`）で Claude Code Web のセッションを開き、直したい内容と「版を上げてPRにして」を頼む（手順は `CLAUDE.md` にある）
+1. キットのリポジトリ（`Hamm-Coder/daily-log-kit`）で Claude Code Web のセッションを開き、直したい内容と「版を上げてPRにして」を頼む（手順は `CLAUDE.md` にある。依頼文は `prompts/5-claude-code-kit-improve.md`）
 2. PR の差分を見てマージする。`kit-release.yml` がテストを通してから、タグ `v<版>` とリリースを自動で作る
 3. PC で配る:
 
@@ -187,6 +187,7 @@ git pull
 
 | 版 | 日付 | 内容 |
 | --- | --- | --- |
+| 1.3.2 | 2026-11-14 | キットの CI と自動リリースが初回から失敗していた不具合を修正（テスト用の GitHub 役リポジトリの既定ブランチを main に固定。`publish-kit.bat` を CRLF で保存し、`.gitattributes` で改行の変換を止める）。キットの改良を頼む依頼文（`prompts/5-claude-code-kit-improve.md`）を追加。各リポジトリに配るファイルの動作は変わらない |
 | 1.3.1 | 2026-11-13 | 各リポジトリに導入・更新・再適用・取り外しの手順（`docs/procedures/daily-log-kit.md`）を配る。マニュアルのテキスト版（`docs/MANUAL.md`）。仕様書11章の案内先の食い違いを修正 |
 | 1.3.0 | 2026-11-13 | セッション開始時の引き継ぎ（次にやること＋作業キュー、判断待ち、始める前の準備、効率化の候補）。繰り返しの判別（準備作業・似た作業・繰り越し・修正の集中）を分析にも追加。準備のルール（config.json の prep） |
 | 1.2.0 | 2026-11-13 | 分析ツール（傾向・改善点・判断待ち、複数リポジトリ対応）。キットの決まりの検査、Windows の通しテストと CI、自動リリース。引き継ぎ資料（CLAUDE.md・SPEC.md・HANDOFF.md・ADR）とマニュアル。`publish-kit.bat` の改行を CRLF に修正。`extras/` を削除 |

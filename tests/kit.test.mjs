@@ -1,4 +1,4 @@
-// daily-log-kit v1.3.1 — キット自体の決まりの検査（node --test で他のテストと一緒に動く）
+// daily-log-kit v1.3.2 — キット自体の決まりの検査（node --test で他のテストと一緒に動く）
 // 版番号の書き換え漏れ、変更履歴の書き忘れ、文字コード、配布ファイルの印を確認する
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -56,6 +56,11 @@ test('.bat は英数字のみで改行は CRLF、処理は1行（実行中の上
     assert.equal(cmds.length, 1, `${rel(f)} の処理は ( ... & exit /b ) の1行にまとめる`);
     assert.match(cmds[0], /^\(.*exit \/b\)$/);
   }
+});
+
+test('.gitattributes で .bat の改行の変換を止めている（Linux の CI や GitHub の zip でも CRLF のまま）', () => {
+  const attrs = fs.readFileSync(path.join(ROOT, '.gitattributes'), 'utf8');
+  assert.match(attrs, /^\*\.bat\s+-text\s*$/m, '.gitattributes に「*.bat -text」を書いてください');
 });
 
 test('依存パッケージを使わない（node: の標準モジュールと相対パスだけ）', () => {

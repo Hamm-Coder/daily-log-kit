@@ -1,0 +1,3 @@
+# daily-log-kit: .bat は CRLF のまま保存する（LF になると cmd が行を読み違える。tests/kit.test.mjs が確認する）
+# autocrlf の設定が違う PC・CI・GitHub の zip のどれで取り出しても同じ内容になるよう、改行の変換を止める
+*.bat -text

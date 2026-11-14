@@ -1,6 +1,6 @@
 # SPEC: daily-log-kit の作業キュー
 
-- 更新日: 2026-11-13
+- 更新日: 2026-11-14
 - 正本の優先順位: この SPEC.md と `docs/decisions/` → `docs/HANDOFF.md` → 会話の合意
 - 状態: 未着手 / 作業中 / 完了 / 保留
 
@@ -12,13 +12,13 @@ Claude Code・claude.ai・Git での作業と決定を、各リポジトリの `
 
 ### K: 動作の確認（実機・本物の GitHub）
 
-| ID | 作業 | 完了条件 | 実行場所 | 状態 |
-| --- | --- | --- | --- | --- |
-| K1 | `kit-ci.yml` の初回実行を確認する | GitHub の Actions で unit（4通り）と e2e-windows（5.1 と 7）がすべて緑。失敗したらログから原因を直す | Web（Actions のログを読む） | 未着手 |
-| K2 | `kit-release.yml` の初回実行を確認する | 版を上げた PR のマージでタグとリリースができる | Web | 未着手 |
-| K3 | RPGMZ_Prototype の `daily-log` Actions の結果を確認する | マージ後にボットの「docs(log): 日報を更新」コミットがあり、`docs/log/README.md` に 11/13 の行がある | Web | 未着手 |
-| K4 | `install-all.ps1 -CreatePR` の実地確認 | 1リポジトリで PR が作られ、PR 本文に版と ADR の説明が入る | PC | 未着手 |
-| K5 | 利用者の環境の版をそろえる | キットのリポジトリのタグが最新の版まであり、`publish-kit` またはこの SPEC の手順で反映済み | PC | 未着手 |
+| ID | 作業 | 完了条件 | 実行場所 | 状態 | 結果（2026-11-14 時点） |
+| --- | --- | --- | --- | --- | --- |
+| K1 | `kit-ci.yml` の初回実行を確認する | GitHub の Actions で unit（4通り）と e2e-windows（5.1 と 7）がすべて緑。失敗したらログから原因を直す | Web（Actions のログを読む） | 完了（v1.3.2） | main への push で3回実行（v1.3.0、extras の削除、v1.3.1）、3回とも失敗。原因は2件で、どちらも v1.3.2 で修正: ①`tests/hooks.test.mjs` の GitHub 役（bare リポジトリ）の既定ブランチが環境まかせで、`git remote set-head origin --auto` が失敗（全 OS）。②`publish-kit.bat` が LF で保存されていた（Linux だけ失敗。Windows は autocrlf で CRLF になり通っていた）。e2e-windows は 1〜3（`install-all.ps1`、分析）が Windows PowerShell 5.1 と実物の robocopy で成功、4（`publish-kit.ps1`）だけ①の巻き添えで失敗（publish-kit が中で `node --test` を実行するため）。PowerShell 7 の通しは 5.1 の失敗で未実行。v1.3.2 の PR（#1）の kit-ci で、unit 4通りと e2e-windows（Windows PowerShell 5.1 と PowerShell 7 の通し、publish-kit と実物の robocopy を含む）がすべて成功 |
+| K2 | `kit-release.yml` の初回実行を確認する | 版を上げた PR のマージでタグとリリースができる | Web | 作業中 | 2回実行（v1.3.0、v1.3.1 の push）、2回とも「テスト」の手順で失敗（K1 と同じ原因）。タグ v1.3.0・v1.3.1 は publish-kit が作ったもので、リリースは0件。v1.3.2 の PR をマージして、タグ v1.3.2 とリリースができれば完了（PR 経由は今回が初めて） |
+| K3 | RPGMZ_Prototype の `daily-log` Actions の結果を確認する | マージ後にボットの「docs(log): 日報を更新」コミットがあり、`docs/log/README.md` に 11/13 の行がある | Web | 未着手 | 未確認。キットのリポジトリのセッションからは RPGMZ_Prototype を読めない。RPGMZ_Prototype のセッションで確認するか、利用者が Actions の画面を見る |
+| K4 | `install-all.ps1 -CreatePR` の実地確認 | 1リポジトリで PR が作られ、PR 本文に版と ADR の説明が入る | PC | 未着手 | キットのリポジトリには結果の記録がない。実行済みなら結果（PR ができたか、本文の内容）を利用者から聞いて記録する |
+| K5 | 利用者の環境の版をそろえる | キットのリポジトリのタグが最新の版まであり、`publish-kit` またはこの SPEC の手順で反映済み | PC | 作業中 | GitHub 側は確認済み: main の先頭が v1.3.1 で、タグ v1.3.1 と同じコミット。タグは v1.0.0、v1.0.1、v1.1.2、v1.3.0、v1.3.1 の5つ（v1.1.0、v1.1.1、v1.2.0 は単独で push されておらず、タグがない。実害なし）。PC のキットのフォルダは未確認。v1.3.2 のマージ後に `git pull` して完了 |
 
 ### L: 展開
 

@@ -56,7 +56,7 @@ Hamm-Coder/daily-log-kit（公開。キットの正本）
    git commit -m "daily-log-kit v<版>"
    gh repo create Hamm-Coder/daily-log-kit --public --source . --push
    ```
-2. **スクリプトの警告を外す**（初回だけ）: `Unblock-File .\install-all.ps1, .\pull-all.ps1, .\publish-kit.ps1, .\publish-kit.bat`
+2. **スクリプトの警告を外す**（初回だけ）: `Unblock-File .\install-all.ps1, .\pull-all.ps1, .\dashboard.ps1, .\publish-kit.ps1, .\publish-kit.bat`
 3. **変更の確認**: `.\install-all.ps1 -Backfill`（何も変えない）
 4. **1つだけ本番**: `.\install-all.ps1 -Repos RPGMZ_prototype -Backfill -Apply -CreatePR`
 5. **GitHub で PR を確認してマージ**。Actions の `daily-log` が緑になれば完了
@@ -223,6 +223,34 @@ cd C:\AllGitRepository\<リポジトリ>
 node C:\AllGitRepository\daily-log-kit\files\tools\daily-log.mjs generate --all
 ```
 
+
+### 全部のリポジトリを1画面で見る（dashboard.ps1）
+
+キットのフォルダで実行する。日報の仕組みを入れたリポジトリとキット本体の状態を、1枚の HTML（`dashboard.html`）にしてブラウザで開く。手元の状態から作るので、先に `pull-all.ps1` で取り込んでおく。
+
+```powershell
+cd C:\AllGitRepository\daily-log-kit
+.\pull-all.ps1 -Yes
+.\dashboard.ps1
+```
+
+| 画面の部分 | 内容 |
+| --- | --- |
+| 上の要約 | 判断待ち、PC でしかできない作業、作業がない期間（30日以上・60日以上・100日以上の3段階）、日報メモの件数 |
+| 一覧 | 1リポジトリ1行。最後の作業（日付と内容）、コミット数（直近24週／全期間）、次にやること・判断待ち・日報メモの件数、注意の改善点、直近24週のグラフ |
+| 詳細 | これまでの作業（README.md の冒頭、HANDOFF.md または CHANGELOG.md の抜粋、最近のコミット5件）、次にやること、判断待ち、詰まったことと手応え、改善点（大きなコミットはここだけ）、最近の決定、直近24週のグラフ（4週ごとの日付つき） |
+
+| オプション | 意味 |
+| --- | --- |
+| （なし） | 日報の仕組みを入れたリポジトリとキット本体 |
+| `-Repos` / `-Exclude` / `-All` / `-NoKit` / `-Root` | 対象の選び方（`pull-all.ps1` と同じ） |
+| `-Out <ファイル>` | 保存先（既定はキットのフォルダの `dashboard.html`） |
+| `-NoOpen` | 作った後にブラウザで開かない |
+
+- キット本体以外では、キットの更新・日報の自動更新・日報メモ・日報の設定のコミットを、作業として数えない（最後の作業、コミット数、グラフ、改善点のすべて）。判断は、件名（「日報の仕組み」「daily-log」「docs(log)」）と、変えたファイルがキットのファイルだけかどうかで行う
+- 「これまでの作業」は決まった規則で抜き出したもので、要約ではない
+- 数値は傾向の目安で、リポジトリ同士の優劣や成果の評価には使わない
+- `dashboard.html` には非公開のリポジトリの内容が入る。`.gitignore` で除外してあるので、コミットや共有はしない
 ## 9. 分析
 
 | 対象 | 場所 | コマンド |
@@ -274,6 +302,7 @@ daily-log-kit/
 ├─ install.mjs         1リポジトリに導入・更新
 ├─ install-all.ps1     一括で導入・更新・再適用
 ├─ pull-all.ps1        まとめて git pull（日報の仕組みを入れたリポジトリだけ）
+├─ dashboard.ps1       複数リポジトリのダッシュボード（dashboard.mjs・dashboard-template.html）
 ├─ publish-kit.bat/.ps1  zip の反映
 ├─ bump-version.mjs    版番号の一括変更
 ├─ templates/  prompts/  tests/  .github/workflows/

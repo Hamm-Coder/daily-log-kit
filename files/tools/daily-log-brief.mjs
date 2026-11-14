@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// daily-log-kit v1.8.0 — セッション開始時の引き継ぎ（次にやること・判断待ち・始める前の準備・効率化の候補）
+// daily-log-kit v1.9.0 — セッション開始時の引き継ぎ（次にやること・判断待ち・始める前の準備・効率化の候補）
 // 仕様: docs/specs/daily-log.md の「13. セッション開始時の引き継ぎ」
 //
 // 使い方:
@@ -175,7 +175,7 @@ export function buildBrief(root, opts = {}) {
 
   const since = addDaysSafe(today, -a.repeatWindowDays);
   const commits = opts.commits || readCommits(root, 'HEAD', cfg).filter((c) => c.parents.length <= 1).map((c) => ({ subject: c.subject, day: dayKey(c.date, cfg) })).filter((c) => c.day >= since);
-  const fixFiles = opts.fixFiles || readFixFiles(root, new Date(Date.parse(today + 'T00:00:00Z') - a.hotspotDays * 86_400_000).toISOString(), a.ignorePaths);
+  const fixFiles = opts.fixFiles || readFixFiles(root, new Date(Date.parse(today + 'T00:00:00Z') - a.hotspotDays * 86_400_000).toISOString(), a.ignorePaths, { maxFiles: a.hotspotMaxFiles });
   const rep = detectRepetition({ memos, commits, fixFiles, today, a, latestNext: latest?.sections.next || [] });
   const efficiency = [
     ...rep.prepRepeats.slice(0, 2).map((p) => `準備作業の繰り返し: 「${p.keyword}」を含む作業が${p.days.length}日（例: ${clip(p.examples[0], 40)}）→ 手順を1つのスクリプトか Skill にまとめる`),

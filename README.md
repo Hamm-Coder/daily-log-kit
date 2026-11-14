@@ -1,4 +1,4 @@
-# daily-log-kit v1.8.0
+# daily-log-kit v1.9.0
 
 Claude Code を使うリポジトリに「日報（日毎ログ）」の仕組みを入れるキット。チャット・Claude Code・Git の作業を `docs/log/` に日ごとにまとめ、作業の傾向・改善点・判断待ちを分析する。
 
@@ -18,6 +18,7 @@ Claude Code を使うリポジトリに「日報（日毎ログ）」の仕組�
 | `install.mjs` | 1つのリポジトリに導入する。何度実行しても同じ結果。既存の設定は保持して追記だけ |
 | `install-all.ps1` | `C:\AllGitRepository` 配下の複数リポジトリへ一括導入（既定は確認のみ） |
 | `pull-all.ps1` | 日報の仕組みを入れたリポジトリとキットを一覧にし、全部・選んだもの・やめるを選んで `git pull` する（入れていないリポジトリは対象外。`-Yes` で確認なし） |
+| `dashboard.ps1` / `dashboard.mjs` | 日報の仕組みを入れたリポジトリとキット本体の状態（これまでの作業・次にやること・判断待ち・改善点・直近24週のコミット）を1画面の HTML にしてブラウザで開く。作った `dashboard.html` はコミットしない |
 | `files/tools/daily-log-analyze.mjs` | 分析ツール（各リポジトリに配られる）。傾向・改善点・判断待ちの一覧 |
 | `files/tools/daily-log-brief.mjs` | セッション開始時の引き継ぎ（次にやること・判断待ち・準備・効率化の候補）。SessionStart フックが使う |
 | `install.test.mjs`、`tests/` | テスト。`node --test` で全部（キットの決まりの検査を含む）。`tests/e2e.ps1` は Windows の通しテスト |
@@ -50,7 +51,7 @@ node ..\daily-log-kit\install.mjs . --dry-run     # 変更予定の確認
 node ..\daily-log-kit\install.mjs . --backfill    # 導入＋過去の日報
 node --test tools/daily-log.test.mjs tools/daily-log-analyze.test.mjs tools/daily-log-brief.test.mjs
 git add -A
-git commit -m "chore: 日報の仕組みを導入（daily-log-kit v1.8.0）"
+git commit -m "chore: 日報の仕組みを導入（daily-log-kit v1.9.0）"
 git push -u origin chore/daily-log
 gh pr create --fill
 ```
@@ -116,7 +117,7 @@ cd C:\AllGitRepository\daily-log-kit
 node --test
 git init -b main
 git add -A
-git commit -m "daily-log-kit v1.8.0"
+git commit -m "daily-log-kit v1.9.0"
 gh repo create Hamm-Coder/daily-log-kit --public --source . --push
 git tag v1.0.0
 git push origin v1.0.0
@@ -188,6 +189,7 @@ git pull
 
 | 版 | 日付 | 内容 |
 | --- | --- | --- |
+| 1.9.0 | 2026-11-14 | `dashboard.ps1`（`dashboard.mjs`）を追加: 日報の仕組みを入れたリポジトリとキット本体を1画面の HTML で見る（要約・一覧・詳細。キット本体以外はキット・日報のコミットを除いて数える）。分析ツール: `excludeCommit` の指定でコミットを除けるようにし、15ファイルを超えるファイルをまとめて直したコミット（版の更新など）を「同じファイルの修正の集中」に数えないようにした |
 | 1.8.0 | 2026-11-14 | 日報メモに任意の見出し「詰まったこと」「手応え（1〜5）」を追加（仕様 4.2）。分析に手応えの平均（直近・週ごと）と詰まったことの一覧、改善点 low-feel・repeated-blocker を追加。セッション開始時の引き継ぎに「前回詰まったこと」。日報メモの雛形・Skill・依頼文4を更新。どちらも任意で、既存のメモはそのまま使える |
 | 1.7.0 | 2026-11-14 | 週1回の分析を Issue にする（`.github/workflows/daily-log-weekly.yml`。`docs/log/config.json` に `"weeklyIssue": true` を書いたリポジトリだけ。毎週月曜の朝、同じ週なら更新し、前の週の分析の Issue は閉じる。仕様 12.5）。分析ツールに `--issue` を追加 |
 | 1.6.0 | 2026-11-14 | `pull-all.ps1` が取り込む前に対象を番号つきで一覧にし、注意を出して「全部（A）」「番号で選ぶ（1つ・複数・範囲）」「やめる（Q/Enter）」を聞くようにした。`-Yes` で確認なしに全部、`-Repos` 指定時は確認しない。各リポジトリに配るファイルの動作は変わらない |

@@ -1,5 +1,5 @@
 ﻿<#
-daily-log-kit v1.8.0 — 一括導入（install-all.ps1）、反映（publish-kit.ps1）、一括の取り込み（pull-all.ps1）の通しテスト
+daily-log-kit v1.9.0 — 一括導入（install-all.ps1）、反映（publish-kit.ps1）、一括の取り込み（pull-all.ps1）、ダッシュボード（dashboard.ps1）の通しテスト
 
 ・GitHub の代わりに一時フォルダの bare リポジトリを使う。本物の GitHub やあなたのリポジトリには触れない
 ・CI（.github/workflows/kit-ci.yml）が Windows の Windows PowerShell 5.1 と PowerShell 7 で実行する
@@ -206,6 +206,19 @@ $r = Run-Ps (Join-Path $kit 'pull-all.ps1') @('-Root', (Join-Path $Root 'repos')
 if ($env:E2E_DEBUG) { Write-Host $r.Out }
 Check ($r.Code -ne 0 -and $r.Out -match 'game: 失敗') '履歴が分かれていたら失敗と表示'
 Check ($r.Out -notmatch 'NativeCommandError|CategoryInfo|FullyQualifiedErrorId') 'git のエラーを PowerShell のエラー表示にしない'
+
+Write-Host ''
+Write-Host '== 7. dashboard.ps1（ダッシュボードを作る。ブラウザは開かない）'
+$dash = Join-Path $Root 'dashboard.html'
+$r = Run-Ps (Join-Path $kit 'dashboard.ps1') @('-Root', (Join-Path $Root 'repos'), '-Out', $dash, '-NoOpen')
+if ($env:E2E_DEBUG) { Write-Host $r.Out }
+Check ($r.Code -eq 0) '終了コード 0（dashboard）'
+Check (Test-Path $dash) 'HTML ができる'
+$html = if (Test-Path $dash) { [System.IO.File]::ReadAllText($dash, [System.Text.Encoding]::UTF8) } else { '' }
+Check ($html -match '"name":"game"' -and $html -match '"name":"daily-log-kit"') '日報の仕組みを入れたリポジトリとキット本体が入る'
+Check ($html -notmatch '"name":"other"') '日報の仕組みがないリポジトリは入らない'
+Check ($r.Out -match '対象外: .*other') '対象外を表示'
+Check ($html -notmatch '__DATA__' -and $html -match '日報ダッシュボード') 'ひな形に集計結果が入っている'
 
 Write-Host ''
 if (-not $env:E2E_KEEP) { Remove-Item -Recurse -Force $Root -ErrorAction SilentlyContinue }

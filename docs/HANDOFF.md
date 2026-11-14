@@ -55,6 +55,8 @@ Hamm-Coder/daily-log-kit（公開）          ← このリポジトリ。キッ
 | 11/14 | v1.3.3: `daily-log.yml` を「既定のブランチへの push」で動くように変更（名前を決め打ちしない。ほかのブランチでは skipped）。検査を1件追加。更新の PR 本文の言い回しを修正 |
 | 11/14 | v1.3.3 をマージ・リリースし、利用者が5リポジトリに配布。既定のブランチが main 以外の4リポジトリで `daily-log` Actions が初めて動き、成功（SPEC K6 完了。K1〜K6 はすべて完了） |
 | 11/14 | v1.4.0: `pull-all.ps1`（日報の仕組みを入れたリポジトリとキットをまとめて `git pull --ff-only`。入れていないリポジトリは対象外）。利用者の依頼（同じフォルダに管理対象でないリポジトリがある）による |
+| 11/14 | v1.4.0 の PR が通しテストの修正より先にマージされ、main の `kit-ci` が一時的に失敗（`pull-all.ps1` 本体ではなくテストの準備の誤り）。修正の PR（#5）で緑に戻した。`pull-all.ps1` は Windows PowerShell 5.1 と 7 の通しテストで確認済み |
+| 11/14 | SPEC M8: キットのセッションに RPGMZ_Prototype を追加し、`docs/log/config.json` に準備のルール（`prep`）5つを書いて PR（RPGMZ_Prototype #44）にした |
 
 ## 4. 確認済みの範囲
 
@@ -70,7 +72,7 @@ Hamm-Coder/daily-log-kit（公開）          ← このリポジトリ。キッ
 | GitHub 上の Actions（kit-ci） | 成功（v1.3.2 の PR。unit 4通りと e2e-windows） | SPEC K1 |
 | GitHub 上の Actions（kit-release） | 成功（v1.3.2 の PR のマージでタグとリリースを作成） | SPEC K2 |
 | GitHub 上の Actions（各リポジトリの daily-log） | 成功（5リポジトリ。既定のブランチが main 以外の4つは v1.3.3 から） | 実機。SPEC K3・K6 |
-| `pull-all.ps1` | `kit-ci` の e2e-windows で確認（v1.4.0 の PR）。実機は未確認 | CI |
+| `pull-all.ps1` | 成功（対象の判別、`-Exclude`、取り込み、未コミットの変更が残ること）。実機は未確認 | `kit-ci` の e2e-windows（PR #5） |
 | `-CreatePR`（gh） | 成功（5リポジトリに導入と更新の PR。本文に版と ADR の説明あり）。PowerShell の版は未確認 | Windows の実機。SPEC K4 |
 | `publish-kit.bat`（Windows PowerShell 5.1 の実機） | 成功（v1.3.0・v1.3.1 を反映） | 実機 |
 
@@ -100,7 +102,7 @@ Hamm-Coder/daily-log-kit（公開）          ← このリポジトリ。キッ
 
 1. v1.4.0 の PR をマージし、PC のキットのフォルダで `git pull`。以後は `.\pull-all.ps1` でまとめて取り込める（各リポジトリへの配布は、次の版とまとめてよい）
 2. マージ済みの `chore/daily-log-v…` ブランチを各リポジトリから消す（Automatically delete head branches の設定を勧める）
-3. SPEC M8: RPGMZ_Prototype の `config.json` に準備のルールを書く（テストプレイ、プラグイン登録の手順）
+3. SPEC M8: RPGMZ_Prototype の PR #44 をマージし、PC で引き継ぎの「始める前の準備」の表示を確かめる
 4. SPEC L1: Unity_CharacterTest などへの導入（導入状況の確認から）
 5. SPEC M2・M3: 判断待ちの解決の記法、週1回の分析の Issue 化
 

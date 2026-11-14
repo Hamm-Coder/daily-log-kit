@@ -1,8 +1,8 @@
-// daily-log-kit v1.4.0 — 実行: node --test tools/daily-log-analyze.test.mjs
+// daily-log-kit v1.5.0 — 実行: node --test tools/daily-log-analyze.test.mjs
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  buildSessions, median, extractSections, pendingItems, isFixCommit, hourBuckets, weekdayCounts,
+  buildSessions, median, extractSections, pendingItems, resolvedItems, parseResolution, matchesPending, isFixCommit, hourBuckets, weekdayCounts,
   lateNightRatio, weeklySeries, detectFindings, renderReport, parseAnalyzeArgs, ANALYSIS_DEFAULTS, daysBetween, formatDuration,
 } from './daily-log-analyze.mjs';
 
@@ -25,6 +25,40 @@ test('中央値と日数', () => {
 test('日報メモの4つの見出しを取り出す', () => {
   const s = extractSections('（日付は推定）\n## 決めたこと\n- パターンB\n- \n## 次にやること\n- （PC）テスト\n```\n## 決めたこと\n- コード内\n```\n## 未解決・判断待ち\n- ボスの名前\n');
   assert.deepEqual(s, { decisions: ['パターンB'], changes: [], next: ['（PC）テスト'], pending: ['ボスの名前'] });
+});
+
+test('判断待ちの解決: 「解決: <項目>」を読む（矢印の後ろは決めた内容）', () => {
+  assert.deepEqual(parseResolution('解決: ボスの名前 → ヴォルクに決定'), { item: 'ボスの名前', outcome: 'ヴォルクに決定' });
+  assert.deepEqual(parseResolution('解決：消費MPの値'), { item: '消費MPの値', outcome: '' });
+  assert.equal(parseResolution('ボスの名前を解決した'), null);
+  assert.equal(parseResolution('解決:'), null);
+});
+
+test('判断待ちの解決: 同じ文か、一方がもう一方を含む（短い方が4文字以上）ときだけ同じとみなす', () => {
+  assert.ok(matchesPending('ボスの名前（ヴォルクは仮）', 'ボスの名前（ヴォルクは仮）'));
+  assert.ok(matchesPending('ボスの名前（ヴォルクは仮）', 'ボスの名前'));
+  assert.ok(matchesPending('奥の手の正式名', '奥の手の正式名（S-13）、ダメージの決め方'));
+  assert.ok(!matchesPending('ボスの名前', 'ボス'));
+  assert.ok(!matchesPending('ボスの名前', '敵の名前'));
+});
+
+test('判断待ちの解決: 解決した項目は一覧から外れ、解決の後にまた書かれたら戻る', () => {
+  const memo = (day, time, pending, decisions = []) => ({ day, meta: { time }, sections: { pending, decisions } });
+  const memos = [
+    memo('2026-11-08', '21:00', ['ボスの名前（ヴォルクは仮）', '消費MPの値']),
+    memo('2026-11-10', '21:00', ['ボスの名前（ヴォルクは仮）', '消費MPの値'], ['解決: ボスの名前 → ヴォルクに決定']),
+    memo('2026-11-11', '09:00', [], ['解決: 消費MPの値 → 20']),
+    memo('2026-11-12', '21:00', ['消費MPの値（もう一度検討）', '新しい件']),
+  ];
+  const p = pendingItems(memos, '2026-11-13', 7);
+  assert.deepEqual(p.map((x) => x.text).sort(), ['新しい件', '消費MPの値（もう一度検討）'].sort());
+  const r = resolvedItems(memos, '2026-11-13', 7);
+  assert.deepEqual(r.map((x) => [x.text, x.resolvedDay, x.outcome, x.waitedDays]), [
+    ['ボスの名前（ヴォルクは仮）', '2026-11-10', 'ヴォルクに決定', 2],
+    ['消費MPの値', '2026-11-11', '20', 3],
+  ]);
+  // 同じメモで判断待ちにも書き、「解決:」も書いたら解決を優先する
+  assert.deepEqual(pendingItems([memo('2026-11-12', '10:00', ['A案かB案か'], ['解決: A案かB案か → A案'])], '2026-11-13', 7), []);
 });
 
 test('判断待ち: 繰り越しを数え、古いメモだけの項目は外す', () => {

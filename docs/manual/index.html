@@ -320,7 +320,7 @@ footer { margin-top: 40px; font-size: 13px; color: var(--muted); }
       <tr><td>決めたこと・次にやること・判断待ち</td><td>メモ1件ごと</td><td><span class="chip mid">中</span></td><td>メモの書き方しだい</td></tr>
       <tr><td>PR の最初のコミットからマージまで</td><td>1本ごと</td><td><span class="chip mid">中</span></td><td>マージコミットのある PR だけ</td></tr>
       <tr><td>作業のまとまりと推定時間</td><td>回ごと</td><td><span class="chip lo">低〜中</span></td><td>コミットの間隔が2時間以内なら同じ作業とみなす推定</td></tr>
-      <tr><td>判断待ちが解決したか</td><td>—</td><td><span class="chip lo">低</span></td><td>新しいメモに書かれなくなったら一覧から消える</td></tr>
+      <tr><td>判断待ちが解決したか</td><td>「決めたこと」の <code>解決: &lt;項目&gt;</code></td><td><span class="chip mid">中</span></td><td>書けば一覧から外れる。書かなくても、新しいメモに書かれなくなれば期間を過ぎて消える</td></tr>
     </tbody>
   </table></div>
 </section>
@@ -403,7 +403,7 @@ title: ADR 0011 を採用
   <p>Claude Code のセッションを始めると、日報から次の4つが自動で Claude に渡されます。あなたが読む必要はなく、「前回の続きをして」「D4 をやって」と頼むだけで、Claude が準備から始めます。</p>
   <div class="cards four">
     <div class="card"><h4>次にやること</h4><p>最新の日報メモから。作業キューの番号（例 D4）があれば、SPEC.md の完了条件と実行場所を添えます。Web版では PC の作業に「この環境ではできない」と付きます。</p></div>
-    <div class="card"><h4>判断待ち</h4><p>直近のメモの「未解決・判断待ち」。最初に出た日と回数つき。</p></div>
+    <div class="card"><h4>判断待ち</h4><p>直近のメモの「未解決・判断待ち」。最初に出た日と回数つき。決めたら「決めたこと」に <code>解決: &lt;項目&gt; → &lt;決めた内容&gt;</code> と書くと外れます。</p></div>
     <div class="card"><h4>始める前の準備</h4><p><code>git pull</code> が要るか、未コミットの変更、<code>node_modules</code> がない、Git LFS がない、作業中のブランチ。次の作業に合わせた準備のルール。</p></div>
     <div class="card"><h4>効率化の候補</h4><p>同じ準備作業や似た作業の繰り返し、何度も繰り越されている作業、修正が続いているファイル。</p></div>
   </div>

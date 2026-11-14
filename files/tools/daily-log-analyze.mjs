@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// daily-log-kit v1.4.0 — 日報と Git 履歴の分析（作業の傾向、改善点、判断待ちの一覧）
+// daily-log-kit v1.5.0 — 日報と Git 履歴の分析（作業の傾向、改善点、判断待ちの一覧）
 // 仕様: docs/specs/daily-log.md の「12. 分析」
 //
 // 使い方:
@@ -34,7 +34,7 @@ export const ANALYSIS_DEFAULTS = {
   pcTasksMax: 5,
   inactiveDays: 14,
   recentDays: 14,
-  pendingWindowDays: 7, // 判断待ちは直近7日のメモに書かれた項目（解決したものは新しいメモに書かれなくなる）
+  pendingWindowDays: 7, // 判断待ちは直近7日のメモに書かれた項目（「決めたこと」の「解決: <項目>」で外れる）
   similarity: 0.5, // 似た作業とみなす文字の重なり（2文字ずつの組の一致率）
   repeatMinDays: 3, // 同じ作業が何日に出たら「繰り返し」とみなすか
   repeatWindowDays: 60, // 繰り返しを探す期間
@@ -105,24 +105,72 @@ export function normalizeItem(s) {
 }
 
 /**
- * 判断待ちの一覧。同じ項目が複数のメモに出ていれば「繰り越し」とみなし、最初に出た日を持つ。
- * 直近 recentDays 日のメモに出た項目だけを「現在の判断待ち」とする（解決済みは新しいメモに書かれなくなる前提）
+ * 「決めたこと」の「解決: <判断待ちの項目>」を取り出す。「解決: ボスの名前 → ヴォルクに決定」のように
+ * 矢印（→ -> ⇒）の後ろに決めた内容を書いてよい。項目の部分だけを返す
  */
-export function pendingItems(memos, today, recentDays = 14) {
+export function parseResolution(line) {
+  const m = /^解決\s*[:：]\s*(.+)$/.exec(String(line || '').trim());
+  if (!m) return null;
+  const [item, ...rest] = m[1].split(/\s*(?:→|->|⇒)\s*/);
+  const text = item.trim();
+  return text ? { item: text, outcome: rest.join(' → ').trim() } : null;
+}
+
+/** 判断待ちと「解決:」の項目が同じか。同じ文、または一方がもう一方を含む（短い方が4文字以上） */
+export function matchesPending(pendingText, resolvedText) {
+  const a = normalizeItem(pendingText);
+  const b = normalizeItem(resolvedText);
+  if (!a || !b) return false;
+  if (a === b) return true;
+  const [s, l] = a.length <= b.length ? [a, b] : [b, a];
+  return s.length >= 4 && l.includes(s);
+}
+
+/**
+ * 判断待ちを古いメモから順にたどる。同じ項目が複数のメモに出ていれば「繰り越し」とみなし、最初に出た日を持つ。
+ * 「決めたこと」の「解決: <項目>」で解決済みにする。解決の後のメモにまた書かれたら、判断待ちに戻す
+ */
+function trackPending(memos) {
   const map = new Map();
-  for (const m of [...memos].sort((a, b) => a.day.localeCompare(b.day))) {
-    for (const text of m.sections.pending) {
+  const order = (m) => m.day + ' ' + (m.meta?.time || '');
+  for (const m of [...memos].sort((a, b) => order(a).localeCompare(order(b)))) {
+    for (const text of m.sections.pending || []) {
       const k = normalizeItem(text);
       if (!k) continue;
       const cur = map.get(k) || { text, firstDay: m.day, lastDay: m.day, count: 0 };
       cur.lastDay = m.day; cur.count++; cur.text = text;
+      delete cur.resolvedDay; delete cur.outcome;
       map.set(k, cur);
     }
+    // 同じメモの判断待ちより後に処理する（同じメモで「解決:」と書いたら解決を優先）
+    for (const line of m.sections.decisions || []) {
+      const r = parseResolution(line);
+      if (!r) continue;
+      for (const cur of map.values()) {
+        if (!cur.resolvedDay && matchesPending(cur.text, r.item)) { cur.resolvedDay = m.day; cur.outcome = r.outcome; }
+      }
+    }
   }
+  return [...map.values()];
+}
+
+/**
+ * 今の判断待ちの一覧。直近 recentDays 日のメモに出た項目のうち、「解決:」で解決していないもの。
+ * 「解決:」を書かなくても、新しいメモに書かれなくなれば期間を過ぎて一覧から消える
+ */
+export function pendingItems(memos, today, recentDays = 14) {
   const since = addDays(today, -recentDays);
-  return [...map.values()].filter((x) => x.lastDay >= since)
-    .map((x) => ({ ...x, ageDays: daysBetween(x.firstDay, today) }))
+  return trackPending(memos).filter((x) => !x.resolvedDay && x.lastDay >= since)
+    .map(({ resolvedDay, outcome, ...x }) => ({ ...x, ageDays: daysBetween(x.firstDay, today) }))
     .sort((a, b) => a.firstDay.localeCompare(b.firstDay) || a.text.localeCompare(b.text));
+}
+
+/** 直近 recentDays 日に「解決:」で解決した判断待ち（解決した日、決めた内容、判断待ちだった日数） */
+export function resolvedItems(memos, today, recentDays = 14) {
+  const since = addDays(today, -recentDays);
+  return trackPending(memos).filter((x) => x.resolvedDay && x.resolvedDay >= since)
+    .map((x) => ({ text: x.text, firstDay: x.firstDay, resolvedDay: x.resolvedDay, outcome: x.outcome || '', waitedDays: daysBetween(x.firstDay, x.resolvedDay) }))
+    .sort((a, b) => a.resolvedDay.localeCompare(b.resolvedDay) || a.text.localeCompare(b.text));
 }
 
 /** addDays の再公開（daily-log-brief.mjs から使う） */
@@ -412,6 +460,11 @@ export function renderReport(results, { today, generatedFor } = {}) {
       for (const p of m.pending) out.push(`| ${p.text.replace(/\|/g, '｜')} | ${p.firstDay} | ${p.count} |`);
       out.push('');
     }
+    if (m.resolved?.length) {
+      out.push(`${h} 解決した判断待ち（直近のメモ）`, '', '| 項目 | 決めた内容 | 最初に出た日 | 解決した日 |', '| --- | --- | --- | --- |');
+      for (const p of m.resolved) out.push(`| ${p.text.replace(/\|/g, '｜')} | ${(p.outcome || '—').replace(/\|/g, '｜')} | ${p.firstDay} | ${p.resolvedDay} |`);
+      out.push('');
+    }
     out.push(`${h} 次にやること（最新のメモ）`, '');
     if (!m.latestNext.items.length) out.push('なし', '');
     else out.push(`${m.latestNext.day} のメモより`, '', ...m.latestNext.items.map((t) => `- ${t}`), '');
@@ -451,7 +504,7 @@ export function renderReport(results, { today, generatedFor } = {}) {
     '- 作業日は日報と同じ区切り（`docs/log/config.json` の `dayStartHour`）。深夜率は時計どおりの0〜4時で数える',
     '- 作業のまとまりは、コミットの間隔が一定時間以内なら同じ作業とみなした推定。コミットしない作業（調べもの、チャット）は入らない',
     '- 件数は作業の量の目安で、成果や生産性の評価には使わない（SPACE フレームワーク: 活動量の指標を単独で使わない）',
-    '- 判断待ちは、直近のメモに書かれている項目。解決したら次のメモに書かなければ一覧から消える');
+    '- 判断待ちは、直近のメモに書かれている項目。解決したら「決めたこと」に「解決: <項目>」と書くと一覧から外れる（書かなくても、新しいメモに書かれなくなれば期間を過ぎて消える）');
   return out.join('\n').replace(/\n{3,}/g, '\n\n').trimEnd() + '\n';
 }
 
@@ -585,6 +638,7 @@ export function analyzeRepo(root, opts = {}) {
     largeCommits,
     recent: { commits: recentCommits.length, fixRatio: recentCommits.length ? recentCommits.filter((c) => isFixCommit(c.subject)).length / recentCommits.length : 0 },
     pending: pendingItems(memos, today, a.pendingWindowDays),
+    resolved: resolvedItems(memos, today, a.pendingWindowDays),
     latestNext: { day: latestMemo?.day || null, items: latestMemo?.sections.next || [] },
     pcTasks: pcUnique,
     repetition,

@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// daily-log-kit v1.4.0 — 日報の生成ツール（依存パッケージなし。Node.js 18 以上）
+// daily-log-kit v1.5.0 — 日報の生成ツール（依存パッケージなし。Node.js 18 以上）
 // 仕様: docs/specs/daily-log.md
 //
 // 使い方:
@@ -16,7 +16,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 
-export const KIT_VERSION = '1.4.0';
+export const KIT_VERSION = '1.5.0';
 
 export const DEFAULT_CONFIG = {
   tz: 'Asia/Tokyo',
@@ -209,7 +209,7 @@ source: ${source}
 branch: ${branch}
 title: ${title}
 ---
-<!-- 書いたら中身のない見出しは残してかまいません（日報には出ません）。秘密情報・個人情報は書かない -->
+<!-- 書いたら中身のない見出しは残してかまいません（日報には出ません）。秘密情報・個人情報は書かない。判断待ちが解決したら、「決めたこと」に「解決: <判断待ちの項目> → <決めた内容>」と書く -->
 ## 決めたこと
 -
 

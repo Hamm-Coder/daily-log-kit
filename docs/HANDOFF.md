@@ -66,6 +66,7 @@ Hamm-Coder/daily-log-kit（公開）          ← このリポジトリ。キッ
 | 11/14 | SPEC M8 完了: 利用者が引き継ぎの「始める前の準備」の表示を確認し、テストプレイとプラグイン登録の手順に、実行するフォルダ・ツール（PC の Claude Code アプリ、PowerShell、RPG Maker MZ）・コマンドを書き足すよう依頼。RPGMZ_Prototype #51 で書き直し、判断待ちの2件を `解決:` で外した（v1.5.0 の記法を実データで初めて使用） |
 | 11/14 | SPEC M5（複数リポジトリのダッシュボード）: claude.ai の非公開ページで画面の案を作り、利用者と仕様を決めた。①「最後の作業」・コミット数・週ごとのグラフは、キットの更新・日報の自動更新・日報メモのコミットを除く（キット本体は除かない）②キット本体も一覧と詳細に入れる ③作業がない期間は30・60・100日以上の3段階（重ねて数えない）④詳細の項目と順番は案のとおり、週ごとのグラフは直近24週で横軸に4週ごとの日付 ⑤「これまでの作業」は README.md の冒頭（多め、最大500文字）・HANDOFF.md または CHANGELOG.md の抜粋・最近のコミット5件を決まった規則で抜き出す ⑥「大きなコミット」は詳細だけに出す ⑦一覧にコミット数（直近24週／全期間）。Claude による要約は無期限保留（必要になったら実装）。実装は PC で実行する `dashboard.ps1` が HTML を作る想定で、作った HTML はキットのリポジトリ（公開）にコミットしない |
 | 11/14 | v1.9.0: `dashboard.ps1`（`dashboard.mjs`・`dashboard-template.html`）。画面の案で決めた仕様どおり。キットのコミットの判断は、件名（「日報の仕組み」「daily-log」「docs(log)」）か、変えたファイルがキットのファイルだけか、のどちらか（件名だけだと「準備のルール」などの設定のコミットを取りこぼすため）。分析ツールに `excludeCommit` と「15ファイルを超える修正コミットは修正の集中に数えない」を追加（キット本体の版の更新が誤って出ていたため）。5リポジトリとキット本体の実データで、画面の案と同じ数になることを確認（SPEC M5 完了） |
+| 11/14 | 利用者が PC で v1.9.0 の `dashboard.ps1` を実行し、ダッシュボードが仕様どおり開くことを確認（修正点なし）。Unity_CharacterTest も「日報の仕組みを入れたリポジトリ」として対象に入った（60日以上作業なし）。見た目で気づいた点（一覧の右端のグラフが小さい、最後の作業の日付が折り返す）は、利用者の判断で直さない |
 
 ## 4. 確認済みの範囲
 
@@ -82,7 +83,7 @@ Hamm-Coder/daily-log-kit（公開）          ← このリポジトリ。キッ
 | GitHub 上の Actions（kit-release） | 成功（v1.3.2 の PR のマージでタグとリリースを作成） | SPEC K2 |
 | GitHub 上の Actions（各リポジトリの daily-log） | 成功（5リポジトリ。既定のブランチが main 以外の4つは v1.3.3 から） | 実機。SPEC K3・K6 |
 | 週1回の Issue（`daily-log-weekly.yml`） | 成功（RPGMZ_Prototype の手動実行で Issue #49 を作成。件名・ラベル・本文を確認）。同じ週の更新と前の週を閉じる動きは、手元の再現だけで確認（GitHub 上は 11/16 の定期実行で確かめる） | 実機、手元の再現 |
-| `dashboard.ps1` | 5リポジトリとキット本体の実データ（Linux の `dashboard.mjs`）で、画面の案と同じ数になることを確認。Windows では `kit-ci` の e2e-windows で確認。実機は未確認 | 手元、CI |
+| `dashboard.ps1` | 成功（利用者の PC。7リポジトリ: 日報の仕組みを入れた6つ＋キット本体。最後の作業・作業がない期間の3段階・改善点の出し分けが仕様どおり）。kit-ci の e2e-windows でも確認 | 実機、CI |
 | `pull-all.ps1` | 実機（Windows PowerShell 5.1）で6リポジトリの取り込みと対象外の判別に成功。未追跡ファイルとのぶつかりは v1.5.1 で対応（退避・置き換え・失敗時の復元・履歴の分かれ・エラー表示を通しテストに追加） | 実機、`kit-ci` の e2e-windows |
 | `-CreatePR`（gh） | 成功（5リポジトリに導入と更新の PR。本文に版と ADR の説明あり）。PowerShell の版は未確認 | Windows の実機。SPEC K4 |
 | `publish-kit.bat`（Windows PowerShell 5.1 の実機） | 成功（v1.3.0・v1.3.1 を反映） | 実機 |
@@ -115,9 +116,8 @@ Hamm-Coder/daily-log-kit（公開）          ← このリポジトリ。キッ
 1. v1.8.0 の更新 PR（5リポジトリ）をマージし、PC で `.\pull-all.ps1` で取り込む
 2. 11/16（月）の定期実行で、RPGMZ_Prototype の週1回の Issue が新しい週の分析に置き換わり、#49 が閉じられるか確かめる（SPEC M3 の残り）
 3. PC の Claude Code アプリで RPGMZ_Prototype を開き、引き継ぎ（SessionStart フック）と、書き直した準備の手順が実際に渡されるか確かめる（次の PR #38 のテストプレイのときに）
-4. v1.9.0 をマージし、PC で `git pull` → `.\pull-all.ps1 -Yes` → `.\dashboard.ps1` で、ダッシュボードが開くか確かめる（Windows の実物での初めての実行）
 5. マージ済みの `chore/daily-log-v…` ブランチを各リポジトリから消す（Automatically delete head branches の設定を勧める）
-6. SPEC L1: Unity_CharacterTest などへの導入（導入状況の確認から）
+6. SPEC L1: Unity_CharacterTest などへの導入（ダッシュボードの対象に入ったので、Unity_CharacterTest は導入済みの可能性がある。導入状況の確認から）
 
 ## 8. 新しいセッションでの始め方（Claude Code に貼る）
 

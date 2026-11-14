@@ -74,7 +74,7 @@ test('週1回の Issue のワークフローは既定で無効（config.json の
   assert.match(yml, /schedule:/);
   assert.match(yml, /workflow_dispatch:/);
   assert.match(yml, /weeklyIssueEnabled/, '設定で有効にしたときだけ動かす');
-  assert.match(yml, /permissions:\n\s+contents: read\n\s+issues: write/, '権限は contents: read と issues: write だけ');
+  assert.match(yml, /permissions:\r?\n\s+contents: read\r?\n\s+issues: write/, '権限は contents: read と issues: write だけ');
   const cfg = JSON.parse(fs.readFileSync(path.join(ROOT, 'files/docs/log/config.json'), 'utf8'));
   assert.equal(cfg.weeklyIssue, false, '新しく入れたリポジトリでも既定は無効');
 });

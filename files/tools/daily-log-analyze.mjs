@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// daily-log-kit v1.6.0 — 日報と Git 履歴の分析（作業の傾向、改善点、判断待ちの一覧）
+// daily-log-kit v1.7.0 — 日報と Git 履歴の分析（作業の傾向、改善点、判断待ちの一覧）
 // 仕様: docs/specs/daily-log.md の「12. 分析」
 //
 // 使い方:
@@ -45,7 +45,7 @@ export const ANALYSIS_DEFAULTS = {
   ignorePaths: [
     'docs/log/', 'package-lock.json', 'yarn.lock', 'pnpm-lock.yaml',
     // キット自体のファイル（導入・更新のコミットを「大きなコミット」に数えない）
-    'tools/daily-log', '.claude/hooks/daily-log-reminder.mjs', '.claude/skills/daily-log/', '.github/workflows/daily-log.yml',
+    'tools/daily-log', '.claude/hooks/daily-log-reminder.mjs', '.claude/skills/daily-log/', '.github/workflows/daily-log',
     'docs/specs/daily-log.md', 'docs/procedures/daily-log.md', 'docs/decisions/0011-daily-log.md',
   ],
 };
@@ -510,8 +510,42 @@ export function renderReport(results, { today, generatedFor } = {}) {
 
 // ---------- 入出力 ----------
 
+// ---------- 週1回の Issue（.github/workflows/daily-log-weekly.yml が使う） ----------
+
+export const ISSUE_TITLE_PREFIX = '日報の分析（';
+const ISSUE_BODY_MAX = 60000; // GitHub の Issue 本文の上限（65,536文字）より少なく
+
+/** その週の月曜日（YYYY-MM-DD） */
+export function weekStart(day) {
+  const d = new Date(day + 'T00:00:00Z');
+  const back = (d.getUTCDay() + 6) % 7; // 月曜なら0、日曜なら6
+  return addDays(day, -back);
+}
+
+/** Issue の件名。同じ週なら同じ件名になる（同じ週に2回動いたら、作り直さずに本文を更新するため） */
+export function issueTitle(today) {
+  return `${ISSUE_TITLE_PREFIX}${weekStart(today)} の週）`;
+}
+
+/** Issue の本文。レポートの前に読み方と止め方を書き、長すぎれば末尾を切る */
+export function issueBody(report, { today } = {}) {
+  const lead = [
+    `> daily-log-kit の週1回の分析（${today || ''} 時点）。数値は作業の傾向をつかむ目安で、成果や生産性の評価には使わない。`,
+    '> 改善点は確認のきっかけ。理由があれば対応しなくてよい。止めるときは `docs/log/config.json` の `"weeklyIssue"` を `false` にする。',
+    '', '',
+  ].join('\n');
+  let text = lead + report;
+  if (text.length > ISSUE_BODY_MAX) text = text.slice(0, ISSUE_BODY_MAX) + '\n\n（長いため、ここで切りました。全体は `node tools/daily-log-analyze.mjs` で見られます）\n';
+  return text;
+}
+
+/** config.json の weeklyIssue が true のときだけ有効（既定は無効） */
+export function weeklyIssueEnabled(cfg = {}) {
+  return cfg.weeklyIssue === true;
+}
+
 export function parseAnalyzeArgs(argv) {
-  const bool = new Set(['json', 'help']);
+  const bool = new Set(['json', 'help', 'issue']);
   const a = { _: [] };
   for (let i = 0; i < argv.length; i++) {
     const t = argv[i];
@@ -655,12 +689,20 @@ export function main(argv = process.argv.slice(2)) {
   const args = parseAnalyzeArgs(argv);
   if (args.help) {
     console.log('使い方: node tools/daily-log-analyze.mjs [リポジトリ...] [--since YYYY-MM-DD] [--until YYYY-MM-DD] [--out ファイル] [--json]');
+    console.log('       node tools/daily-log-analyze.mjs --issue --out <本文のファイル> --title-out <件名のファイル>   # 週1回の Issue 用');
     return 0;
   }
   const roots = (args._.length ? args._ : [process.cwd()]).map((p) => repoRoot(path.resolve(p)));
   const results = roots.map((r) => analyzeRepo(r, { since: args.since, until: args.until, today: args.today }));
   const today = results[0]?.today || dayKey(new Date().toISOString(), DEFAULT_CONFIG);
-  const text = args.json ? JSON.stringify(results.map(({ root, ...r }) => r), null, 2) + '\n' : renderReport(results, { today });
+  let text = args.json ? JSON.stringify(results.map(({ root, ...r }) => r), null, 2) + '\n' : renderReport(results, { today });
+  if (args.issue) {
+    text = issueBody(text, { today });
+    if (args['title-out']) {
+      fs.mkdirSync(path.dirname(path.resolve(args['title-out'])), { recursive: true });
+      fs.writeFileSync(args['title-out'], issueTitle(today) + '\n');
+    }
+  }
   if (args.out) {
     fs.mkdirSync(path.dirname(path.resolve(args.out)), { recursive: true });
     fs.writeFileSync(args.out, text);

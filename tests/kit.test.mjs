@@ -1,4 +1,4 @@
-// daily-log-kit v1.6.0 — キット自体の決まりの検査（node --test で他のテストと一緒に動く）
+// daily-log-kit v1.7.0 — キット自体の決まりの検査（node --test で他のテストと一緒に動く）
 // 版番号の書き換え漏れ、変更履歴の書き忘れ、文字コード、配布ファイルの印を確認する
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -67,6 +67,16 @@ test('配る daily-log.yml は既定のブランチの名前を決め打ちし�
   const yml = fs.readFileSync(path.join(ROOT, 'files/.github/workflows/daily-log.yml'), 'utf8');
   assert.doesNotMatch(yml, /branches:\s*\[\s*main/, 'push の対象を main・master に限らない');
   assert.match(yml, /if: .*github\.ref_name == github\.event\.repository\.default_branch/, '既定のブランチのときだけ動かす条件を書く');
+});
+
+test('週1回の Issue のワークフローは既定で無効（config.json の weeklyIssue を見る）で、権限は最小限', () => {
+  const yml = fs.readFileSync(path.join(ROOT, 'files/.github/workflows/daily-log-weekly.yml'), 'utf8');
+  assert.match(yml, /schedule:/);
+  assert.match(yml, /workflow_dispatch:/);
+  assert.match(yml, /weeklyIssueEnabled/, '設定で有効にしたときだけ動かす');
+  assert.match(yml, /permissions:\r?\n\s+contents: read\r?\n\s+issues: write/, '権限は contents: read と issues: write だけ');
+  const cfg = JSON.parse(fs.readFileSync(path.join(ROOT, 'files/docs/log/config.json'), 'utf8'));
+  assert.equal(cfg.weeklyIssue, false, '新しく入れたリポジトリでも既定は無効');
 });
 
 test('依存パッケージを使わない（node: の標準モジュールと相対パスだけ）', () => {

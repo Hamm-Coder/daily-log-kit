@@ -49,6 +49,8 @@ Hamm-Coder/daily-log-kit（公開）          ← このリポジトリ。キッ
 | 11/13 | v1.3.0 と v1.3.1 を publish-kit で GitHub に反映（タグ v1.3.0・v1.3.1）。これが Actions の初めての実行になり、`kit-ci` は3回、`kit-release` は2回、すべて失敗。リリースは1件もできなかった（この時点では気づいていない） |
 | 11/14 | 開発を claude.ai のチャットから Claude Code に引き継ぎ。Actions のログから失敗の原因2件を特定し、SPEC の K1〜K5 に結果を記録。①テスト用の GitHub 役（bare リポジトリ）の既定ブランチが環境まかせで `git remote set-head origin --auto` が失敗 ②`publish-kit.bat` がリポジトリに LF で入っていた（v1.2.0 で手元だけ CRLF に直り、Windows の autocrlf がコミット時に LF へ戻していた） |
 | 11/14 | v1.3.2: 上の2件を修正（bare リポジトリを `-b main` で作る。`.bat` を CRLF で保存し `.gitattributes` の `*.bat -text` で変換を止める。検査を1件追加）。キットの改良を頼む依頼文（`prompts/5-claude-code-kit-improve.md`）と、`CLAUDE.md` の「PR を作った後」の手順を追加。初めて PR 経由で反映する。PR の `kit-ci` は全ジョブ成功（SPEC K1 完了） |
+| 11/14 | v1.3.2 の PR（#1）をマージ。`kit-release` が成功し、タグ v1.3.2 とリリース v1.3.2 ができた（SPEC K2 完了。リリースは初めて） |
+| 11/14 | 利用者が claude.ai のチャットでの配布の結果をまとめ、SPEC の K3〜K5 に記録。RPGMZ_Prototype: `daily-log` Actions は成功（ボットのコミット e0755f6）、ADR 0011 は Web版で「採用」に変更済み、v1.3.1 の更新 PR は未マージ（差分は想定どおり）、マージ済みの `chore/daily-log-v1.0.1` ブランチが GitHub に残っている（削除と Automatically delete head branches の設定を案内済み）。automaticPromptsMaker にも `-CreatePR` を実行（PR の結果は未確認）。Unity_CharacterTest の導入状況は未確認。v1.3.0 の publish-kit で出た「zip にないファイル（extras/ の9件）を残す」は想定どおりの表示 |
 
 ## 4. 確認済みの範囲
 
@@ -62,9 +64,10 @@ Hamm-Coder/daily-log-kit（公開）          ← このリポジトリ。キッ
 | Windows PowerShell 5.1 での `install-all.ps1`（確認のみ・本番）と分析ツール | 成功 | `kit-ci` の e2e-windows（v1.3.1、Windows PowerShell 5.1.26100）。通しテストの 1〜3 |
 | Windows PowerShell 5.1 での `publish-kit.ps1`（実際の robocopy）、PowerShell 7 の通し | 成功 | v1.3.2 の PR の `kit-ci` の e2e-windows（v1.3.1 まではテストの不具合の巻き添えで失敗・未実行だった） |
 | GitHub 上の Actions（kit-ci） | 成功（v1.3.2 の PR。unit 4通りと e2e-windows） | SPEC K1 |
-| GitHub 上の Actions（kit-release） | **v1.3.1 まで失敗 → v1.3.2 で修正、マージ後に確認** | SPEC K2 |
-| GitHub 上の Actions（各リポジトリの daily-log） | **未確認** | SPEC K3 |
-| `-CreatePR`（gh） | **未確認**（偽の gh でコマンドの中身だけ確認） | SPEC K4 |
+| GitHub 上の Actions（kit-release） | 成功（v1.3.2 の PR のマージでタグとリリースを作成） | SPEC K2 |
+| GitHub 上の Actions（各リポジトリの daily-log） | 成功（RPGMZ_Prototype。ボットのコミット e0755f6） | 実機。SPEC K3 |
+| `-CreatePR`（gh） | 成功（RPGMZ_Prototype に導入と更新の PR。更新の差分は想定どおり）。PR 本文の内容と PowerShell の版は未確認 | Windows の実機。SPEC K4 |
+| `publish-kit.bat`（Windows PowerShell 5.1 の実機） | 成功（v1.3.0・v1.3.1 を反映） | 実機 |
 
 ## 5. 設計の要点（詳細は `docs/decisions/`）
 
@@ -90,10 +93,11 @@ Hamm-Coder/daily-log-kit（公開）          ← このリポジトリ。キッ
 
 ## 7. 次の一手（推奨順）
 
-1. SPEC K2: v1.3.2 の PR（`kit-ci` は緑を確認済み）をマージし、`kit-release` がタグ v1.3.2 とリリースを作ったことを確認する
-2. SPEC K5: PC のキットのフォルダで `git pull` し、`.\install-all.ps1 -Apply -CreatePR` で各リポジトリに配る（K4 の確認を兼ねる）
-3. SPEC K3: RPGMZ_Prototype の `daily-log` Actions が成功しているか確認する
+1. RPGMZ_Prototype の v1.3.1 の更新 PR をマージする（配るファイルの動作は v1.3.2 と同じ。v1.3.2 を配り直す必要はない）
+2. SPEC K5: PC のキットのフォルダで `git pull` して v1.3.2 にする
+3. SPEC K4 の残り: PR 本文の内容と、automaticPromptsMaker の PR の結果を確認する
 4. SPEC M8: RPGMZ_Prototype の `config.json` に準備のルールを書く（テストプレイ、プラグイン登録の手順）
+5. SPEC L1: Unity_CharacterTest などへの導入（導入状況の確認から）
 
 ## 8. 新しいセッションでの始め方（Claude Code に貼る）
 

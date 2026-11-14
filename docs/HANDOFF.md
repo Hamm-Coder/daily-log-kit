@@ -63,6 +63,7 @@ Hamm-Coder/daily-log-kit（公開）          ← このリポジトリ。キッ
 | 11/14 | v1.7.0: 週1回の分析を Issue にする `daily-log-weekly.yml`（`weeklyIssue: true` のリポジトリだけ。毎週月曜 8:17、同じ週は更新、前の週は閉じる。仕様 12.5）。偽の gh を使った手元の再現で、無効・作成・更新・古い週を閉じる・手動実行を確認（SPEC M3 完了） |
 | 11/14 | v1.7.0 を5リポジトリに配布。RPGMZ_Prototype で `weeklyIssue` を有効にした（RPGMZ_Prototype #47）が、`daily-log-weekly.yml` が GitHub にワークフローとして登録されず Actions の一覧に出なかった（ほかの4リポジトリは登録済み。中身は同じで YAML も正しい）。ファイルにコメントを1行足す PR（#48）のマージで登録され、手動実行で Issue #49「日報の分析（2026-11-09 の週）」ができた（GitHub 上で初めて確認） |
 | 11/14 | v1.8.0: 日報メモの任意の見出し「詰まったこと」「手応え（1〜5）」（仕様 4.2）。分析に手応えの平均と詰まったことの一覧、改善点 low-feel・repeated-blocker、引き継ぎに「前回詰まったこと」。既存のメモに影響しないので x.Y.0 とした（SPEC M4 完了） |
+| 11/14 | SPEC M8 完了: 利用者が引き継ぎの「始める前の準備」の表示を確認し、テストプレイとプラグイン登録の手順に、実行するフォルダ・ツール（PC の Claude Code アプリ、PowerShell、RPG Maker MZ）・コマンドを書き足すよう依頼。RPGMZ_Prototype #51 で書き直し、判断待ちの2件を `解決:` で外した（v1.5.0 の記法を実データで初めて使用） |
 
 ## 4. 確認済みの範囲
 
@@ -110,7 +111,7 @@ Hamm-Coder/daily-log-kit（公開）          ← このリポジトリ。キッ
 
 1. v1.4.0 の PR をマージし、PC のキットのフォルダで `git pull`。以後は `.\pull-all.ps1` でまとめて取り込める（各リポジトリへの配布は、次の版とまとめてよい）
 2. マージ済みの `chore/daily-log-v…` ブランチを各リポジトリから消す（Automatically delete head branches の設定を勧める）
-3. SPEC M8: RPGMZ_Prototype の PR #44 をマージし、PC で引き継ぎの「始める前の準備」の表示を確かめる
+3. PC の Claude Code アプリで RPGMZ_Prototype を開き、引き継ぎ（SessionStart フック）が実際に渡されるか確かめる（次の PR #38 のテストプレイのときに）
 4. SPEC L1: Unity_CharacterTest などへの導入（導入状況の確認から）
 5. v1.5.0 の PR をマージし、`.\install-all.ps1 -Repos <5つ> -Apply -CreatePR` で配る
 6. 11/16（月）の定期実行で、RPGMZ_Prototype の Issue が新しい週の分析に置き換わり、#49 が閉じられるか確かめる

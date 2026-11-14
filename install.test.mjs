@@ -55,7 +55,7 @@ test('日報の ADR が既にあれば二重に作らない', () => {
 
 test('ADR は最初から「採用」で、Actions なしの注記を切り替える', () => {
   const tpl = '# ADR {{NUMBER}}\n- 状態: 採用\n- 日付: {{DATE}}\nv{{VERSION}}\n- {{WORKFLOW_LINE}}';
-  assert.equal(renderAdr(tpl, { number: '0012', date: '2026-11-13', version: '1.1.0', workflow: true }), '# ADR 0012\n- 状態: 採用\n- 日付: 2026-11-13\nv1.1.0\n- main への push で GitHub Actions が日報を作り直す');
+  assert.equal(renderAdr(tpl, { number: '0012', date: '2026-11-13', version: '1.1.0', workflow: true }), '# ADR 0012\n- 状態: 採用\n- 日付: 2026-11-13\nv1.1.0\n- 既定のブランチへの push で GitHub Actions が日報を作り直す');
   assert.match(renderAdr(tpl, { number: '0003', date: 'd', version: 'v', workflow: false }), /GitHub Actions を使わず/);
 });
 

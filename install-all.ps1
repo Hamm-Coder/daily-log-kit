@@ -1,5 +1,5 @@
 ﻿<#
-daily-log-kit v1.3.2 — 複数のリポジトリへ日報の仕組みを一括で入れる
+daily-log-kit v1.3.3 — 複数のリポジトリへ日報の仕組みを一括で入れる
 
 安全のための仕組み
 - 既定は確認のみ（何も変えない）。-Apply を付けたときだけコミットする
@@ -120,7 +120,8 @@ foreach ($repo in $targets) {
     if ($CreatePR) {
       Invoke-Git $wt @('push', '-u', 'origin', $Branch) | Out-Null
       $pushed = $true
-      $body = "daily-log-kit v$KitVersion を${verb}します。`n`n- 仕様: docs/specs/daily-log.md`n- 過去の日報: $(if ($Backfill) { 'docs/log/ に生成済み' } else { '未生成（node tools/daily-log.mjs generate --all）' })`n- ADR: docs/decisions/ があるリポジトリでは「採用」で追加（このPRのマージで採用）`n- 確認: node --test tools/daily-log.test.mjs"
+      $lead = if ($installed) { "daily-log-kit v$KitVersion に更新します。" } else { "daily-log-kit v$KitVersion を導入します。" }
+      $body = "$lead`n`n- 仕様: docs/specs/daily-log.md`n- 過去の日報: $(if ($Backfill) { 'docs/log/ に生成済み' } else { '未生成（node tools/daily-log.mjs generate --all）' })`n- ADR: docs/decisions/ があるリポジトリでは「採用」で追加（このPRのマージで採用）`n- 確認: node --test tools/daily-log.test.mjs"
       Push-Location $wt
       try { $url = gh pr create --base $baseName --head $Branch --title $title --body $body }
       finally { Pop-Location }

@@ -1,6 +1,6 @@
 # 日報（日毎ログ）の仕様
 
-- キット: daily-log-kit v1.3.2（どのリポジトリでも同じ内容。作品・製品ごとの差は `docs/log/config.json` だけで吸収する）
+- キット: daily-log-kit v1.3.3（どのリポジトリでも同じ内容。作品・製品ごとの差は `docs/log/config.json` だけで吸収する）
 - 更新日: 2026-11-10
 
 ## 1. 目的
@@ -25,7 +25,7 @@
 | Claude Code のセッションを始めるとき | SessionStart フック `.claude/hooks/daily-log-session-start.mjs` | 次にやること・判断待ち・始める前の準備・効率化の候補を Claude に渡す（13章） |
 | Claude Code が応答を終えるとき | Stop フック `.claude/hooks/daily-log-reminder.mjs` | 作業の差分があるのに日報メモがなければ、同じ HEAD につき1回だけ記録を促す |
 | セッションの終わり・PR作成前 | Skill `.claude/skills/daily-log/SKILL.md` | 日報メモを書き、日報を作り直してコミット |
-| main への push（PRのマージ） | GitHub Actions `.github/workflows/daily-log.yml` | 直近14日分の日報と一覧を作り直し、変更があればボットがコミット |
+| 既定のブランチ（main など）への push（PRのマージ） | GitHub Actions `.github/workflows/daily-log.yml` | 直近14日分の日報と一覧を作り直し、変更があればボットがコミット |
 | 導入直後に1回 | `generate --all` | 全履歴から過去の日報を作る |
 | 好きなとき（週1回を推奨） | `node tools/daily-log-analyze.mjs` | 傾向・改善点・判断待ちの一覧を表示（12章） |
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// daily-log-kit v1.3.3 — 日報と Git 履歴の分析（作業の傾向、改善点、判断待ちの一覧）
+// daily-log-kit v1.4.0 — 日報と Git 履歴の分析（作業の傾向、改善点、判断待ちの一覧）
 // 仕様: docs/specs/daily-log.md の「12. 分析」
 //
 // 使い方:

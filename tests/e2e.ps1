@@ -1,5 +1,5 @@
 ﻿<#
-daily-log-kit v1.3.3 — 一括導入（install-all.ps1）と反映（publish-kit.ps1）の通しテスト
+daily-log-kit v1.4.0 — 一括導入（install-all.ps1）、反映（publish-kit.ps1）、一括の取り込み（pull-all.ps1）の通しテスト
 
 ・GitHub の代わりに一時フォルダの bare リポジトリを使う。本物の GitHub やあなたのリポジトリには触れない
 ・CI（.github/workflows/kit-ci.yml）が Windows の Windows PowerShell 5.1 と PowerShell 7 で実行する
@@ -113,6 +113,34 @@ Check ((G $kit status --porcelain --untracked-files=no) -eq '') 'キットのフ
 $r = Run-Ps (Join-Path $kit 'publish-kit.ps1') @('-Yes')
 if ($env:E2E_DEBUG) { Write-Host $r.Out }
 Check ($r.Code -ne 0 -and $r.Out -match '新しくありません') '同じ版は反映しない'
+
+Write-Host ''
+Write-Host '== 5. pull-all.ps1（日報の仕組みを入れたリポジトリだけ、まとめて git pull）'
+# 導入のブランチを GitHub 役の main に入れる（PR のマージの代わり）。手元の main は1コミット遅れた状態になる
+& git --git-dir=$gameRemote update-ref refs/heads/main (G $game rev-parse $branch)
+# 日報の仕組みを入れていないリポジトリ（対象外になること）
+$other = Join-Path $Root 'repos\other'
+New-Item -ItemType Directory -Path $other -Force | Out-Null
+G $other init -q | Out-Null
+Set-Content -Path (Join-Path $other 'b.txt') -Value 'b' -Encoding ASCII
+G $other add . | Out-Null
+G $other commit -q -m 'init' | Out-Null
+G $game fetch -q origin | Out-Null   # GitHub 側の main に日報の仕組みが入ったことを手元に知らせる（まだ取り込まない）
+$r = Run-Ps (Join-Path $kit 'pull-all.ps1') @('-Root', (Join-Path $Root 'repos'), '-Exclude', 'game')
+if ($env:E2E_DEBUG) { Write-Host $r.Out }
+Check ($r.Code -eq 0) '終了コード 0（-Exclude）'
+Check ($r.Out -match '対象外: .*game') '-Exclude で外したリポジトリは対象外'
+Check (-not (Test-Path (Join-Path $game 'tools'))) '外したリポジトリは取り込まない'
+$r = Run-Ps (Join-Path $kit 'pull-all.ps1') @('-Root', (Join-Path $Root 'repos'))
+if ($env:E2E_DEBUG) { Write-Host $r.Out }
+Check ($r.Code -eq 0) '終了コード 0'
+Check ($r.Out -match 'game: 更新') '日報の仕組みを入れたリポジトリを取り込む'
+Check ($r.Out -match 'daily-log-kit: 最新') 'キット自身も対象'
+Check ($r.Out -match '対象外: .*other') '日報の仕組みがないリポジトリは対象外'
+Check (Test-Path (Join-Path $game 'tools\daily-log.mjs')) '取り込んだファイルが作業フォルダにある'
+Check ((G $game status --short) -match 'a\.txt') '未コミットの変更が残っている'
+$r = Run-Ps (Join-Path $kit 'pull-all.ps1') @('-Root', (Join-Path $Root 'repos'))
+Check ($r.Out -match 'game: 最新') '2回目は「最新」'
 
 Write-Host ''
 if (-not $env:E2E_KEEP) { Remove-Item -Recurse -Force $Root -ErrorAction SilentlyContinue }

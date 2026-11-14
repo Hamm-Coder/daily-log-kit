@@ -56,7 +56,7 @@ Hamm-Coder/daily-log-kit（公開。キットの正本）
    git commit -m "daily-log-kit v<版>"
    gh repo create Hamm-Coder/daily-log-kit --public --source . --push
    ```
-2. **スクリプトの警告を外す**（初回だけ）: `Unblock-File .\install-all.ps1, .\publish-kit.ps1, .\publish-kit.bat`
+2. **スクリプトの警告を外す**（初回だけ）: `Unblock-File .\install-all.ps1, .\pull-all.ps1, .\publish-kit.ps1, .\publish-kit.bat`
 3. **変更の確認**: `.\install-all.ps1 -Backfill`（何も変えない）
 4. **1つだけ本番**: `.\install-all.ps1 -Repos RPGMZ_prototype -Backfill -Apply -CreatePR`
 5. **GitHub で PR を確認してマージ**。Actions の `daily-log` が緑になれば完了
@@ -130,7 +130,32 @@ git pull                              # キットを最新に（古いと警告�
 .\install-all.ps1 -Apply -CreatePR    # 各リポジトリに PR
 ```
 
-その後、GitHub で各 PR をマージし、各リポジトリのフォルダで `git pull` する。
+その後、GitHub で各 PR をマージし、各リポジトリのフォルダで `git pull` する。まとめて行うなら `pull-all.ps1` を使う。
+
+### まとめて git pull する（pull-all.ps1）
+
+キットのフォルダで実行する。日報の仕組みを入れたリポジトリ（`tools/daily-log.mjs` がある）とキット自身だけを対象にし、同じフォルダにあるほかのリポジトリには何もしない。
+
+```powershell
+cd C:\AllGitRepository\daily-log-kit
+.\pull-all.ps1                               # 日報の仕組みを入れたリポジトリとキット
+.\pull-all.ps1 -Exclude Unity_CharacterTest  # 1つ外す
+.\pull-all.ps1 -Repos RPGMZ_prototype        # 名前で指定
+```
+
+| オプション | 意味 |
+| --- | --- |
+| （なし） | 日報の仕組みを入れたリポジトリとキット |
+| `-Repos <名前,…>` | 指定したリポジトリだけ（日報の仕組みの有無は見ない） |
+| `-Exclude <名前,…>` | 指定したリポジトリを外す |
+| `-All` | 直下の Git リポジトリを全部 |
+| `-NoKit` | キット自身を外す |
+| `-Root <フォルダ>` | 対象のフォルダ（既定 `C:\AllGitRepository`） |
+
+- `git pull --ff-only` を使う。手元と GitHub の履歴が分かれているリポジトリや、未コミットの変更が取り込むファイルと重なるリポジトリは「失敗」と表示して次へ進む（統合や上書きはしない）
+- 取り込むのは今チェックアウトしているブランチだけ。ブランチは切り替えない
+- 結果は1行ずつ「更新」「最新」「飛ばしました」「失敗」。対象にしなかったリポジトリは最後に「対象外」として並ぶ
+- 導入の PR をマージしたばかりで一度も取り込んでいないリポジトリは、「対象外」になることがある。そのときは `-Repos` で名前を指定する
 
 | オプション | 意味 |
 | --- | --- |
@@ -216,6 +241,7 @@ daily-log-kit/
 ├─ files/              各リポジトリに配る中身
 ├─ install.mjs         1リポジトリに導入・更新
 ├─ install-all.ps1     一括で導入・更新・再適用
+├─ pull-all.ps1        まとめて git pull（日報の仕組みを入れたリポジトリだけ）
 ├─ publish-kit.bat/.ps1  zip の反映
 ├─ bump-version.mjs    版番号の一括変更
 ├─ templates/  prompts/  tests/  .github/workflows/

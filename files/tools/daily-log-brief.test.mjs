@@ -1,4 +1,4 @@
-// daily-log-kit v1.3.3 — 実行: node --test tools/daily-log-brief.test.mjs
+// daily-log-kit v1.4.0 — 実行: node --test tools/daily-log-brief.test.mjs
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { parseSpecQueue, idsIn, summarizeRow, placeOf, prepFromRules, prepFromState, renderBrief } from './daily-log-brief.mjs';

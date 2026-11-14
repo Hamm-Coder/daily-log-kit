@@ -1,4 +1,4 @@
-// daily-log-kit v1.7.0 — 実行: node --test tools/daily-log-brief.test.mjs
+// daily-log-kit v1.8.0 — 実行: node --test tools/daily-log-brief.test.mjs
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { parseSpecQueue, idsIn, summarizeRow, placeOf, prepFromRules, prepFromState, renderBrief } from './daily-log-brief.mjs';
@@ -125,4 +125,11 @@ test('引き継ぎの文: Web版では PC の作業に印を付け、何もな�
   assert.match(s, /（Web版で今できるのは 1件）/);
   assert.match(s, /- \[必要\] node_modules がない → npm ci/);
   assert.equal(renderBrief({ env: 'pc', latest: null, next: [], pending: [], prep: [], efficiency: [] }), '');
+});
+
+test('引き継ぎ: 前回のメモの「詰まったこと」を出す（なければ見出しも出さない）', () => {
+  const base = { env: 'web', latest: { day: '2026-11-13', time: '21:00', title: 't' }, next: [], pending: [], prep: [], efficiency: [] };
+  const out = renderBrief({ ...base, blockers: ['プラグイン管理の並び順が分からない'] });
+  assert.match(out, /### 前回詰まったこと\n- プラグイン管理の並び順が分からない/);
+  assert.equal(renderBrief({ ...base, blockers: [] }), '');
 });

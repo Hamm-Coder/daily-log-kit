@@ -1,4 +1,4 @@
-# daily-log-kit v1.7.0 — main に新しい版が入ったら、タグ v<版> と GitHub のリリースを自動で作る（各リポジトリには配布しない）
+# daily-log-kit v1.8.0 — main に新しい版が入ったら、タグ v<版> と GitHub のリリースを自動で作る（各リポジトリには配布しない）
 # ・Claude Code がキットのリポジトリを直接直す流れ: 版を上げる PR → マージ → このワークフローがタグとリリースを作る
 # ・publish-kit.ps1 で反映した場合: タグは publish-kit が作るので、リリースだけ作る
 name: kit-release

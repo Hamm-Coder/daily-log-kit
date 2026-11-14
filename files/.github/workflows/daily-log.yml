@@ -1,10 +1,11 @@
-# daily-log-kit v1.3.2 — main への push ごとに日報を作り直してコミットする
+# daily-log-kit v1.3.3 — 既定のブランチへの push ごとに日報を作り直してコミットする
+# 既定のブランチの名前は決め打ちしない（main・master 以外の名前のリポジトリでも動く）。ほかのブランチへの push では何もしない（skipped と表示される）
 # GITHUB_TOKEN による push は別のワークフローを起動しないので、ループしない
 name: daily-log
 
 on:
   push:
-    branches: [main, master]
+    branches: ['**']
     paths-ignore:
       - 'docs/log/20*/**'
       - 'docs/log/README.md'
@@ -24,6 +25,8 @@ concurrency:
 
 jobs:
   generate:
+    # 既定のブランチへの push か、手動の実行のときだけ動かす
+    if: github.event_name == 'workflow_dispatch' || github.ref_name == github.event.repository.default_branch
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:

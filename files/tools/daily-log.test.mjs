@@ -1,4 +1,4 @@
-// daily-log-kit v1.3.2 — 実行: node --test tools/daily-log.test.mjs
+// daily-log-kit v1.3.3 — 実行: node --test tools/daily-log.test.mjs
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {

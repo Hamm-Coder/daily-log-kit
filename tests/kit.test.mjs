@@ -1,4 +1,4 @@
-// daily-log-kit v1.3.2 — キット自体の決まりの検査（node --test で他のテストと一緒に動く）
+// daily-log-kit v1.3.3 — キット自体の決まりの検査（node --test で他のテストと一緒に動く）
 // 版番号の書き換え漏れ、変更履歴の書き忘れ、文字コード、配布ファイルの印を確認する
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -61,6 +61,12 @@ test('.bat は英数字のみで改行は CRLF、処理は1行（実行中の上
 test('.gitattributes で .bat の改行の変換を止めている（Linux の CI や GitHub の zip でも CRLF のまま）', () => {
   const attrs = fs.readFileSync(path.join(ROOT, '.gitattributes'), 'utf8');
   assert.match(attrs, /^\*\.bat\s+-text\s*$/m, '.gitattributes に「*.bat -text」を書いてください');
+});
+
+test('配る daily-log.yml は既定のブランチの名前を決め打ちしない（main がないリポジトリでも日報が更新される）', () => {
+  const yml = fs.readFileSync(path.join(ROOT, 'files/.github/workflows/daily-log.yml'), 'utf8');
+  assert.doesNotMatch(yml, /branches:\s*\[\s*main/, 'push の対象を main・master に限らない');
+  assert.match(yml, /if: .*github\.ref_name == github\.event\.repository\.default_branch/, '既定のブランチのときだけ動かす条件を書く');
 });
 
 test('依存パッケージを使わない（node: の標準モジュールと相対パスだけ）', () => {

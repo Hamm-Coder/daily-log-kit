@@ -1,6 +1,6 @@
 # 日報キットの導入・更新・再適用・取り外し
 
-- 目的: このリポジトリの日報の仕組み（daily-log-kit v1.5.0）を、新しい版に更新する・壊れたときに戻す・外す
+- 目的: このリポジトリの日報の仕組み（daily-log-kit v1.5.1）を、新しい版に更新する・壊れたときに戻す・外す
 - 前提: キットのリポジトリ `Hamm-Coder/daily-log-kit` を `C:\AllGitRepository\daily-log-kit` にクローン済み。Git、Node.js、GitHub CLI（`gh`）
 - 詳しいマニュアル: https://github.com/Hamm-Coder/daily-log-kit/blob/main/docs/MANUAL.md
 - 毎日の使い方: `docs/procedures/daily-log.md`、仕様: `docs/specs/daily-log.md`

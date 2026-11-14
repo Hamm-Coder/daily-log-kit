@@ -1,4 +1,4 @@
-# daily-log-kit v1.5.0
+# daily-log-kit v1.5.1
 
 Claude Code を使うリポジトリに「日報（日毎ログ）」の仕組みを入れるキット。チャット・Claude Code・Git の作業を `docs/log/` に日ごとにまとめ、作業の傾向・改善点・判断待ちを分析する。
 
@@ -50,7 +50,7 @@ node ..\daily-log-kit\install.mjs . --dry-run     # 変更予定の確認
 node ..\daily-log-kit\install.mjs . --backfill    # 導入＋過去の日報
 node --test tools/daily-log.test.mjs tools/daily-log-analyze.test.mjs tools/daily-log-brief.test.mjs
 git add -A
-git commit -m "chore: 日報の仕組みを導入（daily-log-kit v1.5.0）"
+git commit -m "chore: 日報の仕組みを導入（daily-log-kit v1.5.1）"
 git push -u origin chore/daily-log
 gh pr create --fill
 ```
@@ -116,7 +116,7 @@ cd C:\AllGitRepository\daily-log-kit
 node --test
 git init -b main
 git add -A
-git commit -m "daily-log-kit v1.5.0"
+git commit -m "daily-log-kit v1.5.1"
 gh repo create Hamm-Coder/daily-log-kit --public --source . --push
 git tag v1.0.0
 git push origin v1.0.0
@@ -188,6 +188,7 @@ git pull
 
 | 版 | 日付 | 内容 |
 | --- | --- | --- |
+| 1.5.1 | 2026-11-14 | `pull-all.ps1` の修正: 取り込むファイルと同じ名前の未追跡ファイル（Unity の `ProjectSettings/ProjectVersion.txt` など）で止まらないようにした（同じ内容なら置き換え、違えば `.local` に退避。`-NoMoveUntracked` で従来どおり止める）。Windows PowerShell 5.1 で git のエラーが「発生場所…」付きで表示されるのを、本文だけの表示にした。各リポジトリに配るファイルの動作は変わらない |
 | 1.5.0 | 2026-11-14 | 判断待ちの解決の記法（「決めたこと」に `解決: <項目> → <決めた内容>`）。解決した判断待ちは分析とセッション開始時の引き継ぎの一覧から外れ、分析には「解決した判断待ち」として出る（仕様 4.1）。日報メモの雛形・Skill・依頼文に書き方を追記。既存のメモはそのまま使える |
 | 1.4.0 | 2026-11-14 | `pull-all.ps1` を追加（日報の仕組みを入れたリポジトリとキットを、まとめて `git pull --ff-only`。入れていないリポジトリは対象外。`-Repos`・`-Exclude`・`-All`・`-NoKit`）。各リポジトリに配るファイルは手順書の1行だけ変更 |
 | 1.3.3 | 2026-11-14 | 既定のブランチが main・master 以外のリポジトリで、日報が自動で更新されなかった不具合を修正（`daily-log.yml` を「既定のブランチへの push」で動くように変更。ほかのブランチへの push は skipped と表示される）。更新の PR 本文の言い回しを修正（「v<版> に更新します」） |

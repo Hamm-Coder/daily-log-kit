@@ -2,7 +2,7 @@
 
 - 作成日: 2026-11-13（最終更新: 2026-11-14）
 - 対象: このキットの開発を Claude Code（Web版・PC版）で続けるための資料
-- キットの版: `install.mjs` の `KIT_VERSION` を見る（最終更新の時点は v1.5.0）
+- キットの版: `install.mjs` の `KIT_VERSION` を見る（最終更新の時点は v1.5.1）
 
 ## 1. このキットは何か
 
@@ -58,6 +58,7 @@ Hamm-Coder/daily-log-kit（公開）          ← このリポジトリ。キッ
 | 11/14 | v1.4.0 の PR が通しテストの修正より先にマージされ、main の `kit-ci` が一時的に失敗（`pull-all.ps1` 本体ではなくテストの準備の誤り）。修正の PR（#5）で緑に戻した。`pull-all.ps1` は Windows PowerShell 5.1 と 7 の通しテストで確認済み |
 | 11/14 | SPEC M8: キットのセッションに RPGMZ_Prototype を追加し、`docs/log/config.json` に準備のルール（`prep`）5つを書いて PR（RPGMZ_Prototype #44）にした |
 | 11/14 | v1.5.0: 判断待ちの解決の記法（「決めたこと」に `解決: <項目> → <決めた内容>`。仕様 4.1）。解決した判断待ちは分析と引き継ぎの一覧から外れ、分析に「解決した判断待ち」として出る。解決の後にまた書かれたら戻る（SPEC M2 完了） |
+| 11/14 | 利用者が PC で `pull-all.ps1` を初めて実行。Unity_CharacterTest で、未追跡の `ProjectSettings/ProjectVersion.txt` と取り込むファイルがぶつかって失敗し、Windows PowerShell 5.1 が git のエラーを「発生場所…」付きで表示した。v1.5.1 で、同じ内容なら置き換え・違えば `.local` に退避して取り込むようにし、エラーの表示を本文だけにした |
 
 ## 4. 確認済みの範囲
 
@@ -73,7 +74,7 @@ Hamm-Coder/daily-log-kit（公開）          ← このリポジトリ。キッ
 | GitHub 上の Actions（kit-ci） | 成功（v1.3.2 の PR。unit 4通りと e2e-windows） | SPEC K1 |
 | GitHub 上の Actions（kit-release） | 成功（v1.3.2 の PR のマージでタグとリリースを作成） | SPEC K2 |
 | GitHub 上の Actions（各リポジトリの daily-log） | 成功（5リポジトリ。既定のブランチが main 以外の4つは v1.3.3 から） | 実機。SPEC K3・K6 |
-| `pull-all.ps1` | 成功（対象の判別、`-Exclude`、取り込み、未コミットの変更が残ること）。実機は未確認 | `kit-ci` の e2e-windows（PR #5） |
+| `pull-all.ps1` | 実機（Windows PowerShell 5.1）で6リポジトリの取り込みと対象外の判別に成功。未追跡ファイルとのぶつかりは v1.5.1 で対応（退避・置き換え・失敗時の復元・履歴の分かれ・エラー表示を通しテストに追加） | 実機、`kit-ci` の e2e-windows |
 | `-CreatePR`（gh） | 成功（5リポジトリに導入と更新の PR。本文に版と ADR の説明あり）。PowerShell の版は未確認 | Windows の実機。SPEC K4 |
 | `publish-kit.bat`（Windows PowerShell 5.1 の実機） | 成功（v1.3.0・v1.3.1 を反映） | 実機 |
 

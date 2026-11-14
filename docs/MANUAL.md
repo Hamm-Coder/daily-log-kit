@@ -152,9 +152,11 @@ cd C:\AllGitRepository\daily-log-kit
 | `-Exclude <名前,…>` | 指定したリポジトリを外す |
 | `-All` | 直下の Git リポジトリを全部 |
 | `-NoKit` | キット自身を外す |
+| `-NoMoveUntracked` | 取り込むファイルと同じ名前の未追跡ファイルを退避せず、「失敗」と表示する |
 | `-Root <フォルダ>` | 対象のフォルダ（既定 `C:\AllGitRepository`） |
 
-- `git pull --ff-only` を使う。手元と GitHub の履歴が分かれているリポジトリや、未コミットの変更が取り込むファイルと重なるリポジトリは「失敗」と表示して次へ進む（統合や上書きはしない）
+- 早送りだけで取り込む（`git fetch` → `git merge --ff-only`）。手元と GitHub の履歴が分かれているリポジトリや、未コミットの変更が取り込むファイルと重なるリポジトリは「失敗」と表示して次へ進む（統合や上書きはしない）
+- 取り込むファイルと同じ名前の未追跡ファイル（Unity が作る `ProjectSettings/ProjectVersion.txt` など）は、GitHub 側と同じ内容なら置き換え（「置き換え:」と表示）、違う内容なら `<ファイル名>.local` に退避してから取り込む（「退避:」と表示。消さない）。取り込みに失敗したら元に戻す。`.local` は中身を比べて、不要なら消す
 - 取り込むのは今チェックアウトしているブランチだけ。ブランチは切り替えない
 - 結果は1行ずつ「更新」「最新」「飛ばしました」「失敗」。対象にしなかったリポジトリは最後に「対象外」として並ぶ
 - 導入の PR をマージしたばかりで一度も取り込んでいないリポジトリは、「対象外」になることがある。そのときは `-Repos` で名前を指定する
@@ -225,7 +227,7 @@ Web版なら「作業を分析して」。数値は自分の作業の傾向を�
 
 | 症状 | 対処 |
 | --- | --- |
-| `git pull` で「untracked working tree files would be overwritten」 | エディタを閉じ、表示されたファイルを別名に退避（`Move-Item <file> <file>.local`）してから `git pull`。中身を比べて不要なら消す。`git stash -u` や `git clean` は使わない |
+| `git pull` で「untracked working tree files would be overwritten」 | `.\pull-all.ps1` なら自動で退避して取り込む（v1.5.1 から）。手で行うときは、エディタを閉じ、表示されたファイルを別名に退避（`Move-Item <file> <file>.local`）してから `git pull`。中身を比べて不要なら消す。`git stash -u` や `git clean` は使わない |
 | install-all で「リモートに chore/daily-log-v… が既にあります」 | 同じ版の PR が未マージ。マージするか閉じる。マージ済みならそのブランチを GitHub で消す |
 | install-all で「キットが GitHub より N コミット古いです」 | キットのフォルダで `git pull` |
 | robocopy の終了コードが 1 や 3 | 成功（0〜7 は成功、8 以上が失敗） |

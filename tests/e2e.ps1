@@ -1,5 +1,5 @@
 ﻿<#
-daily-log-kit v1.5.1 — 一括導入（install-all.ps1）、反映（publish-kit.ps1）、一括の取り込み（pull-all.ps1）の通しテスト
+daily-log-kit v1.6.0 — 一括導入（install-all.ps1）、反映（publish-kit.ps1）、一括の取り込み（pull-all.ps1）の通しテスト
 
 ・GitHub の代わりに一時フォルダの bare リポジトリを使う。本物の GitHub やあなたのリポジトリには触れない
 ・CI（.github/workflows/kit-ci.yml）が Windows の Windows PowerShell 5.1 と PowerShell 7 で実行する
@@ -20,6 +20,10 @@ function Check([bool]$Cond, [string]$Name) {
 function G([string]$Dir) { $a = $args; $o = & git -C $Dir @a 2>&1; return (($o | Out-String).Trim()) }
 function Run-Ps([string]$File, [string[]]$ArgList) {
   $o = & $Ps -NoProfile -ExecutionPolicy Bypass -File $File @ArgList 2>&1 | Out-String
+  return @{ Out = $o; Code = $LASTEXITCODE }
+}
+function Run-PsInput([string]$File, [string[]]$ArgList, [string]$Text) {
+  $o = $Text | & $Ps -NoProfile -ExecutionPolicy Bypass -File $File @ArgList 2>&1 | Out-String
   return @{ Out = $o; Code = $LASTEXITCODE }
 }
 function Copy-Tree([string]$From, [string]$To) {
@@ -127,12 +131,12 @@ Set-Content -Path (Join-Path $other 'b.txt') -Value 'b' -Encoding ASCII
 G $other add . | Out-Null
 G $other commit -q -m 'init' | Out-Null
 G $game fetch -q origin | Out-Null   # GitHub 側の main に日報の仕組みが入ったことを手元に知らせる（まだ取り込まない）
-$r = Run-Ps (Join-Path $kit 'pull-all.ps1') @('-Root', (Join-Path $Root 'repos'), '-Exclude', 'game')
+$r = Run-Ps (Join-Path $kit 'pull-all.ps1') @('-Root', (Join-Path $Root 'repos'), '-Exclude', 'game', '-Yes')
 if ($env:E2E_DEBUG) { Write-Host $r.Out }
 Check ($r.Code -eq 0) '終了コード 0（-Exclude）'
 Check ($r.Out -match '対象外: .*game') '-Exclude で外したリポジトリは対象外'
 Check (-not (Test-Path (Join-Path $game 'tools'))) '外したリポジトリは取り込まない'
-$r = Run-Ps (Join-Path $kit 'pull-all.ps1') @('-Root', (Join-Path $Root 'repos'))
+$r = Run-Ps (Join-Path $kit 'pull-all.ps1') @('-Root', (Join-Path $Root 'repos'), '-Yes')
 if ($env:E2E_DEBUG) { Write-Host $r.Out }
 Check ($r.Code -eq 0) '終了コード 0'
 Check ($r.Out -match 'game: 更新') '日報の仕組みを入れたリポジトリを取り込む'
@@ -140,8 +144,29 @@ Check ($r.Out -match 'daily-log-kit: 最新') 'キット自身も対象'
 Check ($r.Out -match '対象外: .*other') '日報の仕組みがないリポジトリは対象外'
 Check (Test-Path (Join-Path $game 'tools\daily-log.mjs')) '取り込んだファイルが作業フォルダにある'
 Check ((G $game status --short) -match 'a\.txt') '未コミットの変更が残っている'
-$r = Run-Ps (Join-Path $kit 'pull-all.ps1') @('-Root', (Join-Path $Root 'repos'))
+$r = Run-Ps (Join-Path $kit 'pull-all.ps1') @('-Root', (Join-Path $Root 'repos'), '-Yes')
 Check ($r.Out -match 'game: 最新') '2回目は「最新」'
+
+Write-Host ''
+Write-Host '== 5b. pull-all.ps1（一覧を出して選ぶ）'
+$pa = Join-Path $kit 'pull-all.ps1'
+$rr = @('-Root', (Join-Path $Root 'repos'))
+$r = Run-PsInput $pa $rr 'Q'
+if ($env:E2E_DEBUG) { Write-Host $r.Out }
+Check ($r.Code -eq 0 -and $r.Out -match '\[1\] daily-log-kit' -and $r.Out -match '\[2\] game') '番号つきの一覧を出す'
+Check ($r.Out -match '注意:') '注意文を出す'
+Check ($r.Out -match 'やめました' -and $r.Out -notmatch 'git pull をまとめて実行します') 'Q なら何もしない'
+$r = Run-PsInput $pa $rr ''
+Check ($r.Out -match 'やめました' -and $r.Out -notmatch 'git pull をまとめて実行します') 'Enter だけなら何もしない'
+$r = Run-PsInput $pa $rr '2'
+if ($env:E2E_DEBUG) { Write-Host $r.Out }
+Check ($r.Code -eq 0 -and $r.Out -match 'game: ' -and $r.Out -notmatch 'daily-log-kit: ') '番号で1つだけ取り込む'
+Check ($r.Out -match '選ばなかったもの: daily-log-kit') '選ばなかったものを表示'
+$r = Run-PsInput $pa $rr "9`nA"
+if ($env:E2E_DEBUG) { Write-Host $r.Out }
+Check ($r.Out -match '選べません' -and $r.Out -match 'game: ' -and $r.Out -match 'daily-log-kit: ') '範囲外の番号は聞き直し、A で全部'
+$r = Run-PsInput $pa $rr '1-2'
+Check ($r.Code -eq 0 -and $r.Out -match 'game: ' -and $r.Out -match 'daily-log-kit: ') '範囲（1-2）で選べる'
 
 Write-Host ''
 Write-Host '== 6. pull-all.ps1（取り込むファイルと同じ名前の未追跡ファイル、履歴の分かれ）'

@@ -140,15 +140,35 @@ git pull                              # キットを最新に（古いと警告�
 
 ```powershell
 cd C:\AllGitRepository\daily-log-kit
-.\pull-all.ps1                               # 日報の仕組みを入れたリポジトリとキット
+.\pull-all.ps1                               # 一覧を出して、全部・選んだもの・やめるを選ぶ
+.\pull-all.ps1 -Yes                          # 確認せずに全部
 .\pull-all.ps1 -Exclude Unity_CharacterTest  # 1つ外す
-.\pull-all.ps1 -Repos RPGMZ_prototype        # 名前で指定
+.\pull-all.ps1 -Repos RPGMZ_prototype        # 名前で指定（確認しない）
 ```
+
+実行すると、対象のリポジトリを番号つきで一覧にし、注意（取り込むのは今のブランチ、エディタは閉じる、など）を出してから、どれを取り込むかを聞く。
+
+```
+取り込む対象のリポジトリ（C:\AllGitRepository）:
+  [1] A1111_SD_TokenCounter（ブランチ claude/festive-bell-dubjas）
+  [2] daily-log-kit（ブランチ main）
+  [3] RPGMZ_prototype（ブランチ main）
+  対象外: GAS_LifeLogWebApps
+
+どれを取り込みますか？
+  A       … 全部
+  番号    … 選んだものだけ（例 3、1,3,5、1-3。1つだけでもよい）
+  Q/Enter … やめる（何もしない）
+選択:
+```
+
+読めない入力や範囲外の番号は聞き直す（3回まで）。選ばなかったものは最後に「選ばなかったもの」として並ぶ。
 
 | オプション | 意味 |
 | --- | --- |
-| （なし） | 日報の仕組みを入れたリポジトリとキット |
-| `-Repos <名前,…>` | 指定したリポジトリだけ（日報の仕組みの有無は見ない） |
+| （なし） | 日報の仕組みを入れたリポジトリとキットを一覧にし、どれを取り込むか聞く |
+| `-Yes` | 確認せずに全部取り込む |
+| `-Repos <名前,…>` | 指定したリポジトリだけ（日報の仕組みの有無は見ない。確認しない） |
 | `-Exclude <名前,…>` | 指定したリポジトリを外す |
 | `-All` | 直下の Git リポジトリを全部 |
 | `-NoKit` | キット自身を外す |

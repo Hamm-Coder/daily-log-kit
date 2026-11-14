@@ -1,11 +1,16 @@
 ﻿<#
-daily-log-kit v1.5.1 — 日報の仕組みを入れたリポジトリを、まとめて git pull する
+daily-log-kit v1.6.0 — 日報の仕組みを入れたリポジトリを、まとめて git pull する
 
 対象
 - -Root（既定 C:\AllGitRepository）直下の Git リポジトリのうち、日報の仕組みが入っているもの（tools/daily-log.mjs がある）と、キット自身
 - 日報の仕組みが入っていないリポジトリは対象外（一覧に「対象外」と出るだけで、何もしない）
 - -Repos で名前を指定すると、そのリポジトリだけ（日報の仕組みの有無は見ない）
 - -Exclude で名前を指定すると、そのリポジトリを外す
+
+取り込む前の確認
+- 対象のリポジトリを番号つきで一覧にし、どれを取り込むかを聞く
+  A = 全部 / 番号 = 選んだものだけ（例 3、1,3,5、1-3。1つだけでもよい）/ Q か Enter = やめる（何もしない）
+- -Yes を付けると確認せずに全部取り込む。-Repos で名前を指定したときも確認しない（指定したものを取り込む）
 
 安全のための仕組み
 - 早送りだけで取り込む（git fetch → git merge --ff-only）。手元と GitHub の履歴が分かれているリポジトリは、統合せずに「失敗」と表示して次へ進む
@@ -16,7 +21,8 @@ daily-log-kit v1.5.1 — 日報の仕組みを入れたリポジトリを、ま�
   取り込みに失敗したら元に戻す。-NoMoveUntracked を付けると退避せずに「失敗」と表示する
 
 例
-  .\pull-all.ps1                              # 日報の仕組みを入れたリポジトリとキット
+  .\pull-all.ps1                              # 一覧を出して、全部・選んだもの・やめるを選ぶ
+  .\pull-all.ps1 -Yes                         # 確認せずに全部
   .\pull-all.ps1 -Exclude Unity_CharacterTest # 1つ外す
   .\pull-all.ps1 -Repos RPGMZ_prototype,automaticPromptsMaker
   .\pull-all.ps1 -All                         # 直下の Git リポジトリを全部
@@ -29,7 +35,8 @@ param(
   [string[]]$Exclude,
   [switch]$All,
   [switch]$NoKit,
-  [switch]$NoMoveUntracked
+  [switch]$NoMoveUntracked,
+  [switch]$Yes
 )
 
 # Windows PowerShell 5.1 では git の進捗表示（stderr）がエラー扱いになるため Continue にし、終了コードで判定する
@@ -86,6 +93,64 @@ function Invoke-GitText([string]$Dir, [string[]]$GitArgs) {
 }
 function Write-Indented([string]$Text) {
   foreach ($line in ($Text -split "`r?`n")) { if ($line.Trim()) { Write-Host "      $line" } }
+}
+
+# 取り込むリポジトリを選ぶ。-Yes か -Repos のときは聞かない
+function Read-Answer([string]$Prompt) {
+  if ([Console]::IsInputRedirected) { Write-Host -NoNewline "$Prompt "; $line = [Console]::In.ReadLine(); if ($null -ne $line) { Write-Host $line }; return $line }
+  return (Read-Host $Prompt)
+}
+# 「3」「1,3,5」「1-3」「2 4」を番号の一覧にする。範囲外や読めない値があれば $null
+function ConvertTo-Numbers([string]$Text, [int]$Max) {
+  $nums = @()
+  foreach ($tok in ($Text -split '[,、\s]+' | Where-Object { $_ })) {
+    if ($tok -match '^(\d+)[-~〜](\d+)$') { $a = [int]$Matches[1]; $b = [int]$Matches[2]; if ($a -gt $b) { $t = $a; $a = $b; $b = $t }; $nums += $a..$b }
+    elseif ($tok -match '^\d+$') { $nums += [int]$tok }
+    else { return $null }
+  }
+  $nums = @($nums | Sort-Object -Unique)
+  if ($nums.Count -eq 0) { return $null }
+  foreach ($n in $nums) { if ($n -lt 1 -or $n -gt $Max) { return $null } }
+  return ,$nums
+}
+
+if ($targets.Count -eq 0) {
+  Write-Host "取り込む対象のリポジトリがありません（$Root）"
+  if ($skipped.Count -gt 0) { Write-Host "対象外: $($skipped -join '、')" }
+  exit 0
+}
+if (-not $Yes -and -not $Repos) {
+  Write-Host "取り込む対象のリポジトリ（$Root）:"
+  for ($i = 0; $i -lt $targets.Count; $i++) {
+    $b = Invoke-GitText $targets[$i] @('rev-parse', '--abbrev-ref', 'HEAD')
+    if ($script:GitCode -ne 0 -or -not $b) { $b = '?' }
+    Write-Host ("  [{0}] {1}（ブランチ {2}）" -f ($i + 1), (Split-Path $targets[$i] -Leaf), $b)
+  }
+  if ($skipped.Count -gt 0) { Write-Host "  対象外: $($skipped -join '、')" }
+  Write-Host ''
+  Write-Host '注意: 取り込むのは、各リポジトリで今チェックアウトしているブランチです（ブランチは切り替えません）。' -ForegroundColor Yellow
+  Write-Host '      早送りだけで取り込み、未コミットの変更には触れません。Unity やツクールなどのエディタは閉じてから実行してください。' -ForegroundColor Yellow
+  Write-Host '      取り込むファイルと同じ名前の未追跡ファイルは、内容が違えば <ファイル名>.local に退避します。' -ForegroundColor Yellow
+  Write-Host ''
+  Write-Host 'どれを取り込みますか？'
+  Write-Host '  A       … 全部'
+  Write-Host '  番号    … 選んだものだけ（例 3、1,3,5、1-3。1つだけでもよい）'
+  Write-Host '  Q/Enter … やめる（何もしない）'
+  $chosen = $null
+  for ($try = 1; $try -le 3 -and $null -eq $chosen; $try++) {
+    $ans = Read-Answer '選択'
+    if ($null -eq $ans) { Write-Host '入力がないため、やめました（確認なしで全部取り込むなら -Yes）' -ForegroundColor Red; exit 1 }
+    $ans = $ans.Trim()
+    if ($ans -eq '' -or $ans -match '^[qQ]$') { Write-Host 'やめました（何も取り込んでいません）'; exit 0 }
+    if ($ans -match '^[aA]$') { $chosen = $targets; break }
+    $nums = ConvertTo-Numbers $ans $targets.Count
+    if ($null -eq $nums) { Write-Host "  「$ans」は選べません。A、1〜$($targets.Count) の番号、Q のどれかを入力してください" -ForegroundColor Red; continue }
+    $chosen = @($nums | ForEach-Object { $targets[$_ - 1] })
+  }
+  if ($null -eq $chosen) { Write-Host 'やめました（選択を3回読めませんでした）' -ForegroundColor Red; exit 1 }
+  $notChosen = @($targets | Where-Object { $chosen -notcontains $_ } | ForEach-Object { Split-Path $_ -Leaf })
+  $targets = @($chosen)
+  Write-Host ''
 }
 
 Write-Host "git pull をまとめて実行します（$Root、対象 $($targets.Count) 件）"
@@ -152,6 +217,7 @@ foreach ($repo in $targets) {
     }
   }
 }
+if ($notChosen -and $notChosen.Count -gt 0) { Write-Host "選ばなかったもの: $($notChosen -join '、')" }
 if ($skipped.Count -gt 0) { Write-Host "対象外: $($skipped -join '、')" }
 if ($failed -gt 0) {
   Write-Host "失敗 $failed 件。表示された内容を確認してください（未コミットの変更との重なり、履歴の分かれ、ネットワーク）" -ForegroundColor Red

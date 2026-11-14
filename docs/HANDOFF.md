@@ -116,8 +116,8 @@ Hamm-Coder/daily-log-kit（公開）          ← このリポジトリ。キッ
 1. v1.8.0 の更新 PR（5リポジトリ）をマージし、PC で `.\pull-all.ps1` で取り込む
 2. 11/16（月）の定期実行で、RPGMZ_Prototype の週1回の Issue が新しい週の分析に置き換わり、#49 が閉じられるか確かめる（SPEC M3 の残り）
 3. PC の Claude Code アプリで RPGMZ_Prototype を開き、引き継ぎ（SessionStart フック）と、書き直した準備の手順が実際に渡されるか確かめる（次の PR #38 のテストプレイのときに）
-5. マージ済みの `chore/daily-log-v…` ブランチを各リポジトリから消す（Automatically delete head branches の設定を勧める）
-6. SPEC L1: Unity_CharacterTest などへの導入（ダッシュボードの対象に入ったので、Unity_CharacterTest は導入済みの可能性がある。導入状況の確認から）
+4. マージ済みの `chore/daily-log-v…` ブランチを各リポジトリから消す（Automatically delete head branches の設定を勧める）
+5. SPEC L1: Unity_CharacterTest などへの導入（ダッシュボードの対象に入ったので、Unity_CharacterTest は導入済みの可能性がある。導入状況の確認から）
 
 ## 8. 新しいセッションでの始め方（Claude Code に貼る）
 

@@ -61,6 +61,7 @@ Hamm-Coder/daily-log-kit（公開）          ← このリポジトリ。キッ
 | 11/14 | 利用者が PC で `pull-all.ps1` を初めて実行。Unity_CharacterTest で、未追跡の `ProjectSettings/ProjectVersion.txt` と取り込むファイルがぶつかって失敗し、Windows PowerShell 5.1 が git のエラーを「発生場所…」付きで表示した。v1.5.1 で、同じ内容なら置き換え・違えば `.local` に退避して取り込むようにし、エラーの表示を本文だけにした |
 | 11/14 | v1.6.0: 利用者の依頼で、`pull-all.ps1` が取り込む前に対象を一覧にし、注意を出して全部・選んだもの・やめるを選ばせるようにした（`-Yes` で確認なし） |
 | 11/14 | v1.7.0: 週1回の分析を Issue にする `daily-log-weekly.yml`（`weeklyIssue: true` のリポジトリだけ。毎週月曜 8:17、同じ週は更新、前の週は閉じる。仕様 12.5）。偽の gh を使った手元の再現で、無効・作成・更新・古い週を閉じる・手動実行を確認（SPEC M3 完了） |
+| 11/14 | v1.7.0 を5リポジトリに配布。RPGMZ_Prototype で `weeklyIssue` を有効にした（RPGMZ_Prototype #47）が、`daily-log-weekly.yml` が GitHub にワークフローとして登録されず Actions の一覧に出なかった（ほかの4リポジトリは登録済み。中身は同じで YAML も正しい）。ファイルにコメントを1行足す PR（#48）のマージで登録され、手動実行で Issue #49「日報の分析（2026-11-09 の週）」ができた（GitHub 上で初めて確認） |
 
 ## 4. 確認済みの範囲
 
@@ -76,7 +77,7 @@ Hamm-Coder/daily-log-kit（公開）          ← このリポジトリ。キッ
 | GitHub 上の Actions（kit-ci） | 成功（v1.3.2 の PR。unit 4通りと e2e-windows） | SPEC K1 |
 | GitHub 上の Actions（kit-release） | 成功（v1.3.2 の PR のマージでタグとリリースを作成） | SPEC K2 |
 | GitHub 上の Actions（各リポジトリの daily-log） | 成功（5リポジトリ。既定のブランチが main 以外の4つは v1.3.3 から） | 実機。SPEC K3・K6 |
-| 週1回の Issue（`daily-log-weekly.yml`） | 手元で偽の gh を使って手順を再現し確認。**GitHub 上の実行は未確認**（有効にしたリポジトリで「Run workflow」を試す） | 手元の再現 |
+| 週1回の Issue（`daily-log-weekly.yml`） | 成功（RPGMZ_Prototype の手動実行で Issue #49 を作成。件名・ラベル・本文を確認）。同じ週の更新と前の週を閉じる動きは、手元の再現だけで確認（GitHub 上は 11/16 の定期実行で確かめる） | 実機、手元の再現 |
 | `pull-all.ps1` | 実機（Windows PowerShell 5.1）で6リポジトリの取り込みと対象外の判別に成功。未追跡ファイルとのぶつかりは v1.5.1 で対応（退避・置き換え・失敗時の復元・履歴の分かれ・エラー表示を通しテストに追加） | 実機、`kit-ci` の e2e-windows |
 | `-CreatePR`（gh） | 成功（5リポジトリに導入と更新の PR。本文に版と ADR の説明あり）。PowerShell の版は未確認 | Windows の実機。SPEC K4 |
 | `publish-kit.bat`（Windows PowerShell 5.1 の実機） | 成功（v1.3.0・v1.3.1 を反映） | 実機 |
@@ -110,7 +111,7 @@ Hamm-Coder/daily-log-kit（公開）          ← このリポジトリ。キッ
 3. SPEC M8: RPGMZ_Prototype の PR #44 をマージし、PC で引き継ぎの「始める前の準備」の表示を確かめる
 4. SPEC L1: Unity_CharacterTest などへの導入（導入状況の確認から）
 5. v1.5.0 の PR をマージし、`.\install-all.ps1 -Repos <5つ> -Apply -CreatePR` で配る
-6. v1.7.0 を配り、1つのリポジトリで `"weeklyIssue": true` にして、Actions の「Run workflow」で Issue ができるか確かめる
+6. 11/16（月）の定期実行で、RPGMZ_Prototype の Issue が新しい週の分析に置き換わり、#49 が閉じられるか確かめる
 
 ## 8. 新しいセッションでの始め方（Claude Code に貼る）
 

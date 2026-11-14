@@ -254,6 +254,7 @@ Web版なら「作業を分析して」。数値は自分の作業の傾向を�
 | `git pull` で「untracked working tree files would be overwritten」 | `.\pull-all.ps1` なら自動で退避して取り込む（v1.5.1 から）。手で行うときは、エディタを閉じ、表示されたファイルを別名に退避（`Move-Item <file> <file>.local`）してから `git pull`。中身を比べて不要なら消す。`git stash -u` や `git clean` は使わない |
 | install-all で「リモートに chore/daily-log-v… が既にあります」 | 同じ版の PR が未マージ。マージするか閉じる。マージ済みならそのブランチを GitHub で消す |
 | install-all で「キットが GitHub より N コミット古いです」 | キットのフォルダで `git pull` |
+| Actions の一覧に `daily-log-weekly`（や `daily-log`）が出ない | GitHub がワークフローを登録し損ねている。そのファイルにコメントを1行足す PR を作ってマージすると、読み直されて一覧に出る（RPGMZ_Prototype で実際に起きた） |
 | robocopy の終了コードが 1 や 3 | 成功（0〜7 は成功、8 以上が失敗） |
 | Actions の daily-log が失敗する | ログを見る。「push に失敗」なら main のブランチ保護が原因。そのリポジトリはワークフローを消し、PR の中で `node tools/daily-log.mjs generate` する |
 | .ps1 で「デジタル署名されていません」 | `Unblock-File <ファイル>`。`publish-kit.bat` はそのまま動く |

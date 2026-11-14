@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// daily-log-kit v1.8.0 — 日報と Git 履歴の分析（作業の傾向、改善点、判断待ちの一覧）
+// daily-log-kit v1.9.0 — 日報と Git 履歴の分析（作業の傾向、改善点、判断待ちの一覧）
 // 仕様: docs/specs/daily-log.md の「12. 分析」
 //
 // 使い方:
@@ -45,6 +45,7 @@ export const ANALYSIS_DEFAULTS = {
   carryMinDays: 3, // そのうち何日に分かれて出たら「繰り越し」とみなすか（同じ日のメモだけなら数えない）
   hotspotFixes: 3, // 同じファイルの修正が何回続いたら知らせるか
   hotspotDays: 30,
+  hotspotMaxFiles: 15, // これより多くのファイルをまとめて直したコミット（版の更新など）は、修正の集中に数えない
   ignorePaths: [
     'docs/log/', 'package-lock.json', 'yarn.lock', 'pnpm-lock.yaml',
     // キット自体のファイル（導入・更新のコミットを「大きなコミット」に数えない）
@@ -638,12 +639,15 @@ function readNumstat(root, ignore) {
 }
 
 /** 直近の修正コミットで変更されたファイル（同じ箇所の修正が続いていないかを見る） */
-export function readFixFiles(root, sinceIso, ignore = []) {
-  const raw = tryGit(['log', '--no-merges', `--since=${sinceIso}`, '--name-only', '--format=%x1e%s'], root) || '';
+export function readFixFiles(root, sinceIso, ignore = [], { maxFiles = Infinity, excludeCommit = null } = {}) {
+  const raw = tryGit(['log', '--no-merges', `--since=${sinceIso}`, '--name-only', '--format=%x1e%H%x1f%s'], root) || '';
   return raw.split('\x1e').filter((b) => b.trim()).map((b) => {
-    const [subject, ...files] = b.split('\n');
-    return { subject, files: files.map((s) => s.trim()).filter((f) => f && !ignore.some((p) => f.startsWith(p) || f === p)) };
-  }).filter((x) => isFixCommit(x.subject));
+    const [head, ...lines] = b.split('\n');
+    const [hash, subject] = head.split('\x1f');
+    const all = lines.map((s) => s.trim()).filter(Boolean);
+    return { hash, subject, total: all.length, files: all.filter((f) => !ignore.some((p) => f.startsWith(p) || f === p)) };
+  }).filter((x) => isFixCommit(x.subject) && x.total <= maxFiles && !(excludeCommit && excludeCommit(x)))
+    .map(({ subject, files }) => ({ subject, files }));
 }
 
 function prLeadTimes(root, commits) {
@@ -678,7 +682,9 @@ export function analyzeRepo(root, opts = {}) {
   const a = analysisConfig(cfg);
   const nowIso = opts.now || new Date().toISOString();
   const today = opts.today || dayKey(nowIso, cfg);
-  let commits = readCommits(root, 'HEAD', cfg);
+  // opts.excludeCommit({ hash, subject }) が true のコミットを数えない（ダッシュボードがキットの更新・日報のコミットを除くのに使う）
+  const keep = (c) => !(opts.excludeCommit && opts.excludeCommit({ hash: c.hash, subject: c.subject || '' }));
+  let commits = readCommits(root, 'HEAD', cfg).filter(keep);
   const entries = readEntries(root, cfg);
   const inRange = (d) => (!opts.since || d >= opts.since) && (!opts.until || d <= opts.until);
   commits = commits.filter((c) => inRange(dayKey(c.date, cfg)));
@@ -706,7 +712,7 @@ export function analyzeRepo(root, opts = {}) {
   const recentSince = addDays(today, -a.recentDays);
   const recentCommits = nonMerge.filter((c) => dayKey(c.date, cfg) >= recentSince);
   const lead = prLeadTimes(root, commits);
-  const numstat = readNumstat(root, a.ignorePaths).filter((c) => inRange(dayKey(c.date, cfg)));
+  const numstat = readNumstat(root, a.ignorePaths).filter((c) => inRange(dayKey(c.date, cfg)) && keep(c));
   const largeCommits = numstat.filter((c) => c.lines >= a.largeCommitLines || c.files >= a.largeCommitFiles)
     .map((c) => ({ day: dayKey(c.date, cfg), subject: c.subject, files: c.files, lines: c.lines }))
     .sort((x, y) => y.lines - x.lines);
@@ -718,7 +724,8 @@ export function analyzeRepo(root, opts = {}) {
   const repetition = detectRepetition({
     memos, today, a, latestNext: latestMemo?.sections.next || [],
     commits: nonMerge.map((c) => ({ subject: c.subject, day: dayKey(c.date, cfg) })),
-    fixFiles: readFixFiles(root, new Date(Date.parse(today + 'T00:00:00Z') - a.hotspotDays * 86_400_000).toISOString(), a.ignorePaths),
+    fixFiles: readFixFiles(root, new Date(Date.parse(today + 'T00:00:00Z') - a.hotspotDays * 86_400_000).toISOString(), a.ignorePaths,
+      { maxFiles: a.hotspotMaxFiles, excludeCommit: opts.excludeCommit || null }),
   });
 
   const metrics = {

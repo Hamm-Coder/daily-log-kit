@@ -1,2 +1,4 @@
 # daily-log-kit: publish-kit 用にキットのフォルダへ置いた zip はコミットしない
 daily-log-kit-v*.zip
+# dashboard.ps1 が作るページ（非公開のリポジトリの内容が入るのでコミットしない）
+dashboard.html

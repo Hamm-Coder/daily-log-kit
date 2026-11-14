@@ -17,6 +17,7 @@ Claude Code を使う各リポジトリに「日報（日毎ログ）」の仕�
 | `install.mjs` | 1リポジトリへの導入・更新。既存の設定は保持して追記だけ | 配らない |
 | `install-all.ps1` | `C:\AllGitRepository` 配下へ一括導入（worktree で作業し PR にする） | 配らない |
 | `pull-all.ps1` | 日報の仕組みを入れたリポジトリとキットを、まとめて `git pull` する（`--ff-only`。入れていないリポジトリは対象外） | 配らない |
+| `dashboard.ps1` / `dashboard.mjs` / `dashboard-template.html` | 複数リポジトリのダッシュボード（HTML 1枚）を作って開く。作った `dashboard.html` は非公開のリポジトリの内容を含むので `.gitignore` で除外 | 配らない |
 | `publish-kit.bat` / `publish-kit.ps1` | 新しい版の zip をこのリポジトリへ反映（チャットで作った zip を使う場合） | 配らない |
 | `bump-version.mjs` | 版番号の一括変更 | 配らない |
 | `templates/` | 導入時に作る ADR のひな形 | 配らない（中身から ADR を作る） |

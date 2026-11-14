@@ -1,0 +1,235 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- daily-log-kit の dashboard.mjs が作るページのひな形。集計結果は下のスクリプトの DATA に入る。外部のフォントやスクリプトは読み込まない（PC だけで開く） -->
+<title>日報ダッシュボード</title>
+<style>
+/* 構成: 上に全体の要約（数字）→ 一覧表（1リポジトリ1行）→ リポジトリごとの詳細 */
+:root{
+  --bg:#f4f6f9; --surface:#ffffff; --ink:#18212c; --muted:#5a6676; --line:#dde2ea; --soft:#eef1f6;
+  --accent:#2a6788; --accent-soft:#e3eef5;
+  --warn:#9a6212; --warn-soft:#fbf0dc; --crit:#b23a31; --crit-soft:#fbe6e3; --ok:#2d7a51; --ok-soft:#e2f2e9; --info:#5a6676; --info-soft:#eceff4;
+  --font-display:"BIZ UDPGothic","Yu Gothic UI","Hiragino Sans","Noto Sans JP",sans-serif;
+  --font-body:"Yu Gothic UI","Meiryo UI","Hiragino Sans","Noto Sans JP",system-ui,sans-serif;
+  --font-mono:"Cascadia Mono",Consolas,ui-monospace,"SFMono-Regular",monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#11161d; --surface:#18202a; --ink:#e6ebf1; --muted:#9aa6b5; --line:#2a3542; --soft:#1f2934;
+  --accent:#7fb6d4; --accent-soft:#1d3240;
+  --warn:#e3b260; --warn-soft:#3a2d17; --crit:#ef8a80; --crit-soft:#3d1f1c; --ok:#79c79c; --ok-soft:#1b3326; --info:#9aa6b5; --info-soft:#232d39;
+  color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#11161d; --surface:#18202a; --ink:#e6ebf1; --muted:#9aa6b5; --line:#2a3542; --soft:#1f2934;
+  --accent:#7fb6d4; --accent-soft:#1d3240;
+  --warn:#e3b260; --warn-soft:#3a2d17; --crit:#ef8a80; --crit-soft:#3d1f1c; --ok:#79c79c; --ok-soft:#1b3326; --info:#9aa6b5; --info-soft:#232d39;
+  color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--font-body);font-size:14px;line-height:1.7}
+.wrap{max-width:1200px;margin:0 auto;padding-block:28px 56px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;gap:28px}
+h1,h2,h3{font-family:var(--font-display);text-wrap:balance;margin:0;line-height:1.35}
+h1{font-size:26px;font-weight:700} h2{font-size:18px;font-weight:700} h3{font-size:16px;font-weight:700}
+.num,.mono{font-family:var(--font-mono);font-variant-numeric:tabular-nums}
+header{display:grid;gap:8px}
+.meta{color:var(--muted);display:flex;flex-wrap:wrap;gap:6px 18px}
+.mock{border:1px dashed var(--accent);background:var(--accent-soft);border-radius:8px;padding:10px 14px;font-size:13px}
+.summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+.tile{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px 16px;display:grid;gap:2px;align-content:start}
+.tile .label{color:var(--muted);font-size:12px;letter-spacing:.04em}
+.tile .value{font-family:var(--font-mono);font-size:28px;font-weight:500;line-height:1.2}
+.tile .value small{font-size:13px;color:var(--muted);margin-left:4px;font-family:var(--font-body)}
+.tile .hint{color:var(--muted);font-size:12px;overflow-wrap:anywhere}
+.tile.attn{border-color:var(--warn)} .tile.attn .value{color:var(--warn)}
+.tile.idle{border-top:3px solid var(--line)} .tile.idle.on{border-top-color:var(--info)}
+section{display:grid;gap:12px}
+.sec-head{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:6px 16px}
+.sec-head p{margin:0;color:var(--muted);font-size:13px}
+.table-scroll{overflow-x:auto;background:var(--surface);border:1px solid var(--line);border-radius:10px}
+table{border-collapse:collapse;width:100%;min-width:1040px}
+th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:12px;color:var(--muted);font-weight:500;letter-spacing:.04em;background:var(--soft);white-space:nowrap}
+tr:last-child td{border-bottom:none}
+td.r,th.r{text-align:right}
+.repo-link{color:var(--ink);font-weight:700;text-decoration:none;border-bottom:1px solid var(--line)}
+.repo-link:hover,.repo-link:focus-visible{border-color:var(--accent);color:var(--accent)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:3px}
+.sub{color:var(--muted);font-size:12px}
+.chips{display:flex;flex-wrap:wrap;gap:4px}
+.chip{display:inline-flex;align-items:center;gap:4px;font-size:12px;line-height:1.4;padding:2px 8px;border-radius:999px;white-space:nowrap}
+.chip.warn{background:var(--warn-soft);color:var(--warn)} .chip.crit{background:var(--crit-soft);color:var(--crit)}
+.chip.ok{background:var(--ok-soft);color:var(--ok)} .chip.info{background:var(--info-soft);color:var(--info)}
+.chip.pc{background:var(--accent-soft);color:var(--accent)} .chip.kit{background:var(--soft);color:var(--ink);border:1px solid var(--line)}
+.zero{color:var(--muted)}
+.repos{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,540px),1fr));gap:16px}
+.repo{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:18px;display:grid;gap:14px;min-width:0;align-content:start}
+.repo-top{display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px 12px;align-items:flex-start}
+.repo-top .when{color:var(--muted);font-size:13px}
+.block{display:grid;gap:6px;min-width:0}
+.block h4{margin:0;font-size:12px;color:var(--muted);font-weight:500;letter-spacing:.06em}
+.block ul{margin:0;padding-left:1.2em;display:grid;gap:4px}
+.block li{overflow-wrap:anywhere}
+.empty{color:var(--muted);font-size:13px}
+.history{display:grid;gap:10px;padding:12px 14px;border-radius:10px;background:var(--soft)}
+.history .ov{margin:0;white-space:pre-line;overflow-wrap:anywhere}
+.history .src{color:var(--muted);font-size:12px}
+.history ul{margin:0;padding-left:1.2em;display:grid;gap:3px}
+.finding{display:grid;gap:2px;padding:8px 10px;border-radius:8px;background:var(--soft)}
+.finding .t{font-weight:500} .finding .e{color:var(--muted);font-size:12px;overflow-wrap:anywhere}
+.spark{display:block;width:100%;max-width:100%;height:auto}
+.spark text{fill:var(--muted);font-family:var(--font-mono);font-size:10px}
+.spark .bar{fill:var(--accent);opacity:.6} .spark .bar.now{opacity:1}
+.spark .base,.spark .tick{stroke:var(--line);stroke-width:1}
+.spark .memo{fill:var(--warn)}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;color:var(--muted);font-size:12px}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:4px;vertical-align:-1px}
+footer{color:var(--muted);font-size:12px;display:grid;gap:4px}
+@media (max-width:760px){h1{font-size:22px}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>日報ダッシュボード</h1>
+    <div class="meta" id="meta"></div>
+    <div class="mock">数値は作業の傾向をつかむ目安で、リポジトリ同士の優劣や成果の評価には使いません。作った時点の写しなので、最新にするには <span class="mono">.\pull-all.ps1</span> の後で <span class="mono">.\dashboard.ps1</span> をもう一度実行します。</div>
+  </header>
+
+  <div class="summary" id="summary" aria-label="全体の要約"></div>
+
+  <section aria-labelledby="h-overview">
+    <div class="sec-head">
+      <h2 id="h-overview">一覧</h2>
+      <p>最後に作業した日が新しい順。リポジトリ名を押すと詳細へ移動します</p>
+    </div>
+    <div class="table-scroll"><table id="overview"></table></div>
+  </section>
+
+  <section aria-labelledby="h-repos">
+    <div class="sec-head">
+      <h2 id="h-repos">リポジトリごとの詳細</h2>
+      <div class="legend"><span><i style="background:var(--accent)"></i>週ごとのコミット</span><span><i style="background:var(--warn)"></i>日報メモのある週</span></div>
+    </div>
+    <div class="repos" id="repos"></div>
+  </section>
+
+  <footer>
+    <div>コミット数はマージを除いた数。キット本体以外は、キットの更新・日報の自動更新・日報メモなどのコミット（件名で判断）を除いて数えています。改善点も同じ除き方で数えています。</div>
+    <div>daily-log-kit の <span class="mono">dashboard.ps1</span>（<span class="mono">dashboard.mjs</span>）で作成。このファイルには非公開のリポジトリの内容が入るので、どこにもコミットしたり公開したりしないでください。</div>
+  </footer>
+</div>
+
+<script>
+const DATA = __DATA__;
+const TODAY = DATA[0].today;
+const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const daysBetween = (a, b) => Math.round((Date.parse(b + 'T00:00:00Z') - Date.parse(a + 'T00:00:00Z')) / 864e5);
+const md = (s) => esc(s).replace(/`([^`]+)`/g, '<span class="mono">$1</span>');
+const levelClass = { '注意': 'warn', '情報': 'info', '提案': 'ok' };
+const IDLE = [ { min: 100, label: '100日以上作業なし' }, { min: 60, label: '60日以上作業なし' }, { min: 30, label: '30日以上作業なし' } ];
+const idleBand = (n) => IDLE.find((b) => n >= b.min) || null;
+
+const repos = DATA.map((r) => {
+  const lastDay = r.lastWork ? r.lastWork.day : null;
+  const idle = lastDay ? daysBetween(lastDay, TODAY) : null;
+  const band = idle === null ? null : idleBand(idle);
+  const chips = [];
+  if (r.isKit) chips.push(['kit', 'キット本体']);
+  if (r.pending.length) chips.push(['warn', `判断待ち ${r.pending.length}`]);
+  if (r.pcTasks.length) chips.push(['pc', `PCの作業 ${r.pcTasks.length}`]);
+  if (band) chips.push(['info', band.label]);
+  if (!r.memos && !r.isKit) chips.push(['info', '日報メモなし']);
+  return { ...r, lastDay, idle, band, chips };
+}).sort((a, b) => (b.lastDay || '').localeCompare(a.lastDay || ''));
+
+document.getElementById('meta').innerHTML =
+  `<span>基準日 <span class="num">${esc(TODAY)}</span></span><span>対象 <span class="num">${repos.length}</span> リポジトリ（日報の仕組みを入れたもの ${repos.filter((r) => !r.isKit).length} ＋ キット本体）</span><span>作業日は朝4時区切り</span>`;
+
+// 要約
+const sum = (f) => repos.reduce((s, r) => s + f(r), 0);
+const inBand = (min) => repos.filter((r) => r.band && r.band.min === min);
+const idleTile = (min, label) => { const xs = inBand(min); return { label, value: xs.length, unit: 'リポジトリ', hint: xs.length ? xs.map((r) => r.name).join('、') : '該当なし', idle: true, on: xs.length > 0 }; };
+const tiles = [
+  { label: '判断待ち', value: sum((r) => r.pending.length), unit: '件', hint: `${repos.filter((r) => r.pending.length).length} リポジトリ`, attn: sum((r) => r.pending.length) > 0 },
+  { label: 'PCでしかできない作業', value: sum((r) => r.pcTasks.length), unit: '件', hint: '直近14日のメモから' },
+  idleTile(30, '30日以上作業なし'), idleTile(60, '60日以上作業なし'), idleTile(100, '100日以上作業なし'),
+  { label: '日報メモ（期間内）', value: sum((r) => r.memos), unit: '件', hint: `メモがあるのは ${repos.filter((r) => r.memos).length} リポジトリ` },
+];
+document.getElementById('summary').innerHTML = tiles.map((t) =>
+  `<div class="tile${t.attn ? ' attn' : ''}${t.idle ? ' idle' + (t.on ? ' on' : '') : ''}"><div class="label">${esc(t.label)}</div><div class="value">${t.value}<small>${esc(t.unit)}</small></div><div class="hint">${esc(t.hint)}</div></div>`).join('');
+
+// 週ごとのグラフ（直近24週）。axis=true で4週ごとの日付を横軸に付ける
+function spark(r, { w = 520, h = 96, axis = true } = {}) {
+  const vals = r.weeks, n = vals.length;
+  const max = Math.max(1, ...vals.map((v) => v.commits));
+  const padL = 4, padR = 28, padT = 8, padB = axis ? 22 : 8, plotB = h - padB;
+  const bw = (w - padL - padR) / n;
+  const y = (v) => padT + (plotB - padT) * (1 - v / max);
+  const bars = vals.map((v, i) => {
+    const x = padL + i * bw + 1, bh = plotB - y(v.commits);
+    const memo = v.memos ? `<rect class="memo" x="${x}" y="${plotB + 2}" width="${Math.max(bw - 2, 1)}" height="3" rx="1"></rect>` : '';
+    return `<rect class="bar${i === n - 1 ? ' now' : ''}" x="${x}" y="${y(v.commits)}" width="${Math.max(bw - 2, 1)}" height="${v.commits ? Math.max(bh, 1) : 0}" rx="1"><title>${v.week} の週: コミット ${v.commits}${v.memos ? '、日報メモ ' + v.memos : ''}</title></rect>${memo}`;
+  }).join('');
+  const ticks = axis ? vals.map((v, i) => i % 4 === 0
+    ? `<line class="tick" x1="${padL + i * bw + 1}" x2="${padL + i * bw + 1}" y1="${plotB}" y2="${plotB + 7}"></line><text x="${padL + i * bw + 1}" y="${h - 3}">${v.week.slice(5).replace('-', '/')}</text>` : '').join('') : '';
+  return `<svg class="spark" viewBox="0 0 ${w} ${h}" role="img" aria-label="直近24週のコミット数。最大 ${max}、今週 ${vals[n - 1].commits}">
+    <line class="base" x1="${padL}" x2="${w - padR}" y1="${plotB}" y2="${plotB}"></line>${bars}${ticks}
+    <text x="${w - padR + 4}" y="${y(max) + 4}">${max}</text></svg>`;
+}
+
+// 一覧表（改善点は「注意」だけ。大きなコミットは詳細だけに出す）
+const attnFindings = (r) => r.findings.filter((x) => x.level === '注意' && x.id !== 'large-commits');
+document.getElementById('overview').innerHTML =
+  `<thead><tr><th>リポジトリ</th><th>最後の作業</th><th>最後の作業の内容</th><th class="r">コミット<br><span class="sub">直近24週／全期間</span></th><th class="r">次にやること</th><th class="r">判断待ち</th><th class="r">日報メモ</th><th>改善点（注意）</th><th>直近24週</th></tr></thead><tbody>` +
+  repos.map((r) => {
+    const f = attnFindings(r);
+    return `<tr>
+      <td><a class="repo-link" href="#repo-${esc(r.key)}">${esc(r.name)}</a><div class="chips" style="margin-top:6px">${r.chips.map(([c, t]) => `<span class="chip ${c}">${esc(t)}</span>`).join('')}</div></td>
+      <td class="num">${esc(r.lastDay || '—')}<div class="sub">${r.idle === null ? '' : r.idle === 0 ? '今日' : r.idle + '日前'}</div></td>
+      <td style="min-width:240px">${r.lastWork ? md(r.lastWork.text) : '—'}</td>
+      <td class="r num">${r.commits24}<span class="sub"> ／ ${r.commitsAll}</span></td>
+      <td class="r num ${r.next.items.length ? '' : 'zero'}">${r.next.items.length}</td>
+      <td class="r num ${r.pending.length ? '' : 'zero'}">${r.pending.length}</td>
+      <td class="r num ${r.memos ? '' : 'zero'}">${r.memos}</td>
+      <td>${f.length ? `<div class="chips">${f.map((x) => `<span class="chip warn">${esc(x.title)}</span>`).join('')}</div>` : '<span class="zero">なし</span>'}</td>
+      <td style="width:190px">${spark(r, { w: 190, h: 44, axis: false })}</td></tr>`;
+  }).join('') + '</tbody>';
+
+// 詳細カード
+const list = (items, fmt = (x) => md(x)) => `<ul>${items.map((x) => `<li>${fmt(x)}</li>`).join('')}</ul>`;
+function historyBlock(r) {
+  const ex = r.excerpt;
+  return `<div class="block"><h4>これまでの作業</h4><div class="history">
+    ${r.overview ? `<div><p class="ov">${md(r.overview)}</p><div class="src">— README.md の冒頭</div></div>` : ''}
+    ${ex ? `<div><div class="src">${esc(ex.file)}「${esc(ex.title)}」より</div>${list(ex.items)}</div>` : ''}
+    ${r.recent.length ? `<div><div class="src">最近のコミット${r.isKit ? '' : '（キット・日報の自動コミットを除く）'}</div>${list(r.recent, (c) => `<span class="num sub">${esc(c.day)}</span> ${md(c.text)}`)}</div>` : ''}
+  </div></div>`;
+}
+document.getElementById('repos').innerHTML = repos.map((r) => {
+  const feel = r.feel?.recent, blockers = r.blockers?.recent || [];
+  const noMemo = r.isKit ? 'キット本体には日報の仕組みを入れていません（作業は SPEC.md と docs/HANDOFF.md で管理）' : '日報メモがないため、まだありません';
+  return `<article class="repo" id="repo-${esc(r.key)}">
+    <div class="repo-top">
+      <div><h3>${esc(r.name)}</h3><div class="when">最後の作業 <span class="num">${esc(r.lastDay || '—')}</span>${r.idle === null ? '' : `（${r.idle === 0 ? '今日' : r.idle + '日前'}）`}・コミット 直近24週 <span class="num">${r.commits24}</span>／全期間 <span class="num">${r.commitsAll}</span>・日報メモ <span class="num">${r.memos}</span></div></div>
+      <div class="chips">${r.chips.map(([c, t]) => `<span class="chip ${c}">${esc(t)}</span>`).join('')}</div>
+    </div>
+    ${historyBlock(r)}
+    <div class="block"><h4>次にやること${r.next.day ? `（${esc(r.next.day)} のメモ）` : ''}</h4>
+      ${r.next.items.length ? list(r.next.items, (t) => (/[（(]PC[）)]/.test(t) ? '<span class="chip pc">PC</span> ' : '') + md(t.replace(/^[（(]PC[）)]\s*/, ''))) : `<div class="empty">${esc(noMemo)}</div>`}</div>
+    <div class="block"><h4>判断待ち</h4>
+      ${r.pending.length ? list(r.pending, (p) => `${md(p.text)} <span class="sub">${esc(p.firstDay)}から・${p.count}回</span>`) : '<div class="empty">なし</div>'}
+      ${r.resolved?.length ? `<div class="sub">直近に解決: ${r.resolved.map((x) => esc(x.text)).join('、')}</div>` : ''}</div>
+    <div class="block"><h4>詰まったことと手応え</h4>
+      ${feel?.count ? `<div>手応えの平均 <span class="num">${feel.avg}</span>（${feel.count}件、1〜5）</div>` : ''}
+      ${blockers.length ? list(blockers, (b) => `${md(b.text)} <span class="sub">${esc(b.day)}</span>`) : ''}
+      ${!feel?.count && !blockers.length ? '<div class="empty">まだ書かれていません（日報メモの任意の見出し「詰まったこと」「手応え」）</div>' : ''}</div>
+    <div class="block"><h4>改善点</h4>
+      ${r.findings.length ? r.findings.map((x) => `<div class="finding"><div class="t"><span class="chip ${levelClass[x.level] || 'info'}">${esc(x.level)}</span> ${esc(x.title)}</div><div class="e">${md(x.evidence)}</div><div class="e">→ ${md(x.action)}</div></div>`).join('') : '<div class="empty">検出なし</div>'}</div>
+    ${r.decisions.length ? `<div class="block"><h4>最近の決定</h4>${list(r.decisions, (d) => `${md(d.text)} <span class="sub">${esc(d.day)}</span>`)}</div>` : ''}
+    <div class="block"><h4>週ごとのコミット（直近24週${r.isKit ? '' : '、キットのコミットを除く'}）</h4>${spark(r)}</div>
+  </article>`;
+}).join('');
+</script>
+</body>
+</html>

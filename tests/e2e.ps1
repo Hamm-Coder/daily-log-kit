@@ -1,5 +1,5 @@
 ﻿<#
-daily-log-kit v1.5.0 — 一括導入（install-all.ps1）、反映（publish-kit.ps1）、一括の取り込み（pull-all.ps1）の通しテスト
+daily-log-kit v1.5.1 — 一括導入（install-all.ps1）、反映（publish-kit.ps1）、一括の取り込み（pull-all.ps1）の通しテスト
 
 ・GitHub の代わりに一時フォルダの bare リポジトリを使う。本物の GitHub やあなたのリポジトリには触れない
 ・CI（.github/workflows/kit-ci.yml）が Windows の Windows PowerShell 5.1 と PowerShell 7 で実行する
@@ -142,6 +142,45 @@ Check (Test-Path (Join-Path $game 'tools\daily-log.mjs')) '取り込んだファ
 Check ((G $game status --short) -match 'a\.txt') '未コミットの変更が残っている'
 $r = Run-Ps (Join-Path $kit 'pull-all.ps1') @('-Root', (Join-Path $Root 'repos'))
 Check ($r.Out -match 'game: 最新') '2回目は「最新」'
+
+Write-Host ''
+Write-Host '== 6. pull-all.ps1（取り込むファイルと同じ名前の未追跡ファイル、履歴の分かれ）'
+$work = Join-Path $Root 'work\game'
+& git clone -q $gameRemote $work 2>&1 | Out-Null
+New-Item -ItemType Directory -Force -Path (Join-Path $work 'ProjectSettings') | Out-Null
+Set-Content -Path (Join-Path $work 'ProjectSettings\ProjectVersion.txt') -Value 'm_EditorVersion: 6000.0.1' -Encoding ASCII
+Set-Content -Path (Join-Path $work 'same.txt') -Value 'same' -Encoding ASCII
+G $work add . | Out-Null
+G $work commit -q -m 'ProjectVersion' | Out-Null
+G $work push -q origin HEAD:main | Out-Null
+# 手元には同じ名前の未追跡ファイル（Unity が作ったもの、と同じ内容のもの）
+New-Item -ItemType Directory -Force -Path (Join-Path $game 'ProjectSettings') | Out-Null
+Set-Content -Path (Join-Path $game 'ProjectSettings\ProjectVersion.txt') -Value 'm_EditorVersion: 2022.3.0' -Encoding ASCII
+Set-Content -Path (Join-Path $game 'same.txt') -Value 'same' -Encoding ASCII
+$r = Run-Ps (Join-Path $kit 'pull-all.ps1') @('-Root', (Join-Path $Root 'repos'), '-Repos', 'game', '-NoMoveUntracked')
+if ($env:E2E_DEBUG) { Write-Host $r.Out }
+Check ($r.Code -ne 0 -and $r.Out -match 'ProjectSettings/ProjectVersion\.txt') '-NoMoveUntracked なら失敗と表示し、ファイル名を出す'
+Check ((Get-Content (Join-Path $game 'ProjectSettings\ProjectVersion.txt') -Raw) -match '2022') '-NoMoveUntracked なら手元のファイルに触れない'
+$r = Run-Ps (Join-Path $kit 'pull-all.ps1') @('-Root', (Join-Path $Root 'repos'), '-Repos', 'game')
+if ($env:E2E_DEBUG) { Write-Host $r.Out }
+Check ($r.Code -eq 0 -and $r.Out -match 'game: 更新') '未追跡ファイルがあっても取り込める'
+Check ((Get-Content (Join-Path $game 'ProjectSettings\ProjectVersion.txt') -Raw) -match '6000') 'GitHub 側のファイルになる'
+Check ((Get-Content (Join-Path $game 'ProjectSettings\ProjectVersion.txt.local') -Raw) -match '2022') '内容が違う手元のファイルは .local に退避'
+Check ($r.Out -match '退避: ProjectSettings/ProjectVersion\.txt') '退避したことを表示'
+Check ((Test-Path (Join-Path $game 'same.txt')) -and -not (Test-Path (Join-Path $game 'same.txt.local'))) '同じ内容のファイルは置き換えるだけ（.local を作らない）'
+Check ((G $game status --short) -match 'a\.txt') '未コミットの変更が残っている（6）'
+# 履歴が分かれたとき: 失敗と表示し、PowerShell のエラーの飾り（発生場所など）を出さない
+Set-Content -Path (Join-Path $work 'remote.txt') -Value 'r' -Encoding ASCII
+G $work add . | Out-Null
+G $work commit -q -m 'remote' | Out-Null
+G $work push -q origin HEAD:main | Out-Null
+Set-Content -Path (Join-Path $game 'local.txt') -Value 'l' -Encoding ASCII
+G $game add local.txt | Out-Null
+G $game commit -q -m 'local' | Out-Null
+$r = Run-Ps (Join-Path $kit 'pull-all.ps1') @('-Root', (Join-Path $Root 'repos'), '-Repos', 'game')
+if ($env:E2E_DEBUG) { Write-Host $r.Out }
+Check ($r.Code -ne 0 -and $r.Out -match 'game: 失敗') '履歴が分かれていたら失敗と表示'
+Check ($r.Out -notmatch 'NativeCommandError|CategoryInfo|FullyQualifiedErrorId') 'git のエラーを PowerShell のエラー表示にしない'
 
 Write-Host ''
 if (-not $env:E2E_KEEP) { Remove-Item -Recurse -Force $Root -ErrorAction SilentlyContinue }

@@ -617,7 +617,7 @@ node tools/daily-log-analyze.mjs --out docs/log/analysis/2026-11-13.md</pre><but
   <details>
     <summary>git pull で「untracked working tree files would be overwritten」</summary>
     <div>
-      <p>手元の未追跡のファイル（Unity の <code>ProjectSettings/ProjectVersion.txt</code> など）と、GitHub 側で追加されたファイルがぶつかっています。エディタを閉じ、手元のファイルを別名に退避してから pull します。<span class="place repo">各リポジトリ</span></p>
+      <p>手元の未追跡のファイル（Unity の <code>ProjectSettings/ProjectVersion.txt</code> など）と、GitHub 側で追加されたファイルがぶつかっています。<span class="place kit">キットのフォルダ</span> の <code>.\pull-all.ps1</code> なら、同じ内容は置き換え、違う内容は <code>.local</code> に退避して自動で取り込みます（v1.5.1 から）。手で行うときは、エディタを閉じ、手元のファイルを別名に退避してから pull します。<span class="place repo">各リポジトリ</span></p>
       <div class="code"><pre>git log --oneline HEAD..origin/main -- ProjectSettings/ProjectVersion.txt
 Move-Item ProjectSettings\ProjectVersion.txt ProjectSettings\ProjectVersion.txt.local
 git pull

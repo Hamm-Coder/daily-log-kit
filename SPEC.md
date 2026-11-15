@@ -1,6 +1,6 @@
 # SPEC: daily-log-kit の作業キュー
 
-- 更新日: 2026-11-14
+- 更新日: 2026-11-15
 - 正本の優先順位: この SPEC.md と `docs/decisions/` → `docs/HANDOFF.md` → 会話の合意
 - 状態: 未着手 / 作業中 / 完了 / 保留
 
@@ -25,7 +25,7 @@ Claude Code・claude.ai・Git での作業と決定を、各リポジトリの `
 
 | ID | 作業 | 完了条件 | 実行場所 | 状態 |
 | --- | --- | --- | --- | --- |
-| L1 | Unity_CharacterTest など他のリポジトリへ導入する | `.\install-all.ps1 -Backfill` の確認後、対象を選んで PR をマージ | PC | 未着手 |
+| L1 | Unity_CharacterTest など他のリポジトリへ導入する | `.\install-all.ps1 -Backfill` の確認後、対象を選んで PR をマージ | PC | 作業中（11/15: GoogleFlowCharacterMakingTools に v1.9.0 を導入し、Actions・日報・ファイルの一致を確認。Unity_CharacterTest の版と Actions は未確認） |
 | L2 | 昔のリポジトリ（Android/Kotlin など）の過去の日報だけを作る | `node <キット>\files\tools\daily-log.mjs generate --all` で `docs/log/` を作る（導入はしない） | PC | 未着手 |
 | L3 | チャットだけの日の補完 | 各 claude.ai プロジェクトで `prompts/3-claude-ai-chat-backfill.md` を使い、日報メモを追加 | claude.ai → Web | 未着手 |
 

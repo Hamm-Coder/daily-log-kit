@@ -1,6 +1,6 @@
 # SPEC: daily-log-kit の作業キュー
 
-- 更新日: 2026-11-15
+- 更新日: 2026-11-16
 - 正本の優先順位: この SPEC.md と `docs/decisions/` → `docs/HANDOFF.md` → 会話の合意
 - 状態: 未着手 / 作業中 / 完了 / 保留
 

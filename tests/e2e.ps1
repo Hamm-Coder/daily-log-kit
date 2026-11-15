@@ -1,5 +1,5 @@
 ﻿<#
-daily-log-kit v1.9.0 — 一括導入（install-all.ps1）、反映（publish-kit.ps1）、一括の取り込み（pull-all.ps1）、ダッシュボード（dashboard.ps1）の通しテスト
+daily-log-kit v1.9.1 — 一括導入（install-all.ps1）、反映（publish-kit.ps1）、一括の取り込み（pull-all.ps1）、ダッシュボード（dashboard.ps1）の通しテスト
 
 ・GitHub の代わりに一時フォルダの bare リポジトリを使う。本物の GitHub やあなたのリポジトリには触れない
 ・CI（.github/workflows/kit-ci.yml）が Windows の Windows PowerShell 5.1 と PowerShell 7 で実行する
@@ -219,6 +219,65 @@ Check ($html -match '"name":"game"' -and $html -match '"name":"daily-log-kit"') 
 Check ($html -notmatch '"name":"other"') '日報の仕組みがないリポジトリは入らない'
 Check ($r.Out -match '対象外: .*other') '対象外を表示'
 Check ($html -notmatch '__DATA__' -and $html -match '日報ダッシュボード') 'ひな形に集計結果が入っている'
+
+Write-Host ''
+Write-Host '== 8. GitHub で既定のブランチを変えた後（手元の origin/HEAD は古いまま）'
+# 既定のブランチが claude/old のリポジトリ（日報の仕組みは未導入）
+$movedRemote = Join-Path $Root 'remote\moved.git'
+$moved = Join-Path $Root 'repos\moved'
+& git init -q --bare -b claude/old $movedRemote
+& git clone -q $movedRemote $moved 2>&1 | Out-Null
+G $moved switch -q -c claude/old | Out-Null
+Set-Content -Path (Join-Path $moved 'm.txt') -Value 'm' -Encoding ASCII
+G $moved add . | Out-Null
+G $moved commit -q -m 'init' | Out-Null
+G $moved push -q -u origin claude/old | Out-Null
+G $moved remote set-head origin --auto | Out-Null
+Check ((G $moved symbolic-ref --short refs/remotes/origin/HEAD) -eq 'origin/claude/old') '準備: 手元の origin/HEAD は claude/old'
+# GitHub 役で main を作り、既定のブランチを main に変える（古いブランチは残す）
+G $moved push -q origin claude/old:main | Out-Null
+& git --git-dir=$movedRemote symbolic-ref HEAD refs/heads/main
+G $moved fetch -q origin --prune | Out-Null
+Check ((G $moved symbolic-ref --short refs/remotes/origin/HEAD) -eq 'origin/claude/old') '準備: git fetch だけでは origin/HEAD は変わらない'
+$r = Run-Ps (Join-Path $kit 'pull-all.ps1') @('-Root', (Join-Path $Root 'repos'), '-Repos', 'moved')
+if ($env:E2E_DEBUG) { Write-Host $r.Out }
+Check ($r.Code -eq 0 -and $r.Out -match 'moved: 最新') 'pull-all: 取り込みは今のブランチのまま成功'
+Check ($r.Out -match '既定のブランチが claude/old から main に変わっていました') 'pull-all: 既定のブランチが変わったことを知らせる'
+Check ($r.Out -match 'switch main') 'pull-all: main に移るコマンドを示す'
+Check ((G $moved symbolic-ref --short refs/remotes/origin/HEAD) -eq 'origin/main') 'pull-all: 手元の origin/HEAD を main に直す'
+Check ((G $moved rev-parse --abbrev-ref HEAD) -eq 'claude/old') 'pull-all: ブランチは切り替えない'
+$r = Run-Ps (Join-Path $kit 'pull-all.ps1') @('-Root', (Join-Path $Root 'repos'), '-Repos', 'moved')
+Check ($r.Out -notmatch '変わっていました') 'pull-all: 2回目は知らせない'
+
+# 古いブランチを GitHub 役で消す。手元の origin/HEAD は、消えたブランチを指した状態に戻しておく（一度も直していない PC と同じ）
+G $moved push -q origin --delete claude/old | Out-Null
+G $moved fetch -q origin --prune | Out-Null
+G $moved symbolic-ref refs/remotes/origin/HEAD refs/remotes/origin/claude/old | Out-Null
+$main0 = (& git --git-dir=$movedRemote rev-parse refs/heads/main)
+$ver8 = ([regex]::Match((Get-Content (Join-Path $kit 'install.mjs') -Raw -Encoding UTF8), "KIT_VERSION = '([\d.]+)'")).Groups[1].Value
+$branch8 = "chore/daily-log-v$ver8"
+$r = Run-Ps (Join-Path $kit 'install-all.ps1') @('-Root', (Join-Path $Root 'repos'), '-Repos', 'moved', '-Backfill', '-Apply')
+if ($env:E2E_DEBUG) { Write-Host $r.Out }
+Check ($r.Code -eq 0 -and $r.Out -notmatch 'スキップ') 'install-all: 古いブランチが消えていても導入できる'
+Check ($r.Out -match '基準 origin/main') 'install-all: 基準は main'
+Check ($r.Out -match '既定のブランチが claude/old から main に変わっていました') 'install-all: 既定のブランチが変わったことを知らせる'
+Check ([bool](G $moved branch --list $branch8)) "install-all: ブランチ $branch8 にコミット"
+Check ((G $moved rev-parse "$branch8~1") -eq $main0) 'install-all: main の先頭から作っている'
+Check ((G $moved symbolic-ref --short refs/remotes/origin/HEAD) -eq 'origin/main') 'install-all: 手元の origin/HEAD を main に直す'
+
+# 導入を GitHub 役の main に入れる（PR のマージの代わり）。作業フォルダは古いブランチのままで、ツールがない
+G $moved push -q origin "${branch8}:main" | Out-Null
+G $moved fetch -q origin | Out-Null
+G $moved symbolic-ref refs/remotes/origin/HEAD refs/remotes/origin/claude/old | Out-Null
+Check (-not (Test-Path (Join-Path $moved 'tools'))) '準備: 作業フォルダにツールがなく、origin/HEAD は消えたブランチを指す'
+$r = Run-Ps (Join-Path $kit 'pull-all.ps1') @('-Root', (Join-Path $Root 'repos'), '-Exclude', 'game', '-Yes')
+if ($env:E2E_DEBUG) { Write-Host $r.Out }
+Check ($r.Out -match 'moved: ' -and $r.Out -notmatch '対象外: .*moved') 'pull-all: 日報の仕組みを入れたリポジトリとして扱う（main を見る）'
+$dash8 = Join-Path $Root 'dashboard8.html'
+$r = Run-Ps (Join-Path $kit 'dashboard.ps1') @('-Root', (Join-Path $Root 'repos'), '-Out', $dash8, '-NoOpen')
+if ($env:E2E_DEBUG) { Write-Host $r.Out }
+$html8 = if (Test-Path $dash8) { [System.IO.File]::ReadAllText($dash8, [System.Text.Encoding]::UTF8) } else { '' }
+Check ($r.Code -eq 0 -and $html8 -match '"name":"moved"') 'dashboard: 日報の仕組みを入れたリポジトリとして扱う（main を見る）'
 
 Write-Host ''
 if (-not $env:E2E_KEEP) { Remove-Item -Recurse -Force $Root -ErrorAction SilentlyContinue }

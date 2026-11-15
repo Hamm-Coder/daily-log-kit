@@ -1,10 +1,10 @@
 # 日報キットの導入・更新・再適用・取り外し
 
-- 目的: このリポジトリの日報の仕組み（daily-log-kit v1.9.0）を、新しい版に更新する・壊れたときに戻す・外す
+- 目的: このリポジトリの日報の仕組み（daily-log-kit v1.9.1）を、新しい版に更新する・壊れたときに戻す・外す
 - 前提: キットのリポジトリ `Hamm-Coder/daily-log-kit` を `C:\AllGitRepository\daily-log-kit` にクローン済み。Git、Node.js、GitHub CLI（`gh`）
 - 詳しいマニュアル: https://github.com/Hamm-Coder/daily-log-kit/blob/main/docs/MANUAL.md
 - 毎日の使い方: `docs/procedures/daily-log.md`、仕様: `docs/specs/daily-log.md`
-- 更新日: 2026-11-13
+- 更新日: 2026-11-16
 
 ## 全体の流れ
 
@@ -26,6 +26,8 @@ git pull
 ```
 
 変わるのは、キットのファイル（先頭に `daily-log-kit v` の印があるもの）、`CLAUDE.md` の日報の区間、`.claude/settings.json` のフック。日報メモ、生成済みの日報、`docs/log/config.json` は変わらない。
+
+GitHub で既定のブランチを変えた後（例: `claude/...` から main へ）も、同じコマンドでよい。`install-all.ps1` と `pull-all.ps1` が実行のたびに GitHub の既定のブランチを確かめ直すので、PR は新しい既定のブランチ向けに作られる（変わっていたら「既定のブランチが … に変わっていました」と表示する）。日報の自動更新（`daily-log` Actions）も新しい既定のブランチで動く。PC の作業フォルダを新しいブランチに移すのは手で行う（`git switch main` → `git pull`）。
 
 ## 再適用（キットのファイルを消した・壊した、フックを設定から消した）
 

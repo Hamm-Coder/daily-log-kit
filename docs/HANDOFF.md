@@ -1,8 +1,8 @@
 # 引き継ぎ資料（daily-log-kit）
 
-- 作成日: 2026-11-13（最終更新: 2026-11-15）
+- 作成日: 2026-11-13（最終更新: 2026-11-16）
 - 対象: このキットの開発を Claude Code（Web版・PC版）で続けるための資料
-- キットの版: `install.mjs` の `KIT_VERSION` を見る（最終更新の時点は v1.9.0）
+- キットの版: `install.mjs` の `KIT_VERSION` を見る（最終更新の時点は v1.9.1）
 
 ## 1. このキットは何か
 
@@ -69,6 +69,9 @@ Hamm-Coder/daily-log-kit（公開）          ← このリポジトリ。キッ
 | 11/14 | 利用者が PC で v1.9.0 の `dashboard.ps1` を実行し、ダッシュボードが仕様どおり開くことを確認（修正点なし）。Unity_CharacterTest も「日報の仕組みを入れたリポジトリ」として対象に入った（60日以上作業なし）。見た目で気づいた点（一覧の右端のグラフが小さい、最後の作業の日付が折り返す）は、利用者の判断で直さない |
 | 11/14 | 利用者が v1.8.0 の更新 PR（5リポジトリ）をマージし、`pull-all.ps1` で取り込んだ。キットの開発を新しい Claude Code のセッションへ引き継ぐ（7章に作業上の注意を追加） |
 | 11/15 | 利用者が PC から GoogleFlowCharacterMakingTools（新しいリポジトリ。コミット1件、PR なし）に v1.9.0 を導入してマージ（#1）。キットのセッションに追加して確認: 配られたファイルはキットと一致、`daily-log` Actions は main へのマージで成功、日報の再生成は「変更なし」、配られたテスト46件成功。`docs/decisions/` がないので ADR は作られていない（仕様どおり）。main へ直接 push する運用では、ボットの日報のコミットを取り込むため push の前に `git pull --rebase` が要ることを案内した（SPEC L1 は作業中。Unity_CharacterTest が残り） |
+| 11/15 | 5リポジトリ（RPGMZ_prototype、automaticPromptsMaker、promptBatchExportTool、MangaCreation_Sys_withGAS、A1111_SD_TokenCounter）をキットのセッションに追加。5つとも v1.9.0 に配布・マージ済みだった |
+| 11/16 | A1111_SD_TokenCounter で、既定のブランチを `claude/...` から main に変える前の確認。GitHub 側（`daily-log` Actions）は既定のブランチを毎回確かめるので自動で main 向けになる。PC 側は、手元の `origin/HEAD` が clone したときのままで `git fetch` では変わらず、`install-all.ps1` が古いブランチ向けに PR を作る（古いブランチを消すと失敗し、`pull-all.ps1` と `dashboard.ps1` は対象から外す）ことを手元の再現で確認 |
+| 11/16 | v1.9.1: `install-all.ps1` と `pull-all.ps1` が実行のたびに `git remote set-head origin --auto` で既定のブランチを確かめ直し、変わっていたら表示する。`pull-all.ps1` と `dashboard.ps1` の「日報の仕組みが入っているか」の判定は、`origin/HEAD` が使えないとき main・master も見る。通しテストの 8 と検査1件を追加 |
 
 ## 4. 確認済みの範囲
 
@@ -131,6 +134,7 @@ Hamm-Coder/daily-log-kit（公開）          ← このリポジトリ。キッ
 | 改行 | Windows では `.yml` などが CRLF で取り出される。テストで改行を含む正規表現は `\r?\n` にする |
 | 版の更新 | `bump-version.mjs` はテストの中の「daily-log-kit v…」の文字列も書き換える（害はない） |
 | Actions | 既定のブランチへの push で登録されるはずのワークフローが、GitHub に登録されないことがある（RPGMZ_Prototype の `daily-log-weekly`）。そのファイルにコメントを1行足す PR のマージで登録された |
+| 既定のブランチ | 手元の `origin/HEAD` は clone したときのままで、`git fetch` では変わらない。GitHub の既定のブランチを使う処理は `git remote set-head origin --auto` で確かめ直す（v1.9.1）。既定のブランチが `claude/...` のリポジトリが3つ残っている（automaticPromptsMaker、promptBatchExportTool、MangaCreation_Sys_withGAS） |
 | ダッシュボード | `dashboard.ps1` が作る HTML には非公開のリポジトリの内容が入る。キットのリポジトリは公開なので、集計結果や画面の案をコミットしない |
 | 利用者 | 説明は日本語で、根拠と手順を具体的に。PC で実行するコマンドは PowerShell で、1行ずつのコードブロックにする |
 

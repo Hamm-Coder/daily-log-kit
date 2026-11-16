@@ -617,6 +617,16 @@ node tools/daily-log-analyze.mjs --out docs/log/analysis/2026-11-13.md</pre><but
 <section id="trouble">
   <h2>困ったとき</h2>
   <details>
+    <summary>GitHub で既定のブランチを変えた（例: claude/... から main へ）</summary>
+    <div>
+      <p>GitHub 側は何もしなくて大丈夫です。日報の自動更新（<code>daily-log</code> Actions）は実行のたびに既定のブランチを確かめるので、変えた後は新しい既定のブランチへの push で動きます。</p>
+      <p>PC のリポジトリは、clone したときの既定のブランチを覚えたままで、<code>git pull</code> では変わりません。<span class="place kit">キットのフォルダ</span> の <code>.\install-all.ps1</code> と <code>.\pull-all.ps1</code> が実行のたびに GitHub に確かめ直すので（v1.9.1）、更新の PR は新しい既定のブランチ向けに作られます。変わっていたら「既定のブランチが … から main に変わっていました」と表示します。</p>
+      <p><code>pull-all.ps1</code> はブランチを切り替えません。<span class="place repo">各リポジトリ</span> の作業フォルダを新しい既定のブランチに移すのは、手で行います。</p>
+      <div class="code"><pre>git switch main
+git pull</pre><button type="button">コピー</button></div>
+    </div>
+  </details>
+  <details>
     <summary>git pull で「untracked working tree files would be overwritten」</summary>
     <div>
       <p>手元の未追跡のファイル（Unity の <code>ProjectSettings/ProjectVersion.txt</code> など）と、GitHub 側で追加されたファイルがぶつかっています。<span class="place kit">キットのフォルダ</span> の <code>.\pull-all.ps1</code> なら、同じ内容は置き換え、違う内容は <code>.local</code> に退避して自動で取り込みます（v1.5.1 から）。手で行うときは、エディタを閉じ、手元のファイルを別名に退避してから pull します。<span class="place repo">各リポジトリ</span></p>

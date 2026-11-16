@@ -1,4 +1,4 @@
-// daily-log-kit v1.9.0 — キット自体の決まりの検査（node --test で他のテストと一緒に動く）
+// daily-log-kit v1.9.1 — キット自体の決まりの検査（node --test で他のテストと一緒に動く）
 // 版番号の書き換え漏れ、変更履歴の書き忘れ、文字コード、配布ファイルの印を確認する
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -67,6 +67,18 @@ test('配る daily-log.yml は既定のブランチの名前を決め打ちし�
   const yml = fs.readFileSync(path.join(ROOT, 'files/.github/workflows/daily-log.yml'), 'utf8');
   assert.doesNotMatch(yml, /branches:\s*\[\s*main/, 'push の対象を main・master に限らない');
   assert.match(yml, /if: .*github\.ref_name == github\.event\.repository\.default_branch/, '既定のブランチのときだけ動かす条件を書く');
+});
+
+test('install-all.ps1 と pull-all.ps1 は GitHub の既定のブランチを毎回確かめ直す（手元の origin/HEAD は clone したときのまま）', () => {
+  const inst = fs.readFileSync(path.join(ROOT, 'install-all.ps1'), 'utf8');
+  assert.match(inst, /^\s*& git -C \$repo remote set-head origin --auto/m, 'install-all.ps1 は条件なしで git remote set-head origin --auto を実行する');
+  assert.doesNotMatch(inst, /if \(-not \$headRef\) \{ & git -C \$repo remote set-head/, 'origin/HEAD がないときだけ確かめる書き方に戻さない');
+  const pull = fs.readFileSync(path.join(ROOT, 'pull-all.ps1'), 'utf8');
+  assert.match(pull, /'remote', 'set-head', 'origin', '--auto'/, 'pull-all.ps1 も確かめ直す');
+  for (const f of ['pull-all.ps1', 'dashboard.ps1']) {
+    const src = fs.readFileSync(path.join(ROOT, f), 'utf8');
+    assert.match(src, /'origin\/HEAD', 'origin\/main', 'origin\/master'/, `${f} は origin/HEAD が使えないとき main・master も見る`);
+  }
 });
 
 test('週1回の Issue のワークフローは既定で無効（config.json の weeklyIssue を見る）で、権限は最小限', () => {

@@ -1,5 +1,5 @@
 ﻿<#
-daily-log-kit v1.9.0 — 日報の仕組みを入れたリポジトリを、まとめて git pull する
+daily-log-kit v1.9.1 — 日報の仕組みを入れたリポジトリを、まとめて git pull する
 
 対象
 - -Root（既定 C:\AllGitRepository）直下の Git リポジトリのうち、日報の仕組みが入っているもの（tools/daily-log.mjs がある）と、キット自身
@@ -50,10 +50,14 @@ if (-not (Test-Path $Root)) { Write-Error "フォルダがありません: $Root
 $kitFull = (Resolve-Path $Kit).Path.TrimEnd('\', '/')
 
 # 日報の仕組みが入っているか（作業フォルダにツールがある、または GitHub 側の既定のブランチにある）
+# 手元の origin/HEAD は clone したときのままなので、GitHub で既定のブランチを変えて古いブランチを消すと使えなくなる。そのときは main・master も見る
 function Test-Managed([string]$Dir) {
   if (Test-Path (Join-Path $Dir 'tools\daily-log.mjs')) { return $true }
-  & git -C $Dir cat-file -e 'origin/HEAD:tools/daily-log.mjs' 2>$null
-  return ($LASTEXITCODE -eq 0)
+  foreach ($ref in @('origin/HEAD', 'origin/main', 'origin/master')) {
+    & git -C $Dir cat-file -e "${ref}:tools/daily-log.mjs" 2>$null
+    if ($LASTEXITCODE -eq 0) { return $true }
+  }
+  return $false
 }
 
 $targets = @()
@@ -163,12 +167,22 @@ foreach ($repo in $targets) {
   Invoke-GitText $repo @('rev-parse', '--abbrev-ref', '@{u}') | Out-Null
   if ($script:GitCode -ne 0) { Write-Host "  ${name}: 飛ばしました（ブランチ $branch に GitHub 側の追跡先がありません）"; continue }
   $before = Invoke-GitText $repo @('rev-parse', 'HEAD')
+  $oldHead = Invoke-GitText $repo @('symbolic-ref', '--quiet', '--short', 'refs/remotes/origin/HEAD')
   $out = Invoke-GitText $repo @('fetch', '--quiet')
   if ($script:GitCode -ne 0) {
     $failed++
     Write-Host "  ${name}: 失敗（GitHub から取得できません。ブランチ $branch）" -ForegroundColor Red
     Write-Indented $out
     continue
+  }
+
+  # GitHub 側の既定のブランチを確かめ直す（手元の origin/HEAD は clone したときのままで、git fetch では変わらない）
+  Invoke-GitText $repo @('remote', 'set-head', 'origin', '--auto') | Out-Null
+  $newHead = Invoke-GitText $repo @('symbolic-ref', '--quiet', '--short', 'refs/remotes/origin/HEAD')
+  if ($script:GitCode -eq 0 -and $oldHead -and $newHead -and $oldHead -ne $newHead) {
+    $newName = $newHead -replace '^origin/', ''
+    Write-Host "  ${name}: GitHub の既定のブランチが $($oldHead -replace '^origin/', '') から $newName に変わっていました（手元の記録を直しました）" -ForegroundColor Yellow
+    if ($branch -ne $newName) { Write-Host "      今のブランチは $branch のままです。$newName に移るなら: git -C `"$repo`" switch $newName" }
   }
 
   # 取り込むファイルと同じ名前の未追跡ファイル（git はこれがあると取り込みを止める）

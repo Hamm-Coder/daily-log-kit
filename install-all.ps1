@@ -1,5 +1,5 @@
 ﻿<#
-daily-log-kit v1.9.0 — 複数のリポジトリへ日報の仕組みを一括で入れる
+daily-log-kit v1.9.1 — 複数のリポジトリへ日報の仕組みを一括で入れる
 
 安全のための仕組み
 - 既定は確認のみ（何も変えない）。-Apply を付けたときだけコミットする
@@ -86,11 +86,21 @@ foreach ($repo in $targets) {
   $wt = Join-Path ([System.IO.Path]::GetTempPath()) ("daily-log-" + $name + "-" + [guid]::NewGuid().ToString('N').Substring(0, 6))
   try {
     if (-not (Test-Path (Join-Path $repo '.git'))) { throw 'Git リポジトリではありません' }
+    $oldHead = & git -C $repo symbolic-ref --quiet --short refs/remotes/origin/HEAD 2>$null
     Invoke-Git $repo @('fetch', 'origin', '--prune') | Out-Null
     if ((Invoke-Git $repo @('rev-parse', '--is-shallow-repository')) -eq 'true') { Invoke-Git $repo @('fetch', '--unshallow', 'origin') | Out-Null }
+    # GitHub 側の既定のブランチを毎回確かめ直す（手元の origin/HEAD は clone したときのままで、git fetch では変わらない。
+    # GitHub で既定のブランチを変えた後に古いブランチへ PR を作らないため）
+    & git -C $repo remote set-head origin --auto 2>$null | Out-Null
     $headRef = & git -C $repo symbolic-ref --quiet --short refs/remotes/origin/HEAD 2>$null
-    if (-not $headRef) { & git -C $repo remote set-head origin --auto 2>$null | Out-Null; $headRef = & git -C $repo symbolic-ref --quiet --short refs/remotes/origin/HEAD 2>$null }
+    if ($headRef) {
+      # 消されたブランチを指したままなら使わない
+      & git -C $repo rev-parse --verify --quiet "refs/remotes/$headRef" 2>$null | Out-Null
+      if ($LASTEXITCODE -ne 0) { $headRef = $null }
+    }
     if (-not $headRef) { $headRef = 'origin/main' }
+    $headNote = ''
+    if ($oldHead -and $oldHead -ne $headRef) { $headNote = "既定のブランチが $($oldHead -replace '^origin/', '') から $($headRef -replace '^origin/', '') に変わっていました。$($headRef -replace '^origin/', '') を基準にします" }
     $baseName = $headRef -replace '^origin/', ''
 
     if (& git -C $repo ls-remote --heads origin $Branch) { throw "リモートに $Branch が既にあります（このバージョンのPRが未マージかもしれません）" }
@@ -106,6 +116,7 @@ foreach ($repo in $targets) {
     $out = & node @nodeArgs 2>&1 | Out-String
     if ($LASTEXITCODE -ne 0) { throw $out.Trim() }
     Write-Host "`n=== $name（基準 $headRef）"
+    if ($headNote) { Write-Host $headNote -ForegroundColor Yellow }
     Write-Host $out.TrimEnd()
 
     if (-not $Apply) { $results += [pscustomobject]@{ Repo = $name; Result = '確認のみ' }; continue }

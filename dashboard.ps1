@@ -1,5 +1,5 @@
 ﻿<#
-daily-log-kit v1.9.0 — 日報の仕組みを入れたリポジトリとキット本体を1画面で見るダッシュボード（HTML）を作って開く
+daily-log-kit v1.9.1 — 日報の仕組みを入れたリポジトリとキット本体を1画面で見るダッシュボード（HTML）を作って開く
 
 対象（pull-all.ps1 と同じ選び方）
 - -Root（既定 C:\AllGitRepository）直下の Git リポジトリのうち、日報の仕組みが入っているもの（tools/daily-log.mjs がある）と、キット本体
@@ -39,10 +39,14 @@ if (-not (Test-Path $Root)) { Write-Error "フォルダがありません: $Root
 $kitFull = (Resolve-Path $Kit).Path.TrimEnd('\', '/')
 
 # 日報の仕組みが入っているか（作業フォルダにツールがある、または GitHub 側の既定のブランチにある）
+# 手元の origin/HEAD は clone したときのままなので、GitHub で既定のブランチを変えて古いブランチを消すと使えなくなる。そのときは main・master も見る
 function Test-Managed([string]$Dir) {
   if (Test-Path (Join-Path $Dir 'tools\daily-log.mjs')) { return $true }
-  & git -C $Dir cat-file -e 'origin/HEAD:tools/daily-log.mjs' 2>$null
-  return ($LASTEXITCODE -eq 0)
+  foreach ($ref in @('origin/HEAD', 'origin/main', 'origin/master')) {
+    & git -C $Dir cat-file -e "${ref}:tools/daily-log.mjs" 2>$null
+    if ($LASTEXITCODE -eq 0) { return $true }
+  }
+  return $false
 }
 
 $targets = @()

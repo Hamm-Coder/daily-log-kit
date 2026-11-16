@@ -1,4 +1,4 @@
-# daily-log-kit v1.9.0
+# daily-log-kit v1.9.1
 
 Claude Code を使うリポジトリに「日報（日毎ログ）」の仕組みを入れるキット。チャット・Claude Code・Git の作業を `docs/log/` に日ごとにまとめ、作業の傾向・改善点・判断待ちを分析する。
 
@@ -51,7 +51,7 @@ node ..\daily-log-kit\install.mjs . --dry-run     # 変更予定の確認
 node ..\daily-log-kit\install.mjs . --backfill    # 導入＋過去の日報
 node --test tools/daily-log.test.mjs tools/daily-log-analyze.test.mjs tools/daily-log-brief.test.mjs
 git add -A
-git commit -m "chore: 日報の仕組みを導入（daily-log-kit v1.9.0）"
+git commit -m "chore: 日報の仕組みを導入（daily-log-kit v1.9.1）"
 git push -u origin chore/daily-log
 gh pr create --fill
 ```
@@ -117,7 +117,7 @@ cd C:\AllGitRepository\daily-log-kit
 node --test
 git init -b main
 git add -A
-git commit -m "daily-log-kit v1.9.0"
+git commit -m "daily-log-kit v1.9.1"
 gh repo create Hamm-Coder/daily-log-kit --public --source . --push
 git tag v1.0.0
 git push origin v1.0.0
@@ -189,6 +189,7 @@ git pull
 
 | 版 | 日付 | 内容 |
 | --- | --- | --- |
+| 1.9.1 | 2026-11-16 | GitHub で既定のブランチを変えた後（例: `claude/...` から main へ）、更新の PR が古いブランチ向けに作られる不具合を修正。`install-all.ps1` と `pull-all.ps1` が実行のたびに GitHub の既定のブランチを確かめ直す（手元の `origin/HEAD` は clone したときのままで、`git fetch` では変わらないため）。変わっていたら表示する。古いブランチを消した後でも、`install-all.ps1` が失敗せず、`pull-all.ps1` と `dashboard.ps1` が対象から外さない |
 | 1.9.0 | 2026-11-14 | `dashboard.ps1`（`dashboard.mjs`）を追加: 日報の仕組みを入れたリポジトリとキット本体を1画面の HTML で見る（要約・一覧・詳細。キット本体以外はキット・日報のコミットを除いて数える）。分析ツール: `excludeCommit` の指定でコミットを除けるようにし、15ファイルを超えるファイルをまとめて直したコミット（版の更新など）を「同じファイルの修正の集中」に数えないようにした |
 | 1.8.0 | 2026-11-14 | 日報メモに任意の見出し「詰まったこと」「手応え（1〜5）」を追加（仕様 4.2）。分析に手応えの平均（直近・週ごと）と詰まったことの一覧、改善点 low-feel・repeated-blocker を追加。セッション開始時の引き継ぎに「前回詰まったこと」。日報メモの雛形・Skill・依頼文4を更新。どちらも任意で、既存のメモはそのまま使える |
 | 1.7.0 | 2026-11-14 | 週1回の分析を Issue にする（`.github/workflows/daily-log-weekly.yml`。`docs/log/config.json` に `"weeklyIssue": true` を書いたリポジトリだけ。毎週月曜の朝、同じ週なら更新し、前の週の分析の Issue は閉じる。仕様 12.5）。分析ツールに `--issue` を追加 |

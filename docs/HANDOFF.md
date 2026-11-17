@@ -1,6 +1,6 @@
 # 引き継ぎ資料（daily-log-kit）
 
-- 作成日: 2026-11-13（最終更新: 2026-11-16）
+- 作成日: 2026-11-13（最終更新: 2026-11-17）
 - 対象: このキットの開発を Claude Code（Web版・PC版）で続けるための資料
 - キットの版: `install.mjs` の `KIT_VERSION` を見る（最終更新の時点は v1.9.1）
 
@@ -72,6 +72,8 @@ Hamm-Coder/daily-log-kit（公開）          ← このリポジトリ。キッ
 | 11/15 | 5リポジトリ（RPGMZ_prototype、automaticPromptsMaker、promptBatchExportTool、MangaCreation_Sys_withGAS、A1111_SD_TokenCounter）をキットのセッションに追加。5つとも v1.9.0 に配布・マージ済みだった |
 | 11/16 | A1111_SD_TokenCounter で、既定のブランチを `claude/...` から main に変える前の確認。GitHub 側（`daily-log` Actions）は既定のブランチを毎回確かめるので自動で main 向けになる。PC 側は、手元の `origin/HEAD` が clone したときのままで `git fetch` では変わらず、`install-all.ps1` が古いブランチ向けに PR を作る（古いブランチを消すと失敗し、`pull-all.ps1` と `dashboard.ps1` は対象から外す）ことを手元の再現で確認 |
 | 11/16 | v1.9.1: `install-all.ps1` と `pull-all.ps1` が実行のたびに `git remote set-head origin --auto` で既定のブランチを確かめ直し、変わっていたら表示する。`pull-all.ps1` と `dashboard.ps1` の「日報の仕組みが入っているか」の判定は、`origin/HEAD` が使えないとき main・master も見る。通しテストの 8 と検査1件を追加 |
+| 11/17 | v1.9.1 の PR（#17）をマージ。`kit-ci` は5ジョブ成功、`kit-release` がタグ v1.9.1 とリリースを作成。利用者が A1111_SD_TokenCounter と promptBatchExportTool の既定のブランチを main に変更。PC の `install-all.ps1` で「既定のブランチが claude/ecstatic-tesla-kdl3vd から main に変わっていました」と表示され、基準が origin/main になった（v1.9.1 の動きを実機で確認） |
+| 11/17 | `install-all.ps1 -Apply -CreatePR`（`-Repos` なし）で、保管用の lifelog_with_GAS（PC のフォルダ名は GAS_LifeLogWebApps）にも導入の PR ができた。利用者の決定: そのままマージし、今後追加するほかのリポジトリも同じ運用にする（保管用でも日報の仕組みを入れる。`install-all.ps1` の対象は直下の全リポジトリのままでよい）。lifelog_with_GAS #1 をマージし、`daily-log` Actions は main で成功 |
 
 ## 4. 確認済みの範囲
 

@@ -75,6 +75,7 @@ Hamm-Coder/daily-log-kit（公開）          ← このリポジトリ。キッ
 | 11/17 | v1.9.1 の PR（#17）をマージ。`kit-ci` は5ジョブ成功、`kit-release` がタグ v1.9.1 とリリースを作成。利用者が A1111_SD_TokenCounter と promptBatchExportTool の既定のブランチを main に変更。PC の `install-all.ps1` で「既定のブランチが claude/ecstatic-tesla-kdl3vd から main に変わっていました」と表示され、基準が origin/main になった（v1.9.1 の動きを実機で確認） |
 | 11/17 | `install-all.ps1 -Apply -CreatePR`（`-Repos` なし）で、保管用の lifelog_with_GAS（PC のフォルダ名は GAS_LifeLogWebApps）にも導入の PR ができた。利用者の決定: そのままマージし、今後追加するほかのリポジトリも同じ運用にする（保管用でも日報の仕組みを入れる。`install-all.ps1` の対象は直下の全リポジトリのままでよい）。lifelog_with_GAS #1 をマージし、`daily-log` Actions は main で成功 |
 | 11/18 | SPEC M3 の残りを確認: RPGMZ_Prototype の `daily-log-weekly` が 11/16（月）に定期実行（schedule）で動き成功。予定の 8:17 から約3時間半遅れて 11:43（日本時間）に実行された（GitHub の定期実行の混雑。ワークフローの注記どおり）。Issue #55「日報の分析（2026-11-16 の週）」を作り、前の週の #49 を「新しい分析 #55 に移しました」で閉じた。開いている分析の Issue は #55 の1件だけ |
+| 11/18 | SPEC L1 完了: キットのセッションに Unity_CharacterTest を追加して確認。11/13 に v1.1.2 で導入（#1）、11/17 に v1.9.1 に更新（#2）。配られたファイルはキット v1.9.1 と一致、`.claude/settings.json` に Stop・SessionStart フック、配られたテスト46件成功、日報の再生成は「変更なし」。既定のブランチは `claude/vroid-vrm-animation-test-v9utgs`（main なし）で、`daily-log` Actions は v1.9.1 のマージで初めて動き成功（v1.1.2 のワークフローは main・master だけが対象だったため、11/13〜11/17 は動いていなかった。日報は導入時の生成分があり欠けはない）。リポジトリの作業は 9/10・9/11 だけで、日報メモは0件。マージ済みの `chore/daily-log-v1.1.2` ブランチが GitHub に残っている |
 
 ## 4. 確認済みの範囲
 
@@ -121,7 +122,7 @@ Hamm-Coder/daily-log-kit（公開）          ← このリポジトリ。キッ
 
 ## 7. 次の一手（推奨順）
 
-1. SPEC L1: Unity_CharacterTest の導入状況を確かめる（ダッシュボードで「日報の仕組みを入れたリポジトリ」に入っていた）。入っていれば版と Actions を確認し、入っていなければ `.\install-all.ps1 -Repos Unity_CharacterTest -Backfill -Apply -CreatePR` を案内する
+1. （完了 11/18）SPEC L1: Unity_CharacterTest は導入済みで v1.9.1、`daily-log` Actions も成功していた。日報の仕組みは今 8 リポジトリに入っている
 2. （完了 11/18）RPGMZ_Prototype の週1回の Issue の定期実行を確認した（SPEC M3）。次は 11/23（月）の分で、同じ件名の Issue が残らず1件だけ開いていることを、気づいたときに見ればよい
 3. 次に RPGMZ_Prototype の PR #38 のテストプレイをするとき: PC の Claude Code アプリで引き継ぎ（SessionStart フック）と、書き直した準備の手順が渡されるか、利用者に確かめてもらう
 4. マージ済みの `chore/daily-log-v…` ブランチが各リポジトリに残っている。消すか、GitHub の「Automatically delete head branches」を有効にするよう利用者に案内する（Web 版のセッションからは他のブランチを消さない）
@@ -137,7 +138,7 @@ Hamm-Coder/daily-log-kit（公開）          ← このリポジトリ。キッ
 | 改行 | Windows では `.yml` などが CRLF で取り出される。テストで改行を含む正規表現は `\r?\n` にする |
 | 版の更新 | `bump-version.mjs` はテストの中の「daily-log-kit v…」の文字列も書き換える（害はない） |
 | Actions | 既定のブランチへの push で登録されるはずのワークフローが、GitHub に登録されないことがある（RPGMZ_Prototype の `daily-log-weekly`）。そのファイルにコメントを1行足す PR のマージで登録された |
-| 既定のブランチ | 手元の `origin/HEAD` は clone したときのままで、`git fetch` では変わらない。GitHub の既定のブランチを使う処理は `git remote set-head origin --auto` で確かめ直す（v1.9.1）。既定のブランチが `claude/...` のリポジトリが3つ残っている（automaticPromptsMaker、promptBatchExportTool、MangaCreation_Sys_withGAS） |
+| 既定のブランチ | 手元の `origin/HEAD` は clone したときのままで、`git fetch` では変わらない。GitHub の既定のブランチを使う処理は `git remote set-head origin --auto` で確かめ直す（v1.9.1）。既定のブランチが `claude/...` のリポジトリが3つ残っている（automaticPromptsMaker、MangaCreation_Sys_withGAS、Unity_CharacterTest。11/18 時点。promptBatchExportTool と A1111_SD_TokenCounter は main に変更済み） |
 | ダッシュボード | `dashboard.ps1` が作る HTML には非公開のリポジトリの内容が入る。キットのリポジトリは公開なので、集計結果や画面の案をコミットしない |
 | 利用者 | 説明は日本語で、根拠と手順を具体的に。PC で実行するコマンドは PowerShell で、1行ずつのコードブロックにする |
 

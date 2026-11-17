@@ -1,6 +1,6 @@
 # 引き継ぎ資料（daily-log-kit）
 
-- 作成日: 2026-11-13（最終更新: 2026-11-17）
+- 作成日: 2026-11-13（最終更新: 2026-11-18）
 - 対象: このキットの開発を Claude Code（Web版・PC版）で続けるための資料
 - キットの版: `install.mjs` の `KIT_VERSION` を見る（最終更新の時点は v1.9.1）
 
@@ -74,6 +74,7 @@ Hamm-Coder/daily-log-kit（公開）          ← このリポジトリ。キッ
 | 11/16 | v1.9.1: `install-all.ps1` と `pull-all.ps1` が実行のたびに `git remote set-head origin --auto` で既定のブランチを確かめ直し、変わっていたら表示する。`pull-all.ps1` と `dashboard.ps1` の「日報の仕組みが入っているか」の判定は、`origin/HEAD` が使えないとき main・master も見る。通しテストの 8 と検査1件を追加 |
 | 11/17 | v1.9.1 の PR（#17）をマージ。`kit-ci` は5ジョブ成功、`kit-release` がタグ v1.9.1 とリリースを作成。利用者が A1111_SD_TokenCounter と promptBatchExportTool の既定のブランチを main に変更。PC の `install-all.ps1` で「既定のブランチが claude/ecstatic-tesla-kdl3vd から main に変わっていました」と表示され、基準が origin/main になった（v1.9.1 の動きを実機で確認） |
 | 11/17 | `install-all.ps1 -Apply -CreatePR`（`-Repos` なし）で、保管用の lifelog_with_GAS（PC のフォルダ名は GAS_LifeLogWebApps）にも導入の PR ができた。利用者の決定: そのままマージし、今後追加するほかのリポジトリも同じ運用にする（保管用でも日報の仕組みを入れる。`install-all.ps1` の対象は直下の全リポジトリのままでよい）。lifelog_with_GAS #1 をマージし、`daily-log` Actions は main で成功 |
+| 11/18 | SPEC M3 の残りを確認: RPGMZ_Prototype の `daily-log-weekly` が 11/16（月）に定期実行（schedule）で動き成功。予定の 8:17 から約3時間半遅れて 11:43（日本時間）に実行された（GitHub の定期実行の混雑。ワークフローの注記どおり）。Issue #55「日報の分析（2026-11-16 の週）」を作り、前の週の #49 を「新しい分析 #55 に移しました」で閉じた。開いている分析の Issue は #55 の1件だけ |
 
 ## 4. 確認済みの範囲
 
@@ -89,7 +90,7 @@ Hamm-Coder/daily-log-kit（公開）          ← このリポジトリ。キッ
 | GitHub 上の Actions（kit-ci） | 成功（v1.3.2 の PR。unit 4通りと e2e-windows） | SPEC K1 |
 | GitHub 上の Actions（kit-release） | 成功（v1.3.2 の PR のマージでタグとリリースを作成） | SPEC K2 |
 | GitHub 上の Actions（各リポジトリの daily-log） | 成功（5リポジトリ。既定のブランチが main 以外の4つは v1.3.3 から） | 実機。SPEC K3・K6 |
-| 週1回の Issue（`daily-log-weekly.yml`） | 成功（RPGMZ_Prototype の手動実行で Issue #49 を作成。件名・ラベル・本文を確認）。同じ週の更新と前の週を閉じる動きは、手元の再現だけで確認（GitHub 上は 11/16 の定期実行で確かめる） | 実機、手元の再現 |
+| 週1回の Issue（`daily-log-weekly.yml`） | 成功。RPGMZ_Prototype の手動実行で Issue #49 を作成（11/14）、11/16（月）の定期実行で Issue #55「日報の分析（2026-11-16 の週）」を作成し、#49 を「新しい分析 #55 に移しました」で閉じた。同じ週の更新は手元の再現だけで確認 | 実機、手元の再現 |
 | `dashboard.ps1` | 成功（利用者の PC。7リポジトリ: 日報の仕組みを入れた6つ＋キット本体。最後の作業・作業がない期間の3段階・改善点の出し分けが仕様どおり）。kit-ci の e2e-windows でも確認 | 実機、CI |
 | `pull-all.ps1` | 実機（Windows PowerShell 5.1）で6リポジトリの取り込みと対象外の判別に成功。未追跡ファイルとのぶつかりは v1.5.1 で対応（退避・置き換え・失敗時の復元・履歴の分かれ・エラー表示を通しテストに追加） | 実機、`kit-ci` の e2e-windows |
 | `-CreatePR`（gh） | 成功（5リポジトリに導入と更新の PR。本文に版と ADR の説明あり）。PowerShell の版は未確認 | Windows の実機。SPEC K4 |
@@ -121,7 +122,7 @@ Hamm-Coder/daily-log-kit（公開）          ← このリポジトリ。キッ
 ## 7. 次の一手（推奨順）
 
 1. SPEC L1: Unity_CharacterTest の導入状況を確かめる（ダッシュボードで「日報の仕組みを入れたリポジトリ」に入っていた）。入っていれば版と Actions を確認し、入っていなければ `.\install-all.ps1 -Repos Unity_CharacterTest -Backfill -Apply -CreatePR` を案内する
-2. 11/16（月）8:17 以降: RPGMZ_Prototype の週1回の Issue（`daily-log-weekly`）が定期実行で新しい週の分析になり、#49 が「新しい分析 #N に移しました」で閉じられたか確かめる（SPEC M3 の残り）
+2. （完了 11/18）RPGMZ_Prototype の週1回の Issue の定期実行を確認した（SPEC M3）。次は 11/23（月）の分で、同じ件名の Issue が残らず1件だけ開いていることを、気づいたときに見ればよい
 3. 次に RPGMZ_Prototype の PR #38 のテストプレイをするとき: PC の Claude Code アプリで引き継ぎ（SessionStart フック）と、書き直した準備の手順が渡されるか、利用者に確かめてもらう
 4. マージ済みの `chore/daily-log-v…` ブランチが各リポジトリに残っている。消すか、GitHub の「Automatically delete head branches」を有効にするよう利用者に案内する（Web 版のセッションからは他のブランチを消さない）
 5. 1か月運用した後（12月中旬）: SPEC M7（繰り返しの判別のしきい値）と Q2（分析のしきい値）を実データで見直す

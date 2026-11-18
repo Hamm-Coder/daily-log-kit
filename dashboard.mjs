@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// daily-log-kit v1.9.1 — 複数リポジトリのダッシュボード（HTML 1枚）を作る（各リポジトリには配らない）
+// daily-log-kit v1.10.0 — 複数リポジトリのダッシュボード（HTML 1枚）を作る（各リポジトリには配らない）
 //   node dashboard.mjs [--out dashboard.html] [--today YYYY-MM-DD] [--json] <リポジトリのフォルダ...>
 // 普段は dashboard.ps1 から呼ぶ。対象の選び方（日報の仕組みを入れたリポジトリとキット本体）は dashboard.ps1 が行う
 // 作った HTML には非公開のリポジトリの内容が入るので、コミットしない（.gitignore で除外）
@@ -8,23 +8,14 @@ import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { loadConfig, dayKey, addDays, DEFAULT_CONFIG } from './files/tools/daily-log.mjs';
-import { analyzeRepo, weekStart } from './files/tools/daily-log-analyze.mjs';
+import { analyzeRepo, weekStart, KIT_PATHS, KIT_SUBJECT, isKitPath, isKitCommit } from './files/tools/daily-log-analyze.mjs';
 
 const KIT_DIR = path.dirname(fileURLToPath(import.meta.url));
 export const WEEKS = 24;
 export const IDLE_BANDS = [100, 60, 30]; // 作業がない日数の区切り（重ねて数えない）
 // キット本体以外では、キットの更新・日報の自動更新・日報メモ・日報の設定のコミットを作業に数えない。
-// 判断は変えたファイルで行う（キットのファイルだけを変えたコミット）。ファイルの一覧がないマージは件名で判断する
-export const KIT_PATHS = [
-  'docs/log/', 'tools/daily-log', '.claude/hooks/daily-log', '.claude/skills/daily-log/', '.github/workflows/daily-log',
-  'docs/specs/daily-log.md', 'docs/procedures/daily-log', 'docs/decisions/',
-];
-export const KIT_SUBJECT = /^docs\(log\)|日報の仕組み|daily-log/i;
-/** キットの管理するファイルか（ADR は日報の ADR だけ） */
-export function isKitPath(f) {
-  if (f.startsWith('docs/decisions/')) return /daily-log/.test(f);
-  return KIT_PATHS.some((p) => f.startsWith(p)) || f === 'CLAUDE.md' || f === '.claude/settings.json';
-}
+// 判断（isKitPath・isKitCommit）は各リポジトリに配る分析ツールと共通（v1.10.0 で files/tools/daily-log-analyze.mjs に移した）
+export { KIT_PATHS, KIT_SUBJECT, isKitPath, isKitCommit };
 
 const README_MAX = 500;
 const EXCERPT_MAX = 140;
@@ -86,13 +77,6 @@ export function docExcerpt(dir) {
     file: 'CHANGELOG.md', title: sec.split('\n')[0].replace(/^##\s*/, ''),
     items: sec.split('\n').filter((l) => /^\s*-\s+/.test(l)).slice(0, 3).map((l) => cut(clean(l.replace(/^\s*-\s*/, '')), EXCERPT_MAX)),
   };
-}
-
-/** キット・日報のコミットか。件名が合う（キットの導入・更新、日報の自動更新など）か、キットのファイルだけを変えた
- *  （CLAUDE.md と .claude/settings.json は、キットのファイルと一緒に変えたときだけキットのものとみなす） */
-export function isKitCommit({ subject = '', files = [] }) {
-  if (KIT_SUBJECT.test(subject)) return true;
-  return files.length > 0 && files.every(isKitPath) && files.some((f) => f !== 'CLAUDE.md' && f !== '.claude/settings.json');
 }
 
 /** マージを除いたコミット（新しい順）。kit: キット・日報のコミットか */

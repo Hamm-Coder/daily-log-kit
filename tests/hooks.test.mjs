@@ -1,4 +1,4 @@
-// daily-log-kit v1.9.1 — フックの結合テスト（一時的な Git リポジトリに導入して、実際にフックを動かす）
+// daily-log-kit v1.10.0 — フックの結合テスト（一時的な Git リポジトリに導入して、実際にフックを動かす）
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';

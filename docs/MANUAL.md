@@ -230,11 +230,15 @@ git push -u origin chore/daily-log
 gh pr create --fill
 ```
 
-### 昔のリポジトリの過去の日報だけ作る
+### 昔のリポジトリの過去の日報を作る
+
+`C:\AllGitRepository` の外のフォルダには使わない（決まり）。昔のリポジトリ（Android/Kotlin など）も `C:\AllGitRepository` に置いて、日報の仕組みを導入する。`-Backfill` が全履歴から過去の日報を作る（保管用のリポジトリも導入する決まりのため、日報だけを作って仕組みを入れない使い方はしない）。
 
 ```powershell
-cd C:\AllGitRepository\<リポジトリ>
-node C:\AllGitRepository\daily-log-kit\files\tools\daily-log.mjs generate --all
+cd C:\AllGitRepository
+git clone https://github.com/Hamm-Coder/<リポジトリ>.git
+cd C:\AllGitRepository\daily-log-kit
+.\install-all.ps1 -Repos <リポジトリ> -Backfill -Apply -CreatePR
 ```
 
 
@@ -263,6 +267,7 @@ cd C:\AllGitRepository\daily-log-kit
 
 - キット本体以外では、キットの更新・日報の自動更新・日報メモ・日報の設定のコミットを、作業として数えない（最後の作業、コミット数、グラフ、改善点のすべて）。判断は、件名（「日報の仕組み」「daily-log」「docs(log)」）と、変えたファイルがキットのファイルだけかどうかで行う
 - 「これまでの作業」は決まった規則で抜き出したもので、要約ではない
+- 詳細の「作成」は、Git の履歴で一番古いコミットの日（GitHub で作った日ではない）。GitHub に後から上げたリポジトリでは、GitHub の作成日より前になることがある。浅いクローンでは「実際はもっと前の可能性」と添える
 - 数値は傾向の目安で、リポジトリ同士の優劣や成果の評価には使わない
 - `dashboard.html` には非公開のリポジトリの内容が入る。`.gitignore` で除外してあるので、コミットや共有はしない
 ## 9. 分析

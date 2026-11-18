@@ -1,6 +1,6 @@
 # SPEC: daily-log-kit の作業キュー
 
-- 更新日: 2026-11-18
+- 更新日: 2026-11-19
 - 正本の優先順位: この SPEC.md と `docs/decisions/` → `docs/HANDOFF.md` → 会話の合意
 - 状態: 未着手 / 作業中 / 完了 / 保留
 
@@ -26,7 +26,7 @@ Claude Code・claude.ai・Git での作業と決定を、各リポジトリの `
 | ID | 作業 | 完了条件 | 実行場所 | 状態 |
 | --- | --- | --- | --- | --- |
 | L1 | Unity_CharacterTest など他のリポジトリへ導入する | `.\install-all.ps1 -Backfill` の確認後、対象を選んで PR をマージ | PC | 完了（11/15: GoogleFlowCharacterMakingTools に v1.9.0 を導入。11/17: lifelog_with_GAS に v1.9.1 を導入。11/18: Unity_CharacterTest は 11/13 に v1.1.2 で導入済み、11/17 に v1.9.1 に更新済みで、`daily-log` Actions の成功と日報の生成を確認。利用者の決定: 保管用を含め、追加するリポジトリには同じように導入する） |
-| L2 | 昔のリポジトリ（Android/Kotlin など）の過去の日報だけを作る | `node <キット>\files\tools\daily-log.mjs generate --all` で `docs/log/` を作る（導入はしない） | PC | 未着手 |
+| L2 | 昔のリポジトリ（Android/Kotlin など）の過去の日報を作る | 対象を `C:\AllGitRepository` に置き、`.\install-all.ps1 -Repos <名前> -Backfill -Apply -CreatePR` の PR をマージ（11/19 の決まり: `C:\AllGitRepository` の外のフォルダには適用しない。保管用も導入する決まり（11/17）と合わせ、日報だけを作って仕組みを入れない使い方はしない） | PC | 未着手 |
 | L3 | チャットだけの日の補完 | 各 claude.ai プロジェクトで `prompts/3-claude-ai-chat-backfill.md` を使い、日報メモを追加 | claude.ai → Web | 未着手 |
 
 ### M: 分析の活用（`docs/analysis.md` の提案）

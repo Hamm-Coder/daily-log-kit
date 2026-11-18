@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// daily-log-kit v1.9.1 — 日報と Git 履歴の分析（作業の傾向、改善点、判断待ちの一覧）
+// daily-log-kit v1.10.0 — 日報と Git 履歴の分析（作業の傾向、改善点、判断待ちの一覧）
 // 仕様: docs/specs/daily-log.md の「12. 分析」
 //
 // 使い方:
@@ -65,6 +65,64 @@ const SECTION_KEYS = {
 };
 
 // ---------- 中核（純粋関数） ----------
+
+// キット（日報の仕組み）自身のコミットは、作業の傾向に数えない（導入・更新、日報の自動更新、日報メモ、日報の設定）。
+// ユーザーの作業ではないのに「似た作業の繰り返し」「日報メモの書き忘れ」に数えられ、記録を増やす方向に働くため
+export const KIT_PATHS = [
+  'docs/log/', 'tools/daily-log', '.claude/hooks/daily-log', '.claude/skills/daily-log/', '.github/workflows/daily-log',
+  'docs/specs/daily-log.md', 'docs/procedures/daily-log', 'docs/decisions/',
+];
+export const KIT_SUBJECT = /^docs\(log\)|日報の仕組み|daily-log/i;
+/** キットの管理するファイルか（ADR は日報の ADR だけ） */
+export function isKitPath(f) {
+  if (f.startsWith('docs/decisions/')) return /daily-log/.test(f);
+  return KIT_PATHS.some((p) => f.startsWith(p)) || f === 'CLAUDE.md' || f === '.claude/settings.json';
+}
+/** キット・日報のコミットか。件名が合う（キットの導入・更新、日報の自動更新、日報メモ）か、キットのファイルだけを変えた
+ *  （CLAUDE.md と .claude/settings.json は、キットのファイルと一緒に変えたときだけキットのものとみなす） */
+export function isKitCommit({ subject = '', files = [] }) {
+  if (KIT_SUBJECT.test(subject)) return true;
+  return files.length > 0 && files.every(isKitPath) && files.some((f) => f !== 'CLAUDE.md' && f !== '.claude/settings.json');
+}
+/** キット・日報だけのコミットのハッシュ。マージは1つ目の親との差分で判断する（日報メモだけの PR のマージも外れる） */
+export function readKitHashes(root) {
+  const set = new Set();
+  const take = (raw) => {
+    for (const b of (raw || '').split('\x1e')) {
+      if (!b.trim()) continue;
+      const [head, ...lines] = b.split('\n');
+      const [hash, subject] = head.split('\x1f');
+      if (isKitCommit({ subject, files: lines.map((s) => s.trim()).filter(Boolean) })) set.add(hash.trim());
+    }
+  };
+  take(tryGit(['-c', 'core.quotepath=false', 'log', '--no-merges', '--name-only', '--format=%x1e%H%x1f%s'], root));
+  take(tryGit(['-c', 'core.quotepath=false', 'log', '--merges', '--first-parent', '-m', '--name-only', '--format=%x1e%H%x1f%s'], root));
+  return set;
+}
+/** 日報メモだけの PR（マージの差分が日報のフォルダだけ）で入った日報メモ。値は「YYYY-MM-DD/ファイル名」
+ *  マージの記録などのためだけに書かれたメモなので、繰り返しの判別に数えない（仕様 4.3） */
+export function readLogOnlyEntries(root, cfg = DEFAULT_CONFIG) {
+  const set = new Set();
+  const logDir = (cfg.logDir || 'docs/log') + '/';
+  const entriesDir = (cfg.entriesDir || 'docs/log/entries') + '/';
+  const raw = tryGit(['-c', 'core.quotepath=false', 'log', '--merges', '--first-parent', '-m', '--name-only', '--format=%x1e%H'], root) || '';
+  for (const b of raw.split('\x1e')) {
+    const files = b.split('\n').slice(1).map((s) => s.trim()).filter(Boolean);
+    if (!files.length || !files.every((f) => f.startsWith(logDir))) continue;
+    for (const f of files) if (f.startsWith(entriesDir)) set.add(f.slice(entriesDir.length));
+  }
+  return set;
+}
+/** analyzeRepo・引き継ぎで使う既定の除外（キット本体のリポジトリでは何も除かない） */
+export function defaultExcludeCommit(root) {
+  if (['install.mjs', 'bump-version.mjs', 'files/tools/daily-log.mjs'].every((f) => fs.existsSync(path.join(root, f)))) return null;
+  const kit = readKitHashes(root);
+  return ({ hash, subject }) => kit.has(hash) || KIT_SUBJECT.test(subject || '');
+}
+/** 「作ったもの・変えたもの」のうち、日報メモそのものを指す行（繰り返しの判別に数えない） */
+export function isLogOnlyItem(text) {
+  return /docs\/log\//.test(text) || /^日報メモ(を|の|$|\s)/.test(text.trim());
+}
 
 export function analysisConfig(cfg = {}) {
   return { ...ANALYSIS_DEFAULTS, ...(cfg.analysis || {}) };
@@ -440,22 +498,23 @@ export function clusterItems(items, threshold = 0.5) {
  */
 export function detectRepetition({ memos = [], commits = [], fixFiles = [], today, a = ANALYSIS_DEFAULTS, latestNext = [] }) {
   const since = addDays(today, -a.repeatWindowDays);
+  const workMemos = memos.filter((m) => m.day >= since && !m.logOnly); // 日報メモだけの PR で入ったメモは数えない
   const work = [
-    ...memos.filter((m) => m.day >= since).flatMap((m) => m.sections.changes.map((text) => ({ text, day: m.day, src: 'memo' }))),
+    ...workMemos.flatMap((m) => m.sections.changes.filter((t) => !isLogOnlyItem(t)).map((text) => ({ text, day: m.day, src: 'memo' }))),
     ...commits.filter((c) => c.day >= since && !/^docs\(log\)|^Merge /.test(c.subject)).map((c) => ({ text: c.subject, day: c.day, src: 'commit' })),
   ];
   const repeatedWork = clusterItems(work, a.similarity).filter((c) => c.days.length >= a.repeatMinDays)
     .map((c) => ({ ...c, prep: PREP_WORDS.test(c.text) }))
     .sort((x, y) => y.days.length - x.days.length || y.count - x.count);
   const latestKeys = latestNext.map((t) => t);
-  const carriedNext = clusterItems(memos.flatMap((m) => m.sections.next.map((text) => ({ text, day: m.day }))), a.similarity)
+  const carriedNext = clusterItems(memos.filter((m) => !m.logOnly).flatMap((m) => m.sections.next.map((text) => ({ text, day: m.day }))), a.similarity)
     .filter((c) => c.count >= a.carryMinCount && c.days.length >= a.carryMinDays)
     .filter((c) => !latestKeys.length || latestKeys.some((t) => similarity(t, c.text) >= a.similarity))
     .sort((x, y) => y.count - x.count);
   const counts = new Map();
   for (const f of fixFiles) for (const file of f.files) counts.set(file, (counts.get(file) || 0) + 1);
   const fixHotspots = [...counts].filter(([, n]) => n >= a.hotspotFixes).map(([file, fixes]) => ({ file, fixes })).sort((x, y) => y.fixes - x.fixes);
-  const memoChanges = memos.filter((m) => m.day >= since).flatMap((m) => m.sections.changes.map((text) => ({ text, day: m.day })));
+  const memoChanges = workMemos.flatMap((m) => m.sections.changes.filter((t) => !isLogOnlyItem(t)).map((text) => ({ text, day: m.day })));
   const prepRepeats = prepKeywordRepeats(memoChanges, a.repeatMinDays);
   return { repeatedWork, prepRepeats, carriedNext, fixHotspots };
 }
@@ -479,7 +538,7 @@ export function renderReport(results, { today, generatedFor } = {}) {
     out.push('## リポジトリ別の概要', '', '| リポジトリ | 期間 | 作業日 | コミット | PR | 日報メモ | メモ記録率 | 深夜率 | 改善点 |', '| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |');
     for (const r of results) {
       const m = r.metrics;
-      out.push(`| ${r.name} | ${m.period.from}〜${m.period.to} | ${m.activeDays} | ${m.commits} | ${m.prs} | ${m.memos} | ${m.memoCoverage ? Math.round(m.memoCoverage.ratio * 100) + '%' : '—'} | ${Math.round(m.lateNight.ratio * 100)}% | ${r.findings.length} |`);
+      out.push(`| ${r.name} | ${m.period.from}〜${m.period.to} | ${m.activeDays} | ${m.commits} | ${m.prs} | ${m.memos} | ${m.memoCoverage?.commitDays ? Math.round(m.memoCoverage.ratio * 100) + '%' : '—'} | ${Math.round(m.lateNight.ratio * 100)}% | ${r.findings.length} |`);
     }
     out.push('');
   }
@@ -493,7 +552,8 @@ export function renderReport(results, { today, generatedFor } = {}) {
     out.push(`| 作業日 | ${m.activeDays}日（コミットのある日 ${m.commitDays}日、メモだけの日 ${m.memoOnlyDays}日） |`);
     out.push(`| コミット / PR / 日報メモ | ${m.commits}件 / ${m.prs}本 / ${m.memos}件 |`);
     out.push(`| 作業のまとまり（推定） | ${m.sessions.count}回、約${m.sessions.estimatedHours}時間（コミットの間隔から推定した目安） |`);
-    out.push(`| 日報メモの記録率 | ${m.memoCoverage ? `${Math.round(m.memoCoverage.ratio * 100)}%（導入した ${m.memoCoverage.since} 以降、コミットのあった ${m.memoCoverage.commitDays}日のうち ${m.memoCoverage.withMemo}日）` : 'メモなし'} |`);
+    const cov = m.memoCoverage;
+    out.push(`| 日報メモの記録率 | ${!cov ? 'メモなし' : cov.commitDays ? `${Math.round(cov.ratio * 100)}%（導入した ${cov.since} 以降、コミットのあった ${cov.commitDays}日のうち ${cov.withMemo}日）` : `対象の日なし（導入した ${cov.since} 以降、日報の仕組み以外のコミットがない）`} |`);
     out.push(`| 深夜（0〜4時）のコミット | ${Math.round(m.lateNight.ratio * 100)}%（${m.lateNight.count}件） |`);
     out.push(`| PRの最初のコミットからマージまで（中央値） | ${m.prLeadTime.count ? `${formatDuration(m.prLeadTime.medianDays)}（${m.prLeadTime.count}本）` : '—（マージコミットなし）'} |`);
     out.push(`| 最後の作業日 | ${m.lastActiveDay || '—'}${m.lastActiveDay ? `（${m.daysSinceActive}日前）` : ''} |`, '');
@@ -682,14 +742,16 @@ export function analyzeRepo(root, opts = {}) {
   const a = analysisConfig(cfg);
   const nowIso = opts.now || new Date().toISOString();
   const today = opts.today || dayKey(nowIso, cfg);
-  // opts.excludeCommit({ hash, subject }) が true のコミットを数えない（ダッシュボードがキットの更新・日報のコミットを除くのに使う）
-  const keep = (c) => !(opts.excludeCommit && opts.excludeCommit({ hash: c.hash, subject: c.subject || '' }));
+  // opts.excludeCommit({ hash, subject }) が true のコミットを数えない。省略するとキット・日報だけのコミットを除く（null なら何も除かない）
+  const exclude = opts.excludeCommit === undefined ? defaultExcludeCommit(root) : opts.excludeCommit;
+  const keep = (c) => !(exclude && exclude({ hash: c.hash, subject: c.subject || '' }));
   let commits = readCommits(root, 'HEAD', cfg).filter(keep);
   const entries = readEntries(root, cfg);
   const inRange = (d) => (!opts.since || d >= opts.since) && (!opts.until || d <= opts.until);
   commits = commits.filter((c) => inRange(dayKey(c.date, cfg)));
+  const logOnly = exclude ? readLogOnlyEntries(root, cfg) : new Set();
   const memos = [];
-  for (const [day, list] of entries) if (inRange(day)) for (const e of list) memos.push({ day, meta: e.meta, sections: extractSections(e.body) });
+  for (const [day, list] of entries) if (inRange(day)) for (const e of list) memos.push({ day, meta: e.meta, sections: extractSections(e.body), logOnly: logOnly.has(`${day}/${e.file}`) });
 
   const nonMerge = commits.filter((c) => c.parents.length <= 1);
   const times = nonMerge.map((c) => c.date);
@@ -725,7 +787,7 @@ export function analyzeRepo(root, opts = {}) {
     memos, today, a, latestNext: latestMemo?.sections.next || [],
     commits: nonMerge.map((c) => ({ subject: c.subject, day: dayKey(c.date, cfg) })),
     fixFiles: readFixFiles(root, new Date(Date.parse(today + 'T00:00:00Z') - a.hotspotDays * 86_400_000).toISOString(), a.ignorePaths,
-      { maxFiles: a.hotspotMaxFiles, excludeCommit: opts.excludeCommit || null }),
+      { maxFiles: a.hotspotMaxFiles, excludeCommit: exclude || null }),
   });
 
   const metrics = {

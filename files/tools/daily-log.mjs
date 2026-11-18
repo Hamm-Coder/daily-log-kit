@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// daily-log-kit v1.9.1 — 日報の生成ツール（依存パッケージなし。Node.js 18 以上）
+// daily-log-kit v1.10.0 — 日報の生成ツール（依存パッケージなし。Node.js 18 以上）
 // 仕様: docs/specs/daily-log.md
 //
 // 使い方:
@@ -16,7 +16,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 
-export const KIT_VERSION = '1.9.1';
+export const KIT_VERSION = '1.10.0';
 
 export const DEFAULT_CONFIG = {
   tz: 'Asia/Tokyo',

@@ -1,4 +1,4 @@
-// daily-log-kit v1.9.1 — キット自体の決まりの検査（node --test で他のテストと一緒に動く）
+// daily-log-kit v1.10.0 — キット自体の決まりの検査（node --test で他のテストと一緒に動く）
 // 版番号の書き換え漏れ、変更履歴の書き忘れ、文字コード、配布ファイルの印を確認する
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -79,6 +79,17 @@ test('install-all.ps1 と pull-all.ps1 は GitHub の既定のブランチを毎
     const src = fs.readFileSync(path.join(ROOT, f), 'utf8');
     assert.match(src, /'origin\/HEAD', 'origin\/main', 'origin\/master'/, `${f} は origin/HEAD が使えないとき main・master も見る`);
   }
+});
+
+test('日報メモを書かないとき（日報メモだけの PR のマージの確認など）を、Skill・CLAUDE.md の区間・仕様に書いている（仕様 4.3）', async () => {
+  const skill = fs.readFileSync(path.join(ROOT, 'files/.claude/skills/daily-log/SKILL.md'), 'utf8');
+  assert.match(skill, /書かないとき/, 'Skill に「書かないとき」');
+  assert.match(skill, /日報メモだけの PR/, 'Skill に日報メモだけの PR のマージ');
+  const { CLAUDE_MD_BLOCK } = await import('../install.mjs');
+  assert.match(CLAUDE_MD_BLOCK, /日報メモだけの PR のマージの確認/, 'CLAUDE.md の区間にも書く（Skill を読まずに書き始める場合のため）');
+  assert.match(CLAUDE_MD_BLOCK, /PR #N をマージした/);
+  const spec = fs.readFileSync(path.join(ROOT, 'files/docs/specs/daily-log.md'), 'utf8');
+  assert.match(spec, /^### 4\.3 日報メモを書かないとき/m);
 });
 
 test('週1回の Issue のワークフローは既定で無効（config.json の weeklyIssue を見る）で、権限は最小限', () => {

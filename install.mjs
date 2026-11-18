@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// daily-log-kit v1.9.1 — 1つのリポジトリに日報の仕組みを入れる（何度実行しても同じ結果になる）
+// daily-log-kit v1.10.0 — 1つのリポジトリに日報の仕組みを入れる（何度実行しても同じ結果になる）
 //
 //   node install.mjs <リポジトリのフォルダ> [--backfill] [--dry-run] [--no-workflow] [--no-hook] [--no-adr] [--force]
 //
@@ -22,7 +22,7 @@ import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
-export const KIT_VERSION = '1.9.1';
+export const KIT_VERSION = '1.10.0';
 const KIT_DIR = path.dirname(fileURLToPath(import.meta.url));
 const FILES_DIR = path.join(KIT_DIR, 'files');
 const MARK_START = '<!-- daily-log:start';
@@ -39,6 +39,7 @@ export const CLAUDE_MD_BLOCK = `${MARK_START} (daily-log-kit v${KIT_VERSION}。�
 ## 日報
 
 - 作業の最後（PRを作る前）に \`daily-log\` Skill の手順で \`docs/log/entries/<日付>/\` に日報メモを書き、作業ブランチにコミットする
+- 日報メモだけの PR のマージの確認、Actions の結果の確認、質問への回答だけのセッションでは書かない。「PR #N をマージした」はどのメモにも書かない（日報の PR 欄に自動で載る）。メモを書いたら循環になるため（仕様 4.3）
 - 決めたことはユーザーが決めた・承認したことだけを書き、提案は「未解決・判断待ち」に書く。秘密情報は書かない
 - セッションの開始時に「日報からの引き継ぎ」（次にやること・判断待ち・始める前の準備・効率化の候補）が渡される。依頼に関係するときに使い、準備の項目は作業の前に確かめる
 - \`docs/log/YYYY-MM/\` と \`docs/log/README.md\` は自動生成なので手で編集しない

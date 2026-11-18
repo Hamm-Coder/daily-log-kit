@@ -1,10 +1,11 @@
-// daily-log-kit v1.9.1 — 実行: node --test tools/daily-log-analyze.test.mjs
+// daily-log-kit v1.10.0 — 実行: node --test tools/daily-log-analyze.test.mjs
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   buildSessions, median, extractSections, pendingItems, resolvedItems, parseResolution, matchesPending,
   weekStart, issueTitle, issueBody, weeklyIssueEnabled, ISSUE_TITLE_PREFIX, parseFeel, feelSummary, blockerSummary, isFixCommit, hourBuckets, weekdayCounts,
   lateNightRatio, weeklySeries, detectFindings, renderReport, parseAnalyzeArgs, ANALYSIS_DEFAULTS, daysBetween, formatDuration,
+  isKitCommit, isLogOnlyItem, detectRepetition,
 } from './daily-log-analyze.mjs';
 
 const TZ = 'Asia/Tokyo';
@@ -222,4 +223,22 @@ test('手応えと詰まったこと: 平均・週ごと・繰り返しをまと
   assert.deepEqual(ids, ['low-feel', 'repeated-blocker']);
   // 書かれていなければ何も出さない（既存のメモだけのリポジトリ）
   assert.deepEqual(detectFindings(base).map((x) => x.id), []);
+});
+
+test('日報の仕組み自身のコミットと、日報メモのファイルを指す行は、作業に数えない（仕様 4.3・12.1）', () => {
+  assert.equal(isKitCommit({ subject: 'chore: 日報の仕組みを更新（daily-log-kit v1.10.0）' }), true);
+  assert.equal(isKitCommit({ subject: 'docs(log): 日報メモ', files: ['docs/log/entries/2026-11-18/0643-3.md'] }), true);
+  assert.equal(isKitCommit({ subject: 'Update notes', files: ['docs/log/config.json'] }), true);
+  assert.equal(isKitCommit({ subject: 'feat: トークン数の表示', files: ['app.js', 'docs/log/entries/a.md'] }), false);
+  assert.equal(isKitCommit({ subject: 'docs: README', files: ['CLAUDE.md'] }), false, 'CLAUDE.md だけの変更は作業');
+  assert.equal(isLogOnlyItem('日報メモ docs/log/entries/2026-11-18/0643-3.md'), true);
+  assert.equal(isLogOnlyItem('日報メモを追加'), true);
+  assert.equal(isLogOnlyItem('tools/count.js にトークンの数え方を追加'), false);
+  // 3日続けて日報メモだけを書いても「似た作業の繰り返し」にならない
+  const memos = ['2026-11-16', '2026-11-17', '2026-11-18'].map((day) => ({
+    day, meta: {}, sections: { changes: [`日報メモ docs/log/entries/${day}/0700-main.md`], next: [], decisions: [], pending: [], blockers: [], feel: [] },
+  }));
+  const rep = detectRepetition({ memos, commits: [], fixFiles: [], today: '2026-11-18', a: ANALYSIS_DEFAULTS });
+  assert.deepEqual(rep.repeatedWork, []);
+  assert.deepEqual(rep.prepRepeats, []);
 });

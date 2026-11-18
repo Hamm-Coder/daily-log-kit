@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// daily-log-kit v1.9.1 — セッション開始時の引き継ぎ（次にやること・判断待ち・始める前の準備・効率化の候補）
+// daily-log-kit v1.10.0 — セッション開始時の引き継ぎ（次にやること・判断待ち・始める前の準備・効率化の候補）
 // 仕様: docs/specs/daily-log.md の「13. セッション開始時の引き継ぎ」
 //
 // 使い方:
@@ -13,7 +13,7 @@ import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { dayKey, repoRoot, loadConfig, readEntries, tryGit, readCommits } from './daily-log.mjs';
 import {
-  analysisConfig, extractSections, pendingItems, detectRepetition, readFixFiles, suggestFor, addDaysSafe,
+  analysisConfig, extractSections, pendingItems, detectRepetition, defaultExcludeCommit, readLogOnlyEntries, readFixFiles, suggestFor, addDaysSafe,
 } from './daily-log-analyze.mjs';
 
 const PC_MARK = /[（(]PC[）)]/;
@@ -158,7 +158,7 @@ export function buildBrief(root, opts = {}) {
   const env = opts.env || (process.env.CLAUDE_CODE_REMOTE === 'true' ? 'web' : 'pc');
   const today = opts.today || dayKey(new Date().toISOString(), cfg);
   const memos = [];
-  for (const [day, list] of readEntries(root, cfg)) for (const e of list) memos.push({ day, meta: e.meta, sections: extractSections(e.body) });
+  for (const [day, list] of readEntries(root, cfg)) for (const e of list) memos.push({ day, file: e.file, meta: e.meta, sections: extractSections(e.body) });
   memos.sort((x, y) => (x.day + (x.meta.time || '')).localeCompare(y.day + (y.meta.time || '')));
   const latest = memos.at(-1);
   const specPath = path.join(root, 'SPEC.md');
@@ -174,9 +174,14 @@ export function buildBrief(root, opts = {}) {
   if (env === 'web' && next.some((n) => n.place === 'pc')) prep.push({ level: '確認', text: '（PC）の作業はこの環境ではできない。Web版でできる作業を先に進め、PC作業はまとめて行う' });
 
   const since = addDaysSafe(today, -a.repeatWindowDays);
-  const commits = opts.commits || readCommits(root, 'HEAD', cfg).filter((c) => c.parents.length <= 1).map((c) => ({ subject: c.subject, day: dayKey(c.date, cfg) })).filter((c) => c.day >= since);
-  const fixFiles = opts.fixFiles || readFixFiles(root, new Date(Date.parse(today + 'T00:00:00Z') - a.hotspotDays * 86_400_000).toISOString(), a.ignorePaths, { maxFiles: a.hotspotMaxFiles });
-  const rep = detectRepetition({ memos, commits, fixFiles, today, a, latestNext: latest?.sections.next || [] });
+  // キット・日報だけのコミット（導入・更新、日報メモなど）と、日報メモだけの PR で入ったメモは繰り返しに数えない（仕様 4.3・12.1）
+  const exclude = (opts.commits && opts.fixFiles) ? null : defaultExcludeCommit(root);
+  const logOnly = exclude ? readLogOnlyEntries(root, cfg) : new Set();
+  const workMemos = memos.map((m) => ({ ...m, logOnly: logOnly.has(`${m.day}/${m.file}`) }));
+  const keep = (c) => !(exclude && exclude({ hash: c.hash, subject: c.subject || '' }));
+  const commits = opts.commits || readCommits(root, 'HEAD', cfg).filter((c) => c.parents.length <= 1 && keep(c)).map((c) => ({ subject: c.subject, day: dayKey(c.date, cfg) })).filter((c) => c.day >= since);
+  const fixFiles = opts.fixFiles || readFixFiles(root, new Date(Date.parse(today + 'T00:00:00Z') - a.hotspotDays * 86_400_000).toISOString(), a.ignorePaths, { maxFiles: a.hotspotMaxFiles, excludeCommit: exclude });
+  const rep = detectRepetition({ memos: workMemos, commits, fixFiles, today, a, latestNext: latest?.sections.next || [] });
   const efficiency = [
     ...rep.prepRepeats.slice(0, 2).map((p) => `準備作業の繰り返し: 「${p.keyword}」を含む作業が${p.days.length}日（例: ${clip(p.examples[0], 40)}）→ 手順を1つのスクリプトか Skill にまとめる`),
     ...rep.repeatedWork.slice(0, 2).map((w) => `${w.prep ? '準備作業' : '作業'}の繰り返し: ${w.examples.slice(-2).map((e) => `「${clip(e, 30)}」`).join('')}など、似た作業が${w.days.length}日 → ${suggestFor(w)}`),

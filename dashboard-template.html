@@ -211,7 +211,7 @@ document.getElementById('repos').innerHTML = repos.map((r) => {
   const noMemo = r.isKit ? 'キット本体には日報の仕組みを入れていません（作業は SPEC.md と docs/HANDOFF.md で管理）' : '日報メモがないため、まだありません';
   return `<article class="repo" id="repo-${esc(r.key)}">
     <div class="repo-top">
-      <div><h3>${esc(r.name)}</h3><div class="when">最後の作業 <span class="num">${esc(r.lastDay || '—')}</span>${r.idle === null ? '' : `（${r.idle === 0 ? '今日' : r.idle + '日前'}）`}・コミット 直近24週 <span class="num">${r.commits24}</span>／全期間 <span class="num">${r.commitsAll}</span>・日報メモ <span class="num">${r.memos}</span></div></div>
+      <div><h3>${esc(r.name)}</h3><div class="when">${r.created ? `作成 <span class="num">${esc(r.created.day)}</span>（最初のコミット${r.created.shallow ? '。履歴が浅いため、実際はもっと前の可能性' : ''}）・` : ''}最後の作業 <span class="num">${esc(r.lastDay || '—')}</span>${r.idle === null ? '' : `（${r.idle === 0 ? '今日' : r.idle + '日前'}）`}・コミット 直近24週 <span class="num">${r.commits24}</span>／全期間 <span class="num">${r.commitsAll}</span>・日報メモ <span class="num">${r.memos}</span></div></div>
       <div class="chips">${r.chips.map(([c, t]) => `<span class="chip ${c}">${esc(t)}</span>`).join('')}</div>
     </div>
     ${historyBlock(r)}

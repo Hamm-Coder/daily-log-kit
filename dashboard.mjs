@@ -100,6 +100,15 @@ export function weeklyCounts(commits, today, weeks = WEEKS) {
   return keys.map((week) => ({ week, commits: counts.get(week) }));
 }
 
+/** 作成日の目安: 一番古いコミットの日（キット・日報のコミットも含めた全履歴から）。浅いクローンなら本当の最初ではない */
+export function createdInfo(root, log, cfg) {
+  if (!log.length) return null;
+  const day = log.reduce((min, c) => (c.day < min ? c.day : min), log[0].day);
+  let shallow = false;
+  try { shallow = execFileSync('git', ['-C', root, 'rev-parse', '--is-shallow-repository'], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim() === 'true'; } catch { /* 判定できなければ浅くないとみなす */ }
+  return { day, shallow };
+}
+
 /** 1つのリポジトリの集計 */
 export function collectRepo(dir, { today } = {}) {
   const root = path.resolve(dir);
@@ -116,6 +125,7 @@ export function collectRepo(dir, { today } = {}) {
   const weeks = weeklyCounts(commits, day).map((w) => ({ ...w, memos: memoWeeks.get(w.week) || 0 }));
   return {
     key: path.basename(root).replace(/[^\w.-]/g, '-'), name: path.basename(root), isKit, today: day,
+    created: createdInfo(root, log, cfg),
     lastWork: commits[0] ? { day: commits[0].day, text: commits[0].text } : null,
     commits24: weeks.reduce((s, w) => s + w.commits, 0), commitsAll: commits.length,
     prs: m.prs, memos: m.memos, weeks,

@@ -74,6 +74,7 @@ test('集計: キット本体以外は、キット・日報のコミットを最
 
   const r = collectRepo(dir, { today: TODAY });
   assert.equal(r.isKit, false);
+  assert.deepEqual(r.created, { day: addDays(TODAY, -40), shallow: false }, '作成日は最初のコミットの日');
   assert.deepEqual(r.lastWork, { day: addDays(TODAY, -40), text: 'feat: 最初の機能' });
   assert.equal(r.commitsAll, 1);
   assert.equal(r.commits24, 1);

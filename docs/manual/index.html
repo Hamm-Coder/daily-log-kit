@@ -378,7 +378,7 @@ git pull</pre><button type="button">コピー</button></div>
     <div class="card"><span class="place web">Web版 / PC</span><h4>Claude Code で作業する日</h4><p>始めは「前回の続きをして」で通じます（引き継ぎが自動で渡されます）。最後に「日報を書いて」。頼み忘れても Stop フックが1回促します。メモは作業と同じ PR に入ります。日報メモだけの PR をマージした後や、Actions の結果を確かめただけのときは書きません（書くとマージのたびに次のメモが要る循環になります。PR は日報に自動で載ります。v1.10.0）。</p></div>
     <div class="card"><span class="place web">claude.ai</span><h4>チャットで決めた日</h4><p>チャットの最後に依頼文4（<code>prompts/4-claude-ai-daily-wrapup.md</code>）を貼り、出てきたメモを Web版に「日報メモとして追加して」と渡します。</p></div>
     <div class="card"><span class="place repo">各リポジトリ</span><h4>PC で作業を始めるとき</h4><p>最初に <code>git pull</code>。ボットの日報コミットを取り込み、衝突を防ぎます。複数のリポジトリをまとめて取り込むなら、<span class="place kit">キットのフォルダ</span> で <code>.\pull-all.ps1</code>（日報の仕組みを入れたリポジトリだけが対象。一覧から「全部」「番号で選ぶ」「やめる」を選びます。確認なしで全部なら <code>-Yes</code>）。Unity などのエディタは pull の後で開きます。</p></div>
-    <div class="card"><span class="place kit">キットのフォルダ</span><h4>全部のリポジトリを見渡すとき</h4><p><code>.\pull-all.ps1 -Yes</code> の後で <code>.\dashboard.ps1</code>。判断待ち・PC でしかできない作業・しばらく作業がないリポジトリ・これまでの作業を1画面の HTML で開きます（作った HTML はコミットしません）。</p></div>
+    <div class="card"><span class="place kit">キットのフォルダ</span><h4>全部のリポジトリを見渡すとき</h4><p><code>.\pull-all.ps1 -Yes</code> の後で <code>.\dashboard.ps1</code>。判断待ち・PC でしかできない作業・しばらく作業がないリポジトリ・これまでの作業を1画面の HTML で開きます（作った HTML はコミットしません）。詳細の「作成」は、Git の履歴で一番古いコミットの日です（GitHub で作った日ではありません）。</p></div>
     <div class="card"><span class="place web">Web版</span><h4>週に1回</h4><p><code>docs/log/config.json</code> に <code>"weeklyIssue": true</code> を書くと、毎週月曜の朝に分析が Issue で届きます。手動でも、「作業を分析して」と頼むと、改善点・判断待ち・次にやることがまとめて返ってきます。</p></div>
   </div>
   <h3>日報メモの書き方</h3>

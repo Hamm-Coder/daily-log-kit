@@ -230,11 +230,15 @@ git push -u origin chore/daily-log
 gh pr create --fill
 ```
 
-### 昔のリポジトリの過去の日報だけ作る
+### 昔のリポジトリの過去の日報を作る
+
+`C:\AllGitRepository` の外のフォルダには使わない（決まり）。昔のリポジトリ（Android/Kotlin など）も `C:\AllGitRepository` に置いて、日報の仕組みを導入する。`-Backfill` が全履歴から過去の日報を作る（保管用のリポジトリも導入する決まりのため、日報だけを作って仕組みを入れない使い方はしない）。
 
 ```powershell
-cd C:\AllGitRepository\<リポジトリ>
-node C:\AllGitRepository\daily-log-kit\files\tools\daily-log.mjs generate --all
+cd C:\AllGitRepository
+git clone https://github.com/Hamm-Coder/<リポジトリ>.git
+cd C:\AllGitRepository\daily-log-kit
+.\install-all.ps1 -Repos <リポジトリ> -Backfill -Apply -CreatePR
 ```
 
 

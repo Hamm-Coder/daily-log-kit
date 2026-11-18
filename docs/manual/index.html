@@ -555,11 +555,12 @@ git pull
       </tbody></table></div>
     </div>
   </div>
-  <h3>昔のリポジトリ（Android/Kotlin など）の過去の日報だけを作る</h3>
-  <p>仕組みは入れずに、キットのツールをそのリポジトリで直接動かします。<span class="place repo">各リポジトリ</span></p>
-  <div class="code"><pre>cd C:\AllGitRepository\&lt;リポジトリ&gt;
-node C:\AllGitRepository\daily-log-kit\files\tools\daily-log.mjs generate --all
-start docs\log\README.md</pre><button type="button">コピー</button></div>
+  <h3>昔のリポジトリ（Android/Kotlin など）の過去の日報を作る</h3>
+  <p><code>C:\AllGitRepository</code> の外のフォルダには使いません（決まり）。昔のリポジトリも <code>C:\AllGitRepository</code> に置いて、日報の仕組みを導入します。<code>-Backfill</code> が全履歴から過去の日報を作ります（保管用のリポジトリも導入する決まりのため、日報だけを作って仕組みを入れない使い方はしません）。<span class="place kit">キットのフォルダ</span></p>
+  <div class="code"><pre>cd C:\AllGitRepository
+git clone https://github.com/Hamm-Coder/&lt;リポジトリ&gt;.git
+cd C:\AllGitRepository\daily-log-kit
+.\install-all.ps1 -Repos &lt;リポジトリ&gt; -Backfill -Apply -CreatePR</pre><button type="button">コピー</button></div>
 </section>
 
 <section id="analyze">

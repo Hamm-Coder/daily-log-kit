@@ -11,16 +11,19 @@
   --bg:#f4f6f9; --surface:#ffffff; --ink:#18212c; --muted:#5a6676; --line:#dde2ea; --soft:#eef1f6;
   --accent:#2a6788; --accent-soft:#e3eef5;
   --warn:#9a6212; --warn-soft:#fbf0dc; --crit:#b23a31; --crit-soft:#fbe6e3; --ok:#2d7a51; --ok-soft:#e2f2e9; --info:#5a6676; --info-soft:#eceff4;
+  --series-1:#2a78d6; --series-2:#eb6834; --series-3:#1baf7a; --series-4:#eda100; --series-5:#e87ba4; --series-6:#008300; --series-7:#6250d6; --series-8:#e34948; --series-other:#8a93a0;
   --font-display:"BIZ UDPGothic","Yu Gothic UI","Hiragino Sans","Noto Sans JP",sans-serif;
   --font-body:"Yu Gothic UI","Meiryo UI","Hiragino Sans","Noto Sans JP",system-ui,sans-serif;
   --font-mono:"Cascadia Mono",Consolas,ui-monospace,"SFMono-Regular",monospace;
 }
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --series-1:#3987e5; --series-2:#d95926; --series-3:#199e70; --series-4:#c98500; --series-5:#d55181; --series-6:#0ca30c; --series-7:#9085e9; --series-8:#e66767; --series-other:#6c7685;
   --bg:#11161d; --surface:#18202a; --ink:#e6ebf1; --muted:#9aa6b5; --line:#2a3542; --soft:#1f2934;
   --accent:#7fb6d4; --accent-soft:#1d3240;
   --warn:#e3b260; --warn-soft:#3a2d17; --crit:#ef8a80; --crit-soft:#3d1f1c; --ok:#79c79c; --ok-soft:#1b3326; --info:#9aa6b5; --info-soft:#232d39;
   color-scheme:dark}}
 :root[data-theme="dark"]{
+  --series-1:#3987e5; --series-2:#d95926; --series-3:#199e70; --series-4:#c98500; --series-5:#d55181; --series-6:#0ca30c; --series-7:#9085e9; --series-8:#e66767; --series-other:#6c7685;
   --bg:#11161d; --surface:#18202a; --ink:#e6ebf1; --muted:#9aa6b5; --line:#2a3542; --soft:#1f2934;
   --accent:#7fb6d4; --accent-soft:#1d3240;
   --warn:#e3b260; --warn-soft:#3a2d17; --crit:#ef8a80; --crit-soft:#3d1f1c; --ok:#79c79c; --ok-soft:#1b3326; --info:#9aa6b5; --info-soft:#232d39;
@@ -76,6 +79,18 @@ td.r,th.r{text-align:right}
 .history ul{margin:0;padding-left:1.2em;display:grid;gap:3px}
 .finding{display:grid;gap:2px;padding:8px 10px;border-radius:8px;background:var(--soft)}
 .finding .t{font-weight:500} .finding .e{color:var(--muted);font-size:12px;overflow-wrap:anywhere}
+.daily{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px 16px;position:relative}
+.daily svg{display:block;width:100%;height:auto}
+.daily text{fill:var(--muted);font-family:var(--font-mono);font-size:11px}
+.daily .grid{stroke:var(--line);stroke-width:1} .daily .base{stroke:var(--muted);stroke-width:1}
+.daily .seg{stroke:var(--surface);stroke-width:1.5}
+.daily .col{fill:transparent} .daily .col:hover,.daily .col:focus{fill:var(--soft)}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;margin:0 0 10px;padding:0;list-style:none;font-size:12px}
+.legend li{display:flex;align-items:center;gap:6px}
+.legend .sw{width:12px;height:12px;border-radius:3px;flex:none}
+.legend .n{color:var(--muted);font-family:var(--font-mono)}
+.daily-tip{position:absolute;pointer-events:none;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:12px;box-shadow:0 4px 14px rgba(0,0,0,.12);display:none;min-width:160px;z-index:2}
+.daily-tip .row{display:flex;align-items:center;gap:6px} .daily-tip .row b{margin-left:auto;font-family:var(--font-mono);font-weight:500}
 .spark{display:block;width:100%;max-width:100%;height:auto}
 .spark text{fill:var(--muted);font-family:var(--font-mono);font-size:10px}
 .spark .bar{fill:var(--accent);opacity:.6} .spark .bar.now{opacity:1}
@@ -97,6 +112,14 @@ footer{color:var(--muted);font-size:12px;display:grid;gap:4px}
   </header>
 
   <div class="summary" id="summary" aria-label="全体の要約"></div>
+
+  <section aria-labelledby="h-daily">
+    <div class="sec-head">
+      <h2 id="h-daily">過去30日のコミット数（リポジトリ別）</h2>
+      <p id="daily-note"></p>
+    </div>
+    <div class="daily" id="daily"></div>
+  </section>
 
   <section aria-labelledby="h-overview">
     <div class="sec-head">
@@ -177,6 +200,64 @@ function spark(r, { w = 520, h = 96, axis = true } = {}) {
     <line class="base" x1="${padL}" x2="${w - padR}" y1="${plotB}" y2="${plotB}"></line>${bars}${ticks}
     <text x="${w - padR + 4}" y="${y(max) + 4}">${max}</text></svg>`;
 }
+
+// 過去30日のコミット数（リポジトリ別の積み上げ）。色はリポジトリ名の順に固定の8色。9つ目以降は、30日の件数が少ないものから「その他」にまとめる
+(function dailyChart() {
+  const DAYS = (DATA[0].daily || []).length;
+  const el = document.getElementById('daily');
+  if (!DAYS) { el.innerHTML = '<div class="empty">データがありません</div>'; return; }
+  const dayKeys = Array.from({ length: DAYS }, (_, i) => { const d = new Date(Date.parse(TODAY + 'T00:00:00Z') + (i - DAYS + 1) * 864e5); return d.toISOString().slice(0, 10); });
+  const sum = (a) => a.reduce((s, v) => s + v, 0);
+  const active = DATA.filter((r) => sum(r.daily) > 0).map((r) => ({ name: r.name, daily: r.daily, total: sum(r.daily) }));
+  let series = [...active].sort((a, b) => a.name.localeCompare(b.name));
+  if (series.length > 8) {
+    const keep = new Set([...active].sort((a, b) => b.total - a.total).slice(0, 7).map((x) => x.name));
+    const rest = series.filter((x) => !keep.has(x.name));
+    series = series.filter((x) => keep.has(x.name));
+    series.push({ name: `その他（${rest.length}）`, other: true, daily: dayKeys.map((_, i) => sum(rest.map((x) => x.daily[i]))), total: sum(rest.map((x) => x.total)) });
+  }
+  series.forEach((x, i) => { x.color = x.other ? 'var(--series-other)' : `var(--series-${i + 1})`; });
+  const idle = DATA.length - active.length;
+  document.getElementById('daily-note').textContent = `${dayKeys[0]}〜${dayKeys[DAYS - 1]}。キット・日報の自動コミットを除く（キット本体は除かない）。棒に重ねると内訳が出ます` + (idle ? `。この期間にコミットがないリポジトリ（${idle}）は凡例に出しません` : '');
+  const legend = series.length ? `<ul class="legend" aria-label="凡例">${series.map((x) => `<li><span class="sw" style="background:${x.color}"></span>${esc(x.name)}<span class="n">${x.total}</span></li>`).join('')}</ul>` : '<div class="empty">この期間のコミットはありません</div>';
+  const totals = dayKeys.map((_, i) => sum(series.map((x) => x.daily[i])));
+  const rawMax = Math.max(1, ...totals);
+  const step = rawMax <= 5 ? 1 : rawMax <= 10 ? 2 : rawMax <= 25 ? 5 : rawMax <= 50 ? 10 : Math.ceil(rawMax / 50) * 10;
+  const max = Math.ceil(rawMax / step) * step;
+  const w = 960, h = 260, padL = 34, padR = 8, padT = 10, padB = 26, plotB = h - padB, plotW = w - padL - padR;
+  const bw = plotW / DAYS, gap = Math.min(4, bw * 0.25);
+  const y = (v) => padT + (plotB - padT) * (1 - v / max);
+  let grid = '';
+  for (let v = 0; v <= max; v += step) grid += `<line class="${v ? 'grid' : 'base'}" x1="${padL}" x2="${w - padR}" y1="${y(v)}" y2="${y(v)}"></line><text x="${padL - 6}" y="${y(v) + 4}" text-anchor="end">${v}</text>`;
+  let bars = '', cols = '', ticks = '';
+  dayKeys.forEach((d, i) => {
+    const x = padL + i * bw + gap / 2, bwid = Math.max(bw - gap, 1);
+    let acc = 0;
+    series.forEach((s) => {
+      const v = s.daily[i]; if (!v) return;
+      const y1 = y(acc + v), y0 = y(acc); acc += v;
+      bars += `<rect class="seg" x="${x}" y="${y1}" width="${bwid}" height="${Math.max(y0 - y1, 1)}" style="fill:${s.color}"></rect>`;
+    });
+    cols += `<rect class="col" data-i="${i}" tabindex="0" x="${padL + i * bw}" y="${padT}" width="${bw}" height="${plotB - padT}" aria-label="${d} コミット ${totals[i]}"></rect>`;
+    if ((DAYS - 1 - i) % 7 === 0) ticks += /* 基準日から7日ごと（一番右が基準日） */ `<line class="grid" x1="${x + bwid / 2}" x2="${x + bwid / 2}" y1="${plotB}" y2="${plotB + 5}"></line><text x="${x + bwid / 2}" y="${h - 6}" text-anchor="middle">${d.slice(5).replace('-', '/')}</text>`;
+  });
+  el.innerHTML = legend + `<svg viewBox="0 0 ${w} ${h}" role="img" aria-label="過去30日の日ごとのコミット数。リポジトリ別の積み上げ。最大 ${rawMax} 件/日、合計 ${sum(totals)} 件">${grid}${cols}${bars}${ticks}</svg><div class="daily-tip" role="tooltip"></div>`;
+  // 棒の上に重ねる透明の当たり判定は、色の帯より前に描いて、帯の上の操作も拾う
+  const svg = el.querySelector('svg'), tip = el.querySelector('.daily-tip');
+  svg.querySelectorAll('.seg').forEach((r) => { r.style.pointerEvents = 'none'; });
+  const show = (ev) => {
+    const i = Number(ev.target.dataset.i); if (Number.isNaN(i)) return;
+    const rows = series.filter((s) => s.daily[i]).map((s) => `<div class="row"><span class="sw" style="background:${s.color};width:10px;height:10px;border-radius:2px"></span>${esc(s.name)}<b>${s.daily[i]}</b></div>`).join('');
+    tip.innerHTML = `<div class="num" style="margin-bottom:4px">${dayKeys[i]}（合計 ${totals[i]}）</div>${rows || '<div class="sub">コミットなし</div>'}`;
+    tip.style.display = 'block';
+    const box = el.getBoundingClientRect(), cr = ev.target.getBoundingClientRect();
+    let left = cr.left - box.left + cr.width + 8;
+    if (left + tip.offsetWidth > box.width - 8) left = cr.left - box.left - tip.offsetWidth - 8;
+    tip.style.left = Math.max(8, left) + 'px'; tip.style.top = (padT + 16) + 'px';
+  };
+  const hide = () => { tip.style.display = 'none'; };
+  svg.querySelectorAll('.col').forEach((c) => { c.addEventListener('mouseenter', show); c.addEventListener('focus', show); c.addEventListener('mouseleave', hide); c.addEventListener('blur', hide); });
+})();
 
 // 一覧表（改善点は「注意」だけ。大きなコミットは詳細だけに出す）
 const attnFindings = (r) => r.findings.filter((x) => x.level === '注意' && x.id !== 'large-commits');

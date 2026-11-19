@@ -8,7 +8,7 @@ import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { install } from '../install.mjs';
 import {
-  isKitPath, isKitCommit, isKitRepo, idleBand, readmeOverview, docExcerpt, collectRepo, renderDashboard, weeklyCounts,
+  isKitPath, isKitCommit, isKitRepo, idleBand, readmeOverview, docExcerpt, collectRepo, renderDashboard, weeklyCounts, dailyCounts,
 } from '../dashboard.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -75,6 +75,8 @@ test('集計: キット本体以外は、キット・日報のコミットを最
   const r = collectRepo(dir, { today: TODAY });
   assert.equal(r.isKit, false);
   assert.deepEqual(r.created, { day: addDays(TODAY, -40), shallow: false }, '作成日は最初のコミットの日');
+  assert.equal(r.daily.length, 30);
+  assert.equal(r.daily.reduce((a, b) => a + b, 0), 0, '30日より前の作業と、キット・日報のコミットは数えない');
   assert.deepEqual(r.lastWork, { day: addDays(TODAY, -40), text: 'feat: 最初の機能' });
   assert.equal(r.commitsAll, 1);
   assert.equal(r.commits24, 1);
@@ -115,4 +117,13 @@ test('HTML: 集計結果に「</script>」があっても script を閉じない
   const json = /const DATA = (.*);/.exec(html)[1];
   assert.equal(JSON.parse(json)[0].name, '</script><b>x');
   assert.match(fs.readFileSync(path.join(ROOT, 'dashboard-template.html'), 'utf8'), /const DATA = __DATA__;/);
+});
+
+test('日ごとのコミット数: 基準日を含む直近30日を古い順に数える', () => {
+  const c = (day) => ({ day });
+  const d = dailyCounts([c(TODAY), c(TODAY), c(addDays(TODAY, -29)), c(addDays(TODAY, -30)), c(addDays(TODAY, 1))], TODAY);
+  assert.equal(d.length, 30);
+  assert.equal(d[29], 2, '基準日');
+  assert.equal(d[0], 1, '29日前は入る');
+  assert.equal(d.reduce((a, b) => a + b, 0), 3, '30日前と未来の日は入らない');
 });

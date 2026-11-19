@@ -100,6 +100,15 @@ export function weeklyCounts(commits, today, weeks = WEEKS) {
   return keys.map((week) => ({ week, commits: counts.get(week) }));
 }
 
+export const DAILY_DAYS = 30;
+/** 直近 days 日（基準日を含む）の日ごとのコミット数。古い日から順 */
+export function dailyCounts(commits, today, days = DAILY_DAYS) {
+  const keys = Array.from({ length: days }, (_, i) => addDays(today, i - days + 1));
+  const counts = new Map(keys.map((k) => [k, 0]));
+  for (const c of commits) if (counts.has(c.day)) counts.set(c.day, counts.get(c.day) + 1);
+  return keys.map((d) => counts.get(d));
+}
+
 /** 作成日の目安: 一番古いコミットの日（キット・日報のコミットも含めた全履歴から）。浅いクローンなら本当の最初ではない */
 export function createdInfo(root, log, cfg) {
   if (!log.length) return null;
@@ -128,6 +137,7 @@ export function collectRepo(dir, { today } = {}) {
     created: createdInfo(root, log, cfg),
     lastWork: commits[0] ? { day: commits[0].day, text: commits[0].text } : null,
     commits24: weeks.reduce((s, w) => s + w.commits, 0), commitsAll: commits.length,
+    daily: dailyCounts(commits, day),
     prs: m.prs, memos: m.memos, weeks,
     next: m.latestNext, pending: m.pending, resolved: m.resolved || [], pcTasks: m.pcTasks,
     feel: m.feel || null, blockers: m.blockers || null, decisions: (m.recentDecisions || []).slice(0, 5),

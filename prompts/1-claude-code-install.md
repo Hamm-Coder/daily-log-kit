@@ -13,7 +13,7 @@
    - 「スキップ（キット以外の同名ファイル）」が出たら、上書きせずに私に知らせる
 4. `node --test tools/daily-log.test.mjs tools/daily-log-analyze.test.mjs tools/daily-log-brief.test.mjs` が通ることを確認する。既存のテストや検査（`npm test` など）があれば、それも通ることを確認する
 5. `daily-log` Skill の手順Bに従い、マージ済みPRの説明文（`gh` が使えれば）から、PRごとの要点を日報メモ（`--source pr`）にまとめる。日付はマージ日。使えなければこの手順は飛ばし、その旨を報告する
-6. もう一度 `node tools/daily-log.mjs generate --all` を実行し、「chore: 日報の仕組みを導入（daily-log-kit v1.10.1）」としてコミットし、PRを作る
+6. もう一度 `node tools/daily-log.mjs generate --all` を実行し、「chore: 日報の仕組みを導入（daily-log-kit v1.10.2）」としてコミットし、PRを作る
 7. 最後に、この作業自体の日報メモを `daily-log` Skill の手順Aで書いて同じPRに含める
 
 報告には、導入したファイル、生成された日報の日数、スキップしたものを含めてください。
@@ -24,7 +24,7 @@
 
 | ID | 作業 | 成果物 | 完了条件 | 実行場所 |
 | --- | --- | --- | --- | --- |
-| E1 | 日報の仕組み（daily-log-kit v1.10.1）の導入と過去の日報の生成 | `tools/daily-log.mjs`、`docs/log/`、Stop フック、`daily-log` Skill、`.github/workflows/daily-log.yml` | `node --test tools/daily-log.test.mjs` が成功。`docs/log/README.md` に過去の作業日が並ぶ。PRマージ後に Actions の daily-log が成功 | Web |
+| E1 | 日報の仕組み（daily-log-kit v1.10.2）の導入と過去の日報の生成 | `tools/daily-log.mjs`、`docs/log/`、Stop フック、`daily-log` Skill、`.github/workflows/daily-log.yml` | `node --test tools/daily-log.test.mjs` が成功。`docs/log/README.md` に過去の作業日が並ぶ。PRマージ後に Actions の daily-log が成功 | Web |
 
 ## 更新だけを頼む場合（短い版）
 

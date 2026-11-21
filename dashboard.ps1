@@ -1,5 +1,5 @@
 ﻿<#
-daily-log-kit v1.10.1 — 日報の仕組みを入れたリポジトリとキット本体を1画面で見るダッシュボード（HTML）を作って開く
+daily-log-kit v1.10.2 — 日報の仕組みを入れたリポジトリとキット本体を1画面で見るダッシュボード（HTML）を作って開く
 
 対象（pull-all.ps1 と同じ選び方）
 - -Root（既定 C:\AllGitRepository）直下の Git リポジトリのうち、日報の仕組みが入っているもの（tools/daily-log.mjs がある）と、キット本体

@@ -1,6 +1,6 @@
 # 日報（日毎ログ）の仕様
 
-- キット: daily-log-kit v1.10.0（どのリポジトリでも同じ内容。作品・製品ごとの差は `docs/log/config.json` だけで吸収する）
+- キット: daily-log-kit v1.10.1（どのリポジトリでも同じ内容。作品・製品ごとの差は `docs/log/config.json` だけで吸収する）
 - 更新日: 2026-11-10
 
 ## 1. 目的
@@ -24,7 +24,7 @@
 | --- | --- | --- |
 | Claude Code のセッションを始めるとき | SessionStart フック `.claude/hooks/daily-log-session-start.mjs` | 次にやること・判断待ち・始める前の準備・効率化の候補を Claude に渡す（13章） |
 | Claude Code が応答を終えるとき | Stop フック `.claude/hooks/daily-log-reminder.mjs` | 作業の差分があるのに日報メモがなければ、同じ HEAD につき1回だけ記録を促す |
-| セッションの終わり・PR作成前 | Skill `.claude/skills/daily-log/SKILL.md` | 日報メモを書き、日報を作り直してコミット |
+| セッションの終わり・PR作成前 | Skill `.claude/skills/daily-log/SKILL.md` | 日報メモを書いてコミット（自動生成の日報は含めない。4.4） |
 | 既定のブランチ（main など）への push（PRのマージ） | GitHub Actions `.github/workflows/daily-log.yml` | 直近14日分の日報と一覧を作り直し、変更があればボットがコミット |
 | 導入直後に1回 | `generate --all` | 全履歴から過去の日報を作る |
 | 好きなとき（週1回を推奨） | `node tools/daily-log-analyze.mjs` | 傾向・改善点・判断待ちの一覧を表示（12章） |
@@ -105,6 +105,15 @@ title: 奥の手の設計確定
 - 「ユーザーが PR #N をマージした」は、どのメモにも書かない。PR とマージは日報の「PR」の欄に Git の履歴から自動で載る
 - マージで判断待ちが解決したときは、次に実際の作業をするときのメモに `解決:` を書く（4.1）
 - 分析と引き継ぎは、日報の仕組み自身のコミット（キットの導入・更新、日報の自動更新、日報メモ、`docs/log/config.json` などの設定）を作業に数えない（12.1）
+
+### 4.4 PR に含めるのは日報メモだけ
+
+自動生成の日報（`docs/log/YYYY-MM/YYYY-MM-DD.md`、`docs/log/README.md`）は、PR に含めない。
+
+- 理由: 既定のブランチへのマージのたびに Actions が日報を作り直してコミットする。PR にも同じファイルが入っていると、先に別の PR がマージされた時点で食い違い、続けてマージしたときに必ず衝突する。`.gitattributes` の merge ドライバ（「main 側を優先」など）は、GitHub の画面でのマージには効かないので、衝突の元のファイルを PR に入れないのが確実
+- 日報メモ（`docs/log/entries/`）はファイル名が毎回違うので、PR に含めても衝突しない
+- Stop フックは、作業ブランチで自動生成の日報が変わっていたら1回だけ知らせ、既定のブランチの内容に戻すコマンドを示す（`tools/daily-log.mjs check` の終了コード 4）
+- 例外: 導入・更新の PR（`install-all.ps1 -Backfill`）は過去の日報を作って含める。続けてマージする PR ではないので扱いはそのまま
 
 ## 5. 日報の形式（自動生成）
 

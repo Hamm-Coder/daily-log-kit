@@ -1,4 +1,4 @@
-// daily-log-kit v1.10.0 — 分析と引き継ぎが日報の仕組み自身のコミットを作業に数えないこと（仕様 4.3・12.1）。実際の Git リポジトリで確かめる
+// daily-log-kit v1.10.1 — 分析と引き継ぎが日報の仕組み自身のコミットを作業に数えないこと（仕様 4.3・12.1）。実際の Git リポジトリで確かめる
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';

@@ -3,7 +3,7 @@ name: daily-log
 description: セッションの終わり、PRを作る前、または日報を書いて・過去の日報を作って・作業を分析してと頼まれたときに使う。決めたこと・作ったもの・次にやることを docs/log/entries に記録し、日報の生成と作業の分析を行う。
 ---
 
-# 日報の記録（daily-log-kit v1.10.0）
+# 日報の記録（daily-log-kit v1.10.1）
 
 仕様は `docs/specs/daily-log.md`。生成される `docs/log/YYYY-MM/YYYY-MM-DD.md` と `docs/log/README.md` は手で編集しない。人が書くのは `docs/log/entries/` のメモだけ。
 
@@ -27,8 +27,9 @@ description: セッションの終わり、PRを作る前、または日報を�
    - **詰まったこと**（任意）: 時間がかかったこと、止まったこと、分からなかったこと。次のセッションの引き継ぎに出る
    - **手応え**（任意）: ユーザーが言ったときだけ、最初の箇条書きの先頭に 1〜5 を書く（例 `- 4（だいたい進んだ）`）。Claude が推測して付けない。書かないなら見出しは空のままでよい
 3. 書かないこと: トークン・パスワード・個人情報、コミット一覧の写し（自動で入る）
-4. `node tools/daily-log.mjs generate` で日報を作り直し、出力を確認する
-5. `git add docs/log` して「docs(log): 日報メモ」でコミットする。作業ブランチと同じPRに含める
+4. 日報の見え方を確かめたいときだけ `node tools/daily-log.mjs generate` を実行する。作り直された日報（`docs/log/YYYY-MM/`、`docs/log/README.md`）はコミットしない（仕様 4.4）
+5. `git add docs/log/entries` して「docs(log): 日報メモ」でコミットする。作業ブランチと同じPRに含める。PR に入れるのは日報メモだけで、日報はマージの後に Actions が既定のブランチで作り直す
+   - 自動生成の日報を作業ブランチで変えてしまったら、`git restore --source=origin/HEAD --staged --worktree -- docs/log/README.md "docs/log/20*"` で既定のブランチの内容に戻す（含めたまま PR を続けてマージすると、日報のファイルで衝突する）
 
 ## B. 過去の日報をまとめて作る（導入直後に1回）
 

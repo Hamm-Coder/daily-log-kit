@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// daily-log-kit v1.10.0 — SessionStart フック: 日報からの引き継ぎ（次にやること・判断待ち・始める前の準備・効率化の候補）を Claude に渡す
+// daily-log-kit v1.10.1 — SessionStart フック: 日報からの引き継ぎ（次にやること・判断待ち・始める前の準備・効率化の候補）を Claude に渡す
 // 標準出力の内容が Claude の文脈に入る。止め方: 環境変数 DAILY_LOG_SKIP=1。失敗しても何も出さない（作業を止めない）
 import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';

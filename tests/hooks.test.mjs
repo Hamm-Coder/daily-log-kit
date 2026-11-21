@@ -1,4 +1,4 @@
-// daily-log-kit v1.10.0 — フックの結合テスト（一時的な Git リポジトリに導入して、実際にフックを動かす）
+// daily-log-kit v1.10.1 — フックの結合テスト（一時的な Git リポジトリに導入して、実際にフックを動かす）
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -71,6 +71,34 @@ test('SessionStart フック: 止める設定とツールがない場合は何�
   const r = runHook(dir, '.claude/hooks/daily-log-session-start.mjs');
   assert.equal(r.status, 0);
   assert.equal(r.stdout, '');
+});
+
+test('Stop フック: 作業ブランチで自動生成の日報が変わっていたら1回だけ知らせる（PR の衝突の防止。仕様 4.4）', () => {
+  const dir = makeRepo();
+  const remote = fs.mkdtempSync(path.join(os.tmpdir(), 'dlk-remote-'));
+  git(remote, 'init', '-q', '--bare', '-b', 'main');
+  git(dir, 'remote', 'add', 'origin', remote);
+  git(dir, 'push', '-q', '-u', 'origin', 'main');
+  git(dir, 'remote', 'set-head', 'origin', '--auto');
+  git(dir, 'switch', '-q', '-c', 'feat/y');
+  fs.rmSync(path.join(dir, 'b.txt'));
+  fs.writeFileSync(path.join(dir, 'c.txt'), 'c');
+  fs.mkdirSync(path.join(dir, 'docs/log/entries/2026-11-21'), { recursive: true });
+  fs.writeFileSync(path.join(dir, 'docs/log/entries/2026-11-21/0900-m.md'), '---\ndate: 2026-11-21\n---\n## 決めたこと\n- x\n');
+  git(dir, 'add', '-A');
+  git(dir, 'commit', '-q', '-m', 'feat と日報メモ');
+  assert.equal(runHook(dir, '.claude/hooks/daily-log-reminder.mjs').status, 0, '日報メモだけなら知らせない');
+  execFileSync(process.execPath, [path.join(dir, 'tools/daily-log.mjs'), 'generate'], { cwd: dir, env, stdio: 'ignore' });
+  git(dir, 'add', '-A');
+  git(dir, 'commit', '-q', '-m', 'docs(log): 日報メモ（生成した日報も含めてしまった）');
+  const r = runHook(dir, '.claude/hooks/daily-log-reminder.mjs');
+  assert.equal(r.status, 2);
+  assert.match(r.stderr, /自動生成の日報/);
+  assert.match(r.stderr, /git restore --source=origin\/HEAD/);
+  assert.equal(runHook(dir, '.claude/hooks/daily-log-reminder.mjs').status, 0, '同じ HEAD では2回目は通す');
+  git(dir, 'restore', '--source=origin/HEAD', '--staged', '--worktree', '--', 'docs/log/README.md', 'docs/log/20*');
+  git(dir, 'commit', '-q', '-m', 'docs(log): 自動生成の日報を戻す');
+  assert.equal(runHook(dir, '.claude/hooks/daily-log-reminder.mjs').status, 0, '戻せば知らせない');
 });
 
 test('Stop フック: 作業の差分があってメモがなければ1回だけ促し、2回目と stop_hook_active では通す', () => {

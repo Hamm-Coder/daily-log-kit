@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// daily-log-kit v1.10.0 — 日報の生成ツール（依存パッケージなし。Node.js 18 以上）
+// daily-log-kit v1.10.1 — 日報の生成ツール（依存パッケージなし。Node.js 18 以上）
 // 仕様: docs/specs/daily-log.md
 //
 // 使い方:
@@ -16,7 +16,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 
-export const KIT_VERSION = '1.10.0';
+export const KIT_VERSION = '1.10.1';
 
 export const DEFAULT_CONFIG = {
   tz: 'Asia/Tokyo',
@@ -388,10 +388,20 @@ export function cmdCheck(args, root = repoRoot()) {
   ].filter(Boolean).map((f) => f.replace(/\\/g, '/'));
   const work = touched.filter((f) => !f.startsWith(cfg.logDir + '/'));
   if (!ahead && !work.length) { say('変更なし'); return 0; }
-  if (touched.some((f) => f.startsWith(cfg.entriesDir + '/'))) { say('日報メモあり'); return 0; }
-  if (!work.length) { say('日報の変更のみ'); return 0; }
-  say(`日報メモがありません（${base} との差分 ${work.length}ファイル）`);
-  return 3;
+  const hasMemo = touched.some((f) => f.startsWith(cfg.entriesDir + '/'));
+  if (!hasMemo && work.length) { say(`日報メモがありません（${base} との差分 ${work.length}ファイル）`); return 3; }
+  // 自動生成の日報（docs/log/YYYY-MM/、docs/log/README.md）は既定のブランチで Actions が作る。PR に含めると、
+  // 続けてマージしたときに必ず衝突する（仕様 4.4）
+  const generated = generatedLogFiles(touched, cfg);
+  if (generated.length) { say(`自動生成の日報が作業ブランチで変わっています（${generated.length}ファイル）: ${generated.slice(0, 3).join(', ')}`); return 4; }
+  say(hasMemo ? '日報メモあり' : '日報の変更のみ');
+  return 0;
+}
+
+/** 自動生成の日報ファイル（日別の日報と一覧）。日報メモ（entries）と設定は含まない */
+export function generatedLogFiles(files, cfg = DEFAULT_CONFIG) {
+  const dir = cfg.logDir + '/';
+  return [...new Set(files)].filter((f) => f === dir + 'README.md' || new RegExp(`^${dir.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\d{4}-\\d{2}/`).test(f));
 }
 
 export function cmdTranscripts(args, root = repoRoot()) {

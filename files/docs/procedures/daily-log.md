@@ -2,7 +2,7 @@
 
 - 目的: 作業と決定を日ごとに `docs/log/` へ残し、次のセッションや次作で参照できるようにする
 - 前提: daily-log-kit が導入済み（`tools/daily-log.mjs` がある）。Node.js 18 以上
-- 仕様: `docs/specs/daily-log.md`（daily-log-kit v1.10.0）
+- 仕様: `docs/specs/daily-log.md`（daily-log-kit v1.10.1）
 - 導入・更新・再適用・取り外し: `docs/procedures/daily-log-kit.md`
 - 更新日: 2026-11-10
 
@@ -12,7 +12,7 @@
 
 1. セッションの最初に「日報からの引き継ぎ」（次にやること・判断待ち・準備・効率化の候補）が Claude に渡される。「前回の続きをして」と頼めばよい
 1. 作業の最後に「日報を書いて」と頼む。頼み忘れても Stop フックが1回促す
-2. Claude Code が `docs/log/entries/<日付>/` にメモを作り、作業ブランチにコミットする
+2. Claude Code が `docs/log/entries/<日付>/` にメモを作り、作業ブランチにコミットする（PR に入れるのはメモだけ。自動生成の日報は含めない。仕様 4.4）
 3. PRをマージすると、GitHub Actions が日報（`docs/log/YYYY-MM/YYYY-MM-DD.md`）を作り直す
 4. 日報メモだけの PR をマージしたこと、Actions の結果を確かめたことは記録しない（メモを書くとマージのたびに次のメモが要る循環になる。PR は日報に自動で載る。仕様 4.3）
 

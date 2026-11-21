@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// daily-log-kit v1.10.0 — Stop フック: 作業の差分があるのに日報メモがなければ、1回だけ記録を促す
+// daily-log-kit v1.10.1 — Stop フック: 作業の差分があるのに日報メモがなければ、1回だけ記録を促す
 // 止め方: 環境変数 DAILY_LOG_SKIP=1。判定できないとき・エラー時は何もしない（作業を止めない）
 import { execFileSync, spawnSync } from 'node:child_process';
 import fs from 'node:fs';
@@ -24,6 +24,16 @@ try {
   if (fs.existsSync(mark) && fs.readFileSync(mark, 'utf8').trim() === head) process.exit(0);
 
   const r = spawnSync(process.execPath, [tool, 'check', '--quiet'], { cwd: root, encoding: 'utf8' });
+  if (r.status === 4) {
+    fs.writeFileSync(mark, head);
+    process.stderr.write(
+      '自動生成の日報（docs/log/YYYY-MM/、docs/log/README.md）が作業ブランチで変わっています。PR に含めると、続けてマージしたときに衝突します。\n'
+      + '既定のブランチの内容に戻してコミットしてください（日報は、マージの後に Actions が作り直します）:\n'
+      + '  git restore --source=origin/HEAD --staged --worktree -- docs/log/README.md "docs/log/20*"\n'
+      + '日報メモ（docs/log/entries/）はそのまま含めてかまいません。\n',
+    );
+    process.exit(2);
+  }
   if (r.status !== 3) process.exit(0);
   fs.writeFileSync(mark, head);
   process.stderr.write(

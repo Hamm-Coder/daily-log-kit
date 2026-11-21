@@ -1,4 +1,4 @@
-# daily-log-kit v1.10.0 — 既定のブランチへの push ごとに日報を作り直してコミットする
+# daily-log-kit v1.10.1 — 既定のブランチへの push ごとに日報を作り直してコミットする
 # 既定のブランチの名前は決め打ちしない（main・master 以外の名前のリポジトリでも動く）。ほかのブランチへの push では何もしない（skipped と表示される）
 # GITHUB_TOKEN による push は別のワークフローを起動しないので、ループしない
 name: daily-log

@@ -1,4 +1,4 @@
-# daily-log-kit v1.10.1
+# daily-log-kit v1.10.2
 
 Claude Code を使うリポジトリに「日報（日毎ログ）」の仕組みを入れるキット。チャット・Claude Code・Git の作業を `docs/log/` に日ごとにまとめ、作業の傾向・改善点・判断待ちを分析する。
 
@@ -51,7 +51,7 @@ node ..\daily-log-kit\install.mjs . --dry-run     # 変更予定の確認
 node ..\daily-log-kit\install.mjs . --backfill    # 導入＋過去の日報
 node --test tools/daily-log.test.mjs tools/daily-log-analyze.test.mjs tools/daily-log-brief.test.mjs
 git add -A
-git commit -m "chore: 日報の仕組みを導入（daily-log-kit v1.10.1）"
+git commit -m "chore: 日報の仕組みを導入（daily-log-kit v1.10.2）"
 git push -u origin chore/daily-log
 gh pr create --fill
 ```
@@ -117,7 +117,7 @@ cd C:\AllGitRepository\daily-log-kit
 node --test
 git init -b main
 git add -A
-git commit -m "daily-log-kit v1.10.1"
+git commit -m "daily-log-kit v1.10.2"
 gh repo create Hamm-Coder/daily-log-kit --public --source . --push
 git tag v1.0.0
 git push origin v1.0.0
@@ -189,6 +189,7 @@ git pull
 
 | 版 | 日付 | 内容 |
 | --- | --- | --- |
+| 1.10.2 | 2026-11-21 | 既定のブランチを取り込んだ（merge）作業ブランチで、`check`（Stop フック）が取り込んだ分のファイルまで作業ブランチの変更と数えていた不具合を修正。分岐点からの差分のうち、既定のブランチと中身が同じものは除く（lifelog_with_GAS #4 の衝突を解決したときに、自動生成の日報の誤った知らせとして見つかった） |
 | 1.10.1 | 2026-11-21 | PR を続けてマージすると、自動生成の日報（`docs/log/YYYY-MM/`、`docs/log/README.md`）で衝突する不具合を修正（RPGMZ_Prototype #74 で発生）。Skill が日報を作り直して `docs/log` ごとコミットしていたため、PR に自動生成のファイルが入っていた。PR に入れるのは日報メモ（`docs/log/entries/`）だけにし（仕様 4.4）、作業ブランチで自動生成の日報が変わっていたら Stop フックが1回知らせて、既定のブランチの内容に戻すコマンドを示す（`check` の終了コード 4） |
 | 1.10.0 | 2026-11-18 | 日報メモだけの PR をマージするたびに、その記録のためにまたメモと PR を作る循環を止める。Skill・`CLAUDE.md` の日報の区間・仕様（4.3）に「日報メモを書かないとき」（日報メモだけの PR のマージの確認、Actions の結果の確認、質問への回答だけ）と「『PR #N をマージした』はメモに書かない（日報に自動で載る）」を追加。分析と引き継ぎは、日報の仕組み自身のコミット（キットの導入・更新、日報の自動更新、日報メモ、日報の設定、日報メモだけの PR のマージ）を作業・PR・記録率・繰り返しに数えない。日報メモだけの PR で入ったメモは「似た作業」「次にやることの繰り越し」に数えない。判定はダッシュボードと共通（`files/tools/daily-log-analyze.mjs` に移した） |
 | 1.9.1 | 2026-11-16 | GitHub で既定のブランチを変えた後（例: `claude/...` から main へ）、更新の PR が古いブランチ向けに作られる不具合を修正。`install-all.ps1` と `pull-all.ps1` が実行のたびに GitHub の既定のブランチを確かめ直す（手元の `origin/HEAD` は clone したときのままで、`git fetch` では変わらないため）。変わっていたら表示する。古いブランチを消した後でも、`install-all.ps1` が失敗せず、`pull-all.ps1` と `dashboard.ps1` が対象から外さない |

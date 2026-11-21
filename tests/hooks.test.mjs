@@ -1,4 +1,4 @@
-// daily-log-kit v1.10.1 — フックの結合テスト（一時的な Git リポジトリに導入して、実際にフックを動かす）
+// daily-log-kit v1.10.2 — フックの結合テスト（一時的な Git リポジトリに導入して、実際にフックを動かす）
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -99,6 +99,31 @@ test('Stop フック: 作業ブランチで自動生成の日報が変わって�
   git(dir, 'restore', '--source=origin/HEAD', '--staged', '--worktree', '--', 'docs/log/README.md', 'docs/log/20*');
   git(dir, 'commit', '-q', '-m', 'docs(log): 自動生成の日報を戻す');
   assert.equal(runHook(dir, '.claude/hooks/daily-log-reminder.mjs').status, 0, '戻せば知らせない');
+});
+
+test('Stop フック: 既定のブランチを取り込んだだけの日報は知らせない（取り込みで入った日報は既定のブランチと同じ中身）', () => {
+  const dir = makeRepo();
+  const remote = fs.mkdtempSync(path.join(os.tmpdir(), 'dlk-remote-'));
+  git(remote, 'init', '-q', '--bare', '-b', 'main');
+  git(dir, 'remote', 'add', 'origin', remote);
+  fs.rmSync(path.join(dir, 'b.txt'));
+  git(dir, 'push', '-q', '-u', 'origin', 'main');
+  git(dir, 'remote', 'set-head', 'origin', '--auto');
+  git(dir, 'switch', '-q', '-c', 'feat/z');
+  fs.writeFileSync(path.join(dir, 'c.txt'), 'c');
+  fs.mkdirSync(path.join(dir, 'docs/log/entries/2026-11-21'), { recursive: true });
+  fs.writeFileSync(path.join(dir, 'docs/log/entries/2026-11-21/0900-m.md'), '---\ndate: 2026-11-21\n---\n## 決めたこと\n- x\n');
+  git(dir, 'add', '-A');
+  git(dir, 'commit', '-q', '-m', 'feat と日報メモ');
+  // main 側で Actions が日報を作り直した（を再現）→ 作業ブランチに取り込む
+  git(dir, 'switch', '-q', 'main');
+  execFileSync(process.execPath, [path.join(dir, 'tools/daily-log.mjs'), 'generate'], { cwd: dir, env, stdio: 'ignore' });
+  git(dir, 'add', '-A');
+  git(dir, 'commit', '-q', '-m', 'docs(log): 日報を更新 [skip ci]');
+  git(dir, 'push', '-q', 'origin', 'main');
+  git(dir, 'switch', '-q', 'feat/z');
+  git(dir, 'merge', '-q', '--no-edit', 'origin/main');
+  assert.equal(runHook(dir, '.claude/hooks/daily-log-reminder.mjs').status, 0);
 });
 
 test('Stop フック: 作業の差分があってメモがなければ1回だけ促し、2回目と stop_hook_active では通す', () => {

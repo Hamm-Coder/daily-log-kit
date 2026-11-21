@@ -262,7 +262,7 @@ function spark(r, { w = 520, h = 96, axis = true } = {}) {
 // 一覧表（改善点は「注意」だけ。大きなコミットは詳細だけに出す）
 const attnFindings = (r) => r.findings.filter((x) => x.level === '注意' && x.id !== 'large-commits');
 document.getElementById('overview').innerHTML =
-  `<thead><tr><th>リポジトリ</th><th>作成<br><span class="sub">最初のコミット</span></th><th>最後の作業</th><th>最後の作業の内容</th><th class="r">コミット<br><span class="sub">直近24週／全期間</span></th><th class="r">次にやること</th><th class="r">判断待ち</th><th class="r">日報メモ</th><th>改善点（注意）</th><th>直近24週</th></tr></thead><tbody>` +
+  `<thead><tr><th>リポジトリ</th><th>作成<br><span class="sub">最初のコミット</span></th><th>最後の作業</th><th>最後の作業の内容</th><th class="r">コミット<br><span class="sub">直近24週／全期間</span></th><th class="r">次にやること</th><th class="r">判断待ち</th><th class="r">日報メモ</th><th>改善点（注意）</th></tr></thead><tbody>` +
   repos.map((r) => {
     const f = attnFindings(r);
     return `<tr>
@@ -274,8 +274,7 @@ document.getElementById('overview').innerHTML =
       <td class="r num ${r.next.items.length ? '' : 'zero'}">${r.next.items.length}</td>
       <td class="r num ${r.pending.length ? '' : 'zero'}">${r.pending.length}</td>
       <td class="r num ${r.memos ? '' : 'zero'}">${r.memos}</td>
-      <td>${f.length ? `<div class="chips">${f.map((x) => `<span class="chip warn">${esc(x.title)}</span>`).join('')}</div>` : '<span class="zero">なし</span>'}</td>
-      <td style="width:190px">${spark(r, { w: 190, h: 44, axis: false })}</td></tr>`;
+      <td>${f.length ? `<div class="chips">${f.map((x) => `<span class="chip warn">${esc(x.title)}</span>`).join('')}</div>` : '<span class="zero">なし</span>'}</td></tr>`;
   }).join('') + '</tbody>';
 
 // 詳細カード

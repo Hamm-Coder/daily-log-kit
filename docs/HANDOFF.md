@@ -86,6 +86,7 @@ Hamm-Coder/daily-log-kit（公開）          ← このリポジトリ。キッ
 | 11/21 | RPGMZ_Prototype #74 で日報のファイル（`docs/log/2026-11/2026-11-21.md`、`docs/log/README.md`）が衝突（#73 のマージで main の日報が作り直されたため。RPGMZ のセッションが解決済み）。原因は、配っている Skill が `generate` の後に `git add docs/log` で自動生成の日報まで PR に入れていたこと。`.gitattributes` の merge ドライバは GitHub の画面でのマージに効かないので採らない |
 | 11/21 | v1.10.1: PR に入れるのは日報メモだけ（仕様 4.4、Skill、`CLAUDE.md` の区間、手順書）。作業ブランチで自動生成の日報が変わっていたら Stop フックが知らせ、`git restore --source=origin/HEAD --staged --worktree -- docs/log/README.md "docs/log/20*"` を示す。A1111 の写しで、変更と追加の両方が元に戻ることを確認。フックの結合テストを追加 |
 | 11/21 | lifelog_with_GAS #4（v1.10.1 の更新）が `CLAUDE.md` で衝突。利用者が足した「GAS」の節がキットの管理区間（`daily-log:start`〜`end`）の内側にあり、更新が区間を書き換えたため。main を取り込み、GAS の節を区間の外（前）へ移して解決し push（キットのテスト47件、GAS のテスト成功）。v1.10.2: 解決後の `check` が、main を取り込んだ分の日報やファイルを作業ブランチの変更と数える誤りを修正 |
+| 11/21 | 利用者の依頼で、ダッシュボードの一覧の表から「直近24週」の小さなグラフの列を削除（詳細の週ごとのグラフと、一覧の上の過去30日のグラフは残す）。版は上げない |
 
 ## 4. 確認済みの範囲
 

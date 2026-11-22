@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// daily-log-kit v1.10.3 — 日報の生成ツール（依存パッケージなし。Node.js 18 以上）
+// daily-log-kit v1.10.4 — 日報の生成ツール（依存パッケージなし。Node.js 18 以上）
 // 仕様: docs/specs/daily-log.md
 //
 // 使い方:
@@ -16,7 +16,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 
-export const KIT_VERSION = '1.10.3';
+export const KIT_VERSION = '1.10.4';
 
 export const DEFAULT_CONFIG = {
   tz: 'Asia/Tokyo',
@@ -397,8 +397,28 @@ export function cmdCheck(args, root = repoRoot()) {
   // 続けてマージしたときに必ず衝突する（仕様 4.4）
   const generated = generatedLogFiles(touched, cfg);
   if (generated.length) { say(`自動生成の日報が作業ブランチで変わっています（${generated.length}ファイル）: ${generated.slice(0, 3).join(', ')}`); return 4; }
+  // 手で作られた日報メモ（date の見出しがない、またはフォルダの日付と違う）。new-entry を使わないと、
+  // クラウドの環境（UTC）では日本時間の朝のメモが前の日のフォルダに入る（v1.10.4、仕様 4.5）
+  const odd = badMemoFiles(root, touched, cfg);
+  if (odd.length) { say(`日付の見出しがない・フォルダと日付が合わない日報メモがあります（${odd.length}件）: ${odd.slice(0, 3).join(', ')}`); return 5; }
   say(hasMemo ? '日報メモあり' : '日報の変更のみ');
   return 0;
+}
+
+/** 作業ブランチで足した・変えた日報メモのうち、date の見出しがないものと、フォルダの日付と date が違うもの */
+export function badMemoFiles(root, files, cfg = DEFAULT_CONFIG) {
+  const dir = cfg.entriesDir + '/';
+  const out = [];
+  for (const f of [...new Set(files)]) {
+    if (!f.startsWith(dir) || !f.endsWith('.md')) continue;
+    const m = /^(\d{4}-\d{2}-\d{2})\//.exec(f.slice(dir.length));
+    if (!m) continue;
+    let text;
+    try { text = fs.readFileSync(path.join(root, f), 'utf8'); } catch { continue; } // 消したファイル
+    const date = parseEntry(text).meta.date;
+    if (!date || date !== m[1]) out.push(f);
+  }
+  return out;
 }
 
 /** 自動生成の日報ファイル（日別の日報と一覧）。日報メモ（entries）と設定は含まない */

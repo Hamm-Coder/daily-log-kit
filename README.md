@@ -1,4 +1,4 @@
-# daily-log-kit v1.10.3
+# daily-log-kit v1.10.4
 
 Claude Code を使うリポジトリに「日報（日毎ログ）」の仕組みを入れるキット。チャット・Claude Code・Git の作業を `docs/log/` に日ごとにまとめ、作業の傾向・改善点・判断待ちを分析する。
 
@@ -51,7 +51,7 @@ node ..\daily-log-kit\install.mjs . --dry-run     # 変更予定の確認
 node ..\daily-log-kit\install.mjs . --backfill    # 導入＋過去の日報
 node --test tools/daily-log.test.mjs tools/daily-log-analyze.test.mjs tools/daily-log-brief.test.mjs
 git add -A
-git commit -m "chore: 日報の仕組みを導入（daily-log-kit v1.10.3）"
+git commit -m "chore: 日報の仕組みを導入（daily-log-kit v1.10.4）"
 git push -u origin chore/daily-log
 gh pr create --fill
 ```
@@ -117,7 +117,7 @@ cd C:\AllGitRepository\daily-log-kit
 node --test
 git init -b main
 git add -A
-git commit -m "daily-log-kit v1.10.3"
+git commit -m "daily-log-kit v1.10.4"
 gh repo create Hamm-Coder/daily-log-kit --public --source . --push
 git tag v1.0.0
 git push origin v1.0.0
@@ -189,6 +189,7 @@ git pull
 
 | 版 | 日付 | 内容 |
 | --- | --- | --- |
+| 1.10.4 | 2026-11-23 | ダッシュボードの「日報メモの書き忘れ」の誤った表示を直す。① PR のマージだけの日を記録率に数えない（GoogleFlowCharacterMakingTools）② 日報メモの日付のずれを防ぐ（MangaCreation_Sys_withGAS で、`new-entry` を使わず手で作ったメモ7件が、UTC の日付で前の日のフォルダに入っていた）: 引き継ぎに「今日の作業日」を毎回出す、Skill に `new-entry` を必須と明記、Stop フックが `date:` の見出しがない・フォルダと日付が違うメモを1回知らせる（`check` の終了コード 5）。仕様 4.5 を追加 |
 | 1.10.3 | 2026-11-22 | PR を続けてマージすると、`daily-log` Actions が失敗する不具合を修正（RPGMZ_Prototype で #81・#85・#86・#87 を1分以内にマージしたときに発生）。各回は起動したときのコミットから日報を作るため、先に別の回が日報を push していると `git pull --rebase` が自動生成の日報どうしで衝突し、やり直しても衝突の状態のまま失敗していた。push の前に最新の既定のブランチに合わせて（`fetch` と `reset --hard`）日報を作り直すようにした。古いワークフローで失敗し、新しいもので通る検査を追加 |
 | 1.10.2 | 2026-11-21 | 既定のブランチを取り込んだ（merge）作業ブランチで、`check`（Stop フック）が取り込んだ分のファイルまで作業ブランチの変更と数えていた不具合を修正。分岐点からの差分のうち、既定のブランチと中身が同じものは除く（lifelog_with_GAS #4 の衝突を解決したときに、自動生成の日報の誤った知らせとして見つかった） |
 | 1.10.1 | 2026-11-21 | PR を続けてマージすると、自動生成の日報（`docs/log/YYYY-MM/`、`docs/log/README.md`）で衝突する不具合を修正（RPGMZ_Prototype #74 で発生）。Skill が日報を作り直して `docs/log` ごとコミットしていたため、PR に自動生成のファイルが入っていた。PR に入れるのは日報メモ（`docs/log/entries/`）だけにし（仕様 4.4）、作業ブランチで自動生成の日報が変わっていたら Stop フックが1回知らせて、既定のブランチの内容に戻すコマンドを示す（`check` の終了コード 4） |

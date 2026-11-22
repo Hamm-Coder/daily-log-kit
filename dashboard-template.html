@@ -91,6 +91,7 @@ td.r,th.r{text-align:right}
 .legend .n{color:var(--muted);font-family:var(--font-mono)}
 .daily-tip{position:absolute;pointer-events:none;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:12px;box-shadow:0 4px 14px rgba(0,0,0,.12);display:none;min-width:160px;z-index:2}
 .daily-tip .row{display:flex;align-items:center;gap:6px} .daily-tip .row b{margin-left:auto;font-family:var(--font-mono);font-weight:500}
+#overview tfoot th,#overview tfoot td{background:var(--soft);border-bottom:none;font-weight:700;color:var(--ink);font-size:13px;letter-spacing:0}
 .spark{display:block;width:100%;max-width:100%;height:auto}
 .spark text{fill:var(--muted);font-family:var(--font-mono);font-size:10px}
 .spark .bar{fill:var(--accent);opacity:.6} .spark .bar.now{opacity:1}
@@ -218,7 +219,7 @@ function spark(r, { w = 520, h = 96, axis = true } = {}) {
   }
   series.forEach((x, i) => { x.color = x.other ? 'var(--series-other)' : `var(--series-${i + 1})`; });
   const idle = DATA.length - active.length;
-  document.getElementById('daily-note').textContent = `${dayKeys[0]}〜${dayKeys[DAYS - 1]}。キット・日報の自動コミットを除く（キット本体は除かない）。棒に重ねると内訳が出ます` + (idle ? `。この期間にコミットがないリポジトリ（${idle}）は凡例に出しません` : '');
+  document.getElementById('daily-note').textContent = `${dayKeys[0]}〜${dayKeys[DAYS - 1]}。全リポジトリの合計 ${sum(DATA.map((r) => sum(r.daily)))} 件。キット・日報の自動コミットを除く（キット本体は除かない）。棒に重ねると内訳が出ます` + (idle ? `。この期間にコミットがないリポジトリ（${idle}）は凡例に出しません` : '');
   const legend = series.length ? `<ul class="legend" aria-label="凡例">${series.map((x) => `<li><span class="sw" style="background:${x.color}"></span>${esc(x.name)}<span class="n">${x.total}</span></li>`).join('')}</ul>` : '<div class="empty">この期間のコミットはありません</div>';
   const totals = dayKeys.map((_, i) => sum(series.map((x) => x.daily[i])));
   const rawMax = Math.max(1, ...totals);
@@ -275,7 +276,8 @@ document.getElementById('overview').innerHTML =
       <td class="r num ${r.pending.length ? '' : 'zero'}">${r.pending.length}</td>
       <td class="r num ${r.memos ? '' : 'zero'}">${r.memos}</td>
       <td>${f.length ? `<div class="chips">${f.map((x) => `<span class="chip warn">${esc(x.title)}</span>`).join('')}</div>` : '<span class="zero">なし</span>'}</td></tr>`;
-  }).join('') + '</tbody>';
+  }).join('') + '</tbody>' +
+  `<tfoot><tr class="total"><th scope="row" colspan="4">全リポジトリ合計（${repos.length}）</th><td class="r num">${repos.reduce((s, r) => s + r.commits24, 0)}<span class="sub"> ／ ${repos.reduce((s, r) => s + r.commitsAll, 0)}</span></td><td colspan="4"></td></tr></tfoot>`;
 
 // 詳細カード
 const list = (items, fmt = (x) => md(x)) => `<ul>${items.map((x) => `<li>${fmt(x)}</li>`).join('')}</ul>`;

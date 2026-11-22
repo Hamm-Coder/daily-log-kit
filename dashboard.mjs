@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// daily-log-kit v1.10.2 — 複数リポジトリのダッシュボード（HTML 1枚）を作る（各リポジトリには配らない）
+// daily-log-kit v1.10.3 — 複数リポジトリのダッシュボード（HTML 1枚）を作る（各リポジトリには配らない）
 //   node dashboard.mjs [--out dashboard.html] [--today YYYY-MM-DD] [--json] <リポジトリのフォルダ...>
 // 普段は dashboard.ps1 から呼ぶ。対象の選び方（日報の仕組みを入れたリポジトリとキット本体）は dashboard.ps1 が行う
 // 作った HTML には非公開のリポジトリの内容が入るので、コミットしない（.gitignore で除外）

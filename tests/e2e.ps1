@@ -1,5 +1,5 @@
 ﻿<#
-daily-log-kit v1.10.2 — 一括導入（install-all.ps1）、反映（publish-kit.ps1）、一括の取り込み（pull-all.ps1）、ダッシュボード（dashboard.ps1）の通しテスト
+daily-log-kit v1.10.3 — 一括導入（install-all.ps1）、反映（publish-kit.ps1）、一括の取り込み（pull-all.ps1）、ダッシュボード（dashboard.ps1）の通しテスト
 
 ・GitHub の代わりに一時フォルダの bare リポジトリを使う。本物の GitHub やあなたのリポジトリには触れない
 ・CI（.github/workflows/kit-ci.yml）が Windows の Windows PowerShell 5.1 と PowerShell 7 で実行する

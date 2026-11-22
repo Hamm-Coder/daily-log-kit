@@ -1,5 +1,5 @@
 ﻿<#
-daily-log-kit v1.10.2 — 新しい版のキット（zip）を GitHub の daily-log-kit リポジトリへ反映する
+daily-log-kit v1.10.3 — 新しい版のキット（zip）を GitHub の daily-log-kit リポジトリへ反映する
 
 ■ 置き場所と実行場所
   このファイルと publish-kit.bat は、キットのフォルダ（例 C:\AllGitRepository\daily-log-kit）の直下に置いて実行する。

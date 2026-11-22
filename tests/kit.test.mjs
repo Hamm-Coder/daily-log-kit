@@ -1,4 +1,4 @@
-// daily-log-kit v1.10.2 — キット自体の決まりの検査（node --test で他のテストと一緒に動く）
+// daily-log-kit v1.10.3 — キット自体の決まりの検査（node --test で他のテストと一緒に動く）
 // 版番号の書き換え漏れ、変更履歴の書き忘れ、文字コード、配布ファイルの印を確認する
 import test from 'node:test';
 import assert from 'node:assert/strict';

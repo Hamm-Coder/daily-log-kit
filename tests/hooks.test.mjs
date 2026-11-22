@@ -1,4 +1,4 @@
-// daily-log-kit v1.10.3 — フックの結合テスト（一時的な Git リポジトリに導入して、実際にフックを動かす）
+// daily-log-kit v1.10.4 — フックの結合テスト（一時的な Git リポジトリに導入して、実際にフックを動かす）
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -179,4 +179,48 @@ test('daily-log.yml: 先に別の回が日報を push していても、最新�
   assert.doesNotMatch(r.stdout + r.stderr, /CONFLICT|unmerged/);
   // GitHub 役の main は、回 A の日報の上に積まれている（巻き戻していない）
   assert.match(git(remote, 'log', '--format=%s', 'main'), /Merge pull request #81/);
+});
+
+test('Stop フック: 手で作った日報メモ（date の見出しがない・フォルダと日付が違う）を1回知らせる（v1.10.4、仕様 4.5）', () => {
+  const dir = makeRepo();
+  fs.rmSync(path.join(dir, 'b.txt'));
+  const remote = fs.mkdtempSync(path.join(os.tmpdir(), 'dlk-remote-'));
+  git(remote, 'init', '-q', '--bare', '-b', 'main');
+  git(dir, 'remote', 'add', 'origin', remote);
+  git(dir, 'push', '-q', '-u', 'origin', 'main');
+  git(dir, 'remote', 'set-head', 'origin', '--auto');
+  git(dir, 'switch', '-q', '-c', 'feat/w');
+  fs.writeFileSync(path.join(dir, 'c.txt'), 'c');
+  // MangaCreation で起きた形: 前のメモを写して、UTC の日付のフォルダに date なしで置いた
+  fs.mkdirSync(path.join(dir, 'docs/log/entries/2026-11-22'), { recursive: true });
+  fs.writeFileSync(path.join(dir, 'docs/log/entries/2026-11-22/0646-x.md'), '---\ntitle: 手で作ったメモ\n---\n## 決めたこと\n- x\n');
+  git(dir, 'add', '-A');
+  git(dir, 'commit', '-q', '-m', 'feat と手書きのメモ');
+  const r = runHook(dir, '.claude/hooks/daily-log-reminder.mjs');
+  assert.equal(r.status, 2);
+  assert.match(r.stderr, /new-entry/);
+  assert.equal(runHook(dir, '.claude/hooks/daily-log-reminder.mjs').status, 0, '同じ HEAD では2回目は通す');
+  // date があってもフォルダと違えば知らせる
+  fs.writeFileSync(path.join(dir, 'docs/log/entries/2026-11-22/0646-x.md'), '---\ndate: 2026-11-23\ntitle: x\n---\n## 決めたこと\n- x\n');
+  git(dir, 'commit', '-qam', 'date を足した（フォルダと違う）');
+  assert.equal(runHook(dir, '.claude/hooks/daily-log-reminder.mjs').status, 2);
+  // new-entry で作ったメモなら知らせない
+  fs.rmSync(path.join(dir, 'docs/log/entries/2026-11-22'), { recursive: true });
+  execFileSync(process.execPath, [path.join(dir, 'tools/daily-log.mjs'), 'new-entry', '--title', 'x'], { cwd: dir, env, stdio: 'ignore' });
+  git(dir, 'add', '-A');
+  git(dir, 'commit', '-qm', 'new-entry で作り直した');
+  assert.equal(runHook(dir, '.claude/hooks/daily-log-reminder.mjs').status, 0);
+});
+
+test('SessionStart フック: 今日の作業日を毎回出す（メモがないリポジトリでも）', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'dlk-today-'));
+  git(dir, 'init', '-q', '-b', 'main');
+  fs.writeFileSync(path.join(dir, 'a.txt'), 'a');
+  git(dir, 'add', '.');
+  git(dir, 'commit', '-q', '-m', 'init');
+  install(dir, {});
+  const r = runHook(dir, '.claude/hooks/daily-log-session-start.mjs');
+  assert.equal(r.status, 0);
+  assert.match(r.stdout, /今日の作業日: \d{4}-\d{2}-\d{2}（Asia\/Tokyo・朝4時区切り）/);
+  assert.match(r.stdout, /new-entry/);
 });

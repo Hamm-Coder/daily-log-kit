@@ -2,7 +2,7 @@
 
 - 作成日: 2026-11-13（最終更新: 2026-11-23）
 - 対象: このキットの開発を Claude Code（Web版・PC版）で続けるための資料
-- キットの版: `install.mjs` の `KIT_VERSION` を見る（最終更新の時点は v1.10.3）
+- キットの版: `install.mjs` の `KIT_VERSION` を見る（最終更新の時点は v1.10.4）
 
 ## 1. このキットは何か
 
@@ -94,6 +94,10 @@ Hamm-Coder/daily-log-kit（公開）          ← このリポジトリ。キッ
 | 11/22 | RPGMZ_Prototype で #81・#85・#86・#87 を1分以内にマージし、#85 の `daily-log` Actions が失敗（`CONFLICT … docs/log/README.md` の後、やり直しも「unmerged files」で失敗）。`concurrency` は効いていて同時には動いていない。原因は、各回が起動したときのコミットから日報を作り、先に終わった回（#81）の日報の上に `git pull --rebase` で載せようとして、自動生成の日報どうしが衝突したこと。#86 の「cancelled」は、待っていた回が新しい回に置き換わっただけで問題ない |
 | 11/22 | v1.10.3: `daily-log.yml` の push の手順を「最新の main に合わせる（fetch と reset --hard）→ 作り直す → push」を最大5回に変えた（rebase しない）。重複していた「日報を生成」の手順は外した。同じ形を再現する検査を追加し、古いワークフローでは同じエラーで失敗し、新しいものでは通ることを確認 |
 | 11/23 | 利用者が v1.10.3 を8リポジトリに配布してマージ（MangaCreation_Sys_withGAS は PC の `git fetch` が「cannot lock ref」で一度止まり、取り込み直して再実行）。8つとも既定のブランチが v1.10.3 で、`daily-log.yml` は rebase をやめて最新の main に合わせる手順。マージ後の自動更新コミットは新しい手順で成功。残っていた `chore/daily-log-v…` ブランチもなくなった |
+| 11/23 | 利用者が PC でダッシュボードを確認（v1.10.3 まで反映、問題なし）。#33 は一度マージされていなかったので、利用者がマージした |
+| 11/23 | MangaCreation_Sys_withGAS のダッシュボードに「日報メモの書き忘れ（4日のうち3日、75%）」。調べると書き忘れではなく、メモの日付のずれ: 11/23 朝（日本時間 6:46〜7:46）の作業のメモ3件が `entries/2026-11-22/` に置かれていた。同じずれが 11/22 朝の4件にもある（合わせて7件、どれも日本時間 4〜9時に書いたもの＝ UTC ではまだ前日）。このリポジトリのメモは30件中19件が `date:` の見出しなしで、`new-entry` を使わず手で作られていた。Claude が UTC の日付でフォルダを決めたと考えられる。ほかの7リポジトリのメモはすべて `new-entry` で作られていて、ずれなし |
+| 11/23 | GoogleFlowCharacterMakingTools の「書き忘れ（67%）」も調査: 11/21 は P2-1 の PR #7 のマージだけの日（作業は 11/16 でメモあり）で、マージだけの日を作業日に数えていたため |
+| 11/23 | v1.10.4: 記録率はマージ以外のコミットがある日で数える。引き継ぎに「今日の作業日」を毎回出す（メモがないリポジトリでも）。Skill に `new-entry` 必須と明記。`check` が `date:` の見出しがない・フォルダと日付が違うメモを見つけたら終了コード 5、Stop フックが1回知らせる。仕様 4.5。検査3件を追加。実データで GoogleFlow は 100% になった |
 
 ## 4. 確認済みの範囲
 
@@ -142,12 +146,13 @@ Hamm-Coder/daily-log-kit（公開）          ← このリポジトリ。キッ
 
 状態（11/23）: 8リポジトリとも v1.10.3（続けてマージしたときの Actions の衝突も修正済み）。日報メモの循環（v1.10.0）、自動生成の日報の衝突（v1.10.1）、`CLAUDE.md` の管理区間の衝突（lifelog_with_GAS）を防ぐ仕組みがそろった。ダッシュボードは作成日・過去30日のグラフ・全リポジトリの合計まで利用者が確認済み。SPEC は K・L1・M1〜M5・M8 が完了
 
-1. SPEC L3: GoogleFlowCharacterMakingTools 用の依頼文を利用者に渡した（claude.ai のプロジェクト「GoogleFlow専用のキャラクター一貫性を維持したプロンプト・リソース作成」、期間はプロジェクトの開始〜11/15）。zip が届いたら、日報メモ（`docs/log/entries/`）だけを入れて PR にする。ほかの6リポジトリは、claude.ai にプロジェクトがあるかを利用者に確かめてから（automaticPromptsMaker と Unity_CharacterTest を優先）
-2. SPEC L2: 昔のリポジトリを `C:\AllGitRepository` に置き、`install-all.ps1 -Repos <名前> -Backfill -Apply -CreatePR` で導入する（`C:\AllGitRepository` の外には適用しない決まり）。対象は利用者が決める
-3. 11/23（月）以降: RPGMZ_Prototype の週1回の Issue が、同じ件名で1件だけ開いているかを、気づいたときに見る（同じ週の更新は GitHub 上では未確認）
-4. 次に RPGMZ_Prototype のテストプレイをするとき: PC の Claude Code アプリで引き継ぎ（SessionStart フック）と準備の手順が渡されるか、利用者に確かめてもらう
-5. マージ済みの `chore/daily-log-v…` ブランチ（lifelog_with_GAS の `chore/daily-log-v1.10.0` など）は、利用者が消すか「Automatically delete head branches」を有効にする（Web 版のセッションからは他のブランチを消さない）
-6. 1か月運用した後（12月中旬）: SPEC M7（繰り返しの判別のしきい値）と Q2（分析のしきい値）を実データで見直す。RPGMZ_prototype の「世界設定」の「設定」を準備作業と取り違える誤検出もここで直す
+1. v1.10.4 を配布する。MangaCreation_Sys_withGAS のずれた7件のメモを正しいフォルダへ移す PR をマージする（11/23 の経緯）
+2. SPEC L3: GoogleFlowCharacterMakingTools 用の依頼文を利用者に渡した（claude.ai のプロジェクト「GoogleFlow専用のキャラクター一貫性を維持したプロンプト・リソース作成」、期間はプロジェクトの開始〜11/15）。zip が届いたら、日報メモ（`docs/log/entries/`）だけを入れて PR にする。ほかの6リポジトリは、claude.ai にプロジェクトがあるかを利用者に確かめてから（automaticPromptsMaker と Unity_CharacterTest を優先）
+3. SPEC L2: 昔のリポジトリを `C:\AllGitRepository` に置き、`install-all.ps1 -Repos <名前> -Backfill -Apply -CreatePR` で導入する（`C:\AllGitRepository` の外には適用しない決まり）。対象は利用者が決める
+4. 11/23（月）以降: RPGMZ_Prototype の週1回の Issue が、同じ件名で1件だけ開いているかを、気づいたときに見る（同じ週の更新は GitHub 上では未確認）
+5. 次に RPGMZ_Prototype のテストプレイをするとき: PC の Claude Code アプリで引き継ぎ（SessionStart フック）と準備の手順が渡されるか、利用者に確かめてもらう
+6. マージ済みの `chore/daily-log-v…` ブランチ（lifelog_with_GAS の `chore/daily-log-v1.10.0` など）は、利用者が消すか「Automatically delete head branches」を有効にする（Web 版のセッションからは他のブランチを消さない）
+7. 1か月運用した後（12月中旬）: SPEC M7（繰り返しの判別のしきい値）と Q2（分析のしきい値）を実データで見直す。RPGMZ_prototype の「世界設定」の「設定」を準備作業と取り違える誤検出もここで直す
 
 ### 作業上の注意（このセッションで分かったこと）
 

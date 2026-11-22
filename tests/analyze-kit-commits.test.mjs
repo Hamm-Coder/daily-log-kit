@@ -1,4 +1,4 @@
-// daily-log-kit v1.10.3 — 分析と引き継ぎが日報の仕組み自身のコミットを作業に数えないこと（仕様 4.3・12.1）。実際の Git リポジトリで確かめる
+// daily-log-kit v1.10.4 — 分析と引き継ぎが日報の仕組み自身のコミットを作業に数えないこと（仕様 4.3・12.1）。実際の Git リポジトリで確かめる
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -60,6 +60,26 @@ test('日報メモだけの PR のマージとキットの更新は、作業・P
     // 引き継ぎの「効率化の候補」にも出さない
     const brief = buildBrief(dir, { today: '2026-11-18', env: 'web', state: {} });
     assert.deepEqual(brief.efficiency, [], `効率化の候補: ${brief.efficiency.join(' / ')}`);
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('記録率: PR のマージだけの日は数えない（v1.10.4。GoogleFlowCharacterMakingTools で 11/16 の作業を 11/21 にマージした形）', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'dlk-merge-day-'));
+  g(dir, null, 'init', '-q', '-b', 'main');
+  write(dir, 'tools/daily-log.mjs', '// v1\n'); commit(dir, '2026-11-15', 'chore: 日報の仕組みを導入');
+  write(dir, 'app.js', 'v1\n'); write(dir, 'docs/log/entries/2026-11-15/0700-a.md', memo('2026-11-15', 'a', ['app.js']).replace('date: 2026-11-15', 'date: 2026-11-15'));
+  commit(dir, '2026-11-15', 'feat: a');
+  g(dir, null, 'switch', '-q', '-c', 'p21');
+  write(dir, 'app.js', 'v2\n'); write(dir, 'docs/log/entries/2026-11-16/0700-b.md', memo('2026-11-16', 'b', ['app.js']));
+  commit(dir, '2026-11-16', 'feat: b');
+  g(dir, null, 'switch', '-q', 'main');
+  g(dir, '2026-11-21', 'merge', '-q', '--no-ff', '-m', 'Merge pull request #7 from owner/p21', 'p21');
+  try {
+    const m = analyzeRepo(dir, { today: '2026-11-22', now: '2026-11-22T03:00:00Z' }).metrics;
+    assert.equal(m.memoCoverage.commitDays, 2, '11/15 と 11/16 だけ（11/21 はマージだけ）');
+    assert.equal(m.memoCoverage.withMemo, 2);
   } finally {
     fs.rmSync(dir, { recursive: true, force: true });
   }

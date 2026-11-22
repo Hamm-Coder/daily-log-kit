@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// daily-log-kit v1.10.3 — 日報と Git 履歴の分析（作業の傾向、改善点、判断待ちの一覧）
+// daily-log-kit v1.10.4 — 日報と Git 履歴の分析（作業の傾向、改善点、判断待ちの一覧）
 // 仕様: docs/specs/daily-log.md の「12. 分析」
 //
 // 使い方:
@@ -760,6 +760,8 @@ export function analyzeRepo(root, opts = {}) {
   for (const m of memos) { const v = dayCounts.get(m.day) || { commits: 0, memos: 0 }; v.memos++; dayCounts.set(m.day, v); }
   const days = [...dayCounts.keys()].sort();
   const commitDays = days.filter((d) => dayCounts.get(d).commits > 0);
+  // 記録率は、マージ以外のコミットがある日で数える（PR のマージだけの日は作業ではなく、メモを書かない日。仕様 4.3、v1.10.4）
+  const workDays = new Set(nonMerge.map((c) => dayKey(c.date, cfg)));
   const memoDays = new Set(memos.map((m) => m.day));
 
   // 記録率は「日報の仕組みを入れた日」以降で数える（後から補った過去のメモで起点が早まらないように）
@@ -767,7 +769,7 @@ export function analyzeRepo(root, opts = {}) {
   if (memos.length) {
     const installed = (tryGit(['log', '--diff-filter=A', '--format=%aI', '--', 'tools/daily-log.mjs'], root) || '').split('\n').filter(Boolean).at(-1);
     const since = installed ? dayKey(installed, cfg) : [...memoDays].sort()[0];
-    const target = commitDays.filter((d) => d >= since);
+    const target = commitDays.filter((d) => d >= since && workDays.has(d));
     const withMemo = target.filter((d) => memoDays.has(d)).length;
     memoCoverage = { since, commitDays: target.length, withMemo, ratio: target.length ? withMemo / target.length : 1 };
   }

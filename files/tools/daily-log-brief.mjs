@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// daily-log-kit v1.10.3 — セッション開始時の引き継ぎ（次にやること・判断待ち・始める前の準備・効率化の候補）
+// daily-log-kit v1.10.4 — セッション開始時の引き継ぎ（次にやること・判断待ち・始める前の準備・効率化の候補）
 // 仕様: docs/specs/daily-log.md の「13. セッション開始時の引き継ぎ」
 //
 // 使い方:
@@ -94,9 +94,12 @@ export function renderBrief(b) {
   const lines = [];
   const blockers = b.blockers || [];
   const has = b.next.length || b.pending.length || b.prep.length || b.efficiency.length || blockers.length;
-  if (!has) return '';
+  // 今日の作業日は毎回出す。クラウドの環境の時計は UTC なので、日本時間の朝（4〜9時）は日付を1日前と取り違えやすい（v1.10.4）
+  const todayLine = b.today ? `今日の作業日: ${b.today}（${b.tz || 'Asia/Tokyo'}・朝${b.dayStartHour ?? 4}時区切り）。日報メモは \`node tools/daily-log.mjs new-entry\` で作る（手でファイルを作らない。日付とフォルダはこのツールが決める）` : '';
+  if (!has) return todayLine ? ['## 日報からの引き継ぎ（daily-log）', '', todayLine, ''].join('\n') : '';
   lines.push('## 日報からの引き継ぎ（daily-log）', '');
   lines.push('この情報は、ユーザーの依頼に関係するときに使う。最初の返答で全部を繰り返さない。');
+  if (todayLine) lines.push(todayLine);
   if (b.latest) lines.push(`前回のメモ: ${b.latest.day}${b.latest.time ? ' ' + b.latest.time : ''}「${b.latest.title || '（題名なし）'}」${b.latest.source ? `（${b.latest.source}）` : ''} / この環境: ${b.env === 'web' ? 'Web版' : 'PC'}`);
   if (b.next.length) {
     lines.push('', '### 次にやること');
@@ -189,6 +192,7 @@ export function buildBrief(root, opts = {}) {
     ...rep.fixHotspots.slice(0, 2).map((h) => `修正の集中: ${h.file} を直近${a.hotspotDays}日で${h.fixes}回修正 → テストか検査を追加する`),
   ];
   return {
+    today, tz: cfg.tz, dayStartHour: cfg.dayStartHour,
     env, latest: latest ? { day: latest.day, time: latest.meta.time, title: latest.meta.title, source: latest.meta.source } : null,
     next, blockers: (latest?.sections.blockers || []).slice(0, 5),
     pending: pendingItems(memos, today, a.pendingWindowDays).slice(0, 5), prep, efficiency,

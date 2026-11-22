@@ -1,4 +1,4 @@
-# daily-log-kit v1.10.3 — 週に1回、日報の分析（tools/daily-log-analyze.mjs）を Issue にする
+# daily-log-kit v1.10.4 — 週に1回、日報の分析（tools/daily-log-analyze.mjs）を Issue にする
 # ・既定は無効。docs/log/config.json に "weeklyIssue": true を書くと有効になる（無効のときは数秒で終わる）
 # ・同じ週の Issue があれば本文を更新し、前の週までの分析の Issue は閉じる（開いているのは常に最新の1件）
 # ・Actions の画面の「Run workflow」で手動で動かすと、設定にかかわらず作る（試すとき用）

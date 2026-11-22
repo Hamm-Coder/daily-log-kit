@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// daily-log-kit v1.10.3 — Stop フック: 作業の差分があるのに日報メモがなければ、1回だけ記録を促す
+// daily-log-kit v1.10.4 — Stop フック: 作業の差分があるのに日報メモがなければ、1回だけ記録を促す
 // 止め方: 環境変数 DAILY_LOG_SKIP=1。判定できないとき・エラー時は何もしない（作業を止めない）
 import { execFileSync, spawnSync } from 'node:child_process';
 import fs from 'node:fs';
@@ -31,6 +31,16 @@ try {
       + '既定のブランチの内容に戻してコミットしてください（日報は、マージの後に Actions が作り直します）:\n'
       + '  git restore --source=origin/HEAD --staged --worktree -- docs/log/README.md "docs/log/20*"\n'
       + '日報メモ（docs/log/entries/）はそのまま含めてかまいません。\n',
+    );
+    process.exit(2);
+  }
+  if (r.status === 5) {
+    fs.writeFileSync(mark, head);
+    process.stderr.write(
+      '日付の見出し（date:）がない、またはフォルダの日付と date が合わない日報メモがあります（手で作ったメモ）。\n'
+      + '今日の作業のメモなら、node tools/daily-log.mjs new-entry で作り直し、内容を移してから古いファイルを消してください（日付とフォルダは日本時間・朝4時区切りで決まる）。\n'
+      + '過去の日のメモ（チャットの補完など）なら、正しい日付のフォルダに置き、先頭の --- の中に date: YYYY-MM-DD を書いてください。\n'
+      + '詳しくは node tools/daily-log.mjs check を実行。\n',
     );
     process.exit(2);
   }

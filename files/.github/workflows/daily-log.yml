@@ -1,4 +1,4 @@
-# daily-log-kit v1.10.2 — 既定のブランチへの push ごとに日報を作り直してコミットする
+# daily-log-kit v1.10.3 — 既定のブランチへの push ごとに日報を作り直してコミットする
 # 既定のブランチの名前は決め打ちしない（main・master 以外の名前のリポジトリでも動く）。ほかのブランチへの push では何もしない（skipped と表示される）
 # GITHUB_TOKEN による push は別のワークフローを起動しないので、ループしない
 name: daily-log
@@ -34,24 +34,23 @@ jobs:
         with:
           fetch-depth: 0 # 日別の集計に全履歴が必要
           lfs: false # 画像などの LFS 素材は取得しない（帯域を消費しない）
-      - name: 日報を生成
-        run: |
-          node --version
-          if [ "${{ inputs.all }}" = "true" ]; then
-            node tools/daily-log.mjs generate --all
-          else
-            node tools/daily-log.mjs generate
-          fi
-      - name: 変更があればコミット
+      - name: 日報を作り直して push（最新の main に合わせてから）
+        # 先に別の回が日報を push していると、この回の日報は古い main から作ったものになる（checkout は起動したときのコミット）。
+        # 日報は全履歴から作り直すものなので、取り込み（rebase）はせず、最新の main に合わせてから作り直して push する。
+        # rebase すると自動生成の日報どうしが衝突し、やり直しても衝突の状態のまま失敗し続けていた（v1.10.3 で修正）
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add docs/log
-          if git diff --cached --quiet; then echo '変更なし'; exit 0; fi
-          git commit -m 'docs(log): 日報を更新 [skip ci]'
-          for i in 1 2 3; do
-            git pull --rebase --autostash origin "${GITHUB_REF_NAME}" && git push origin "HEAD:${GITHUB_REF_NAME}" && exit 0
-            sleep 5
+          for i in 1 2 3 4 5; do
+            git fetch --quiet origin "${GITHUB_REF_NAME}"
+            git reset --quiet --hard "origin/${GITHUB_REF_NAME}"
+            if [ "${{ inputs.all }}" = "true" ]; then node tools/daily-log.mjs generate --all; else node tools/daily-log.mjs generate; fi
+            git add docs/log
+            if git diff --cached --quiet; then echo '変更なし（最新の main の日報と同じ）'; exit 0; fi
+            git commit --quiet -m 'docs(log): 日報を更新 [skip ci]'
+            if git push origin "HEAD:${GITHUB_REF_NAME}"; then exit 0; fi
+            echo "push できませんでした（${i}回目）。最新の main に合わせて作り直します"
+            sleep $((i * 5))
           done
           echo 'push に失敗しました。ブランチ保護がある場合は docs/specs/daily-log.md の「ブランチ保護があるとき」を参照' >&2
           exit 1

@@ -1,4 +1,4 @@
-// daily-log-kit v1.10.2 — ダッシュボード（dashboard.mjs）のテスト
+// daily-log-kit v1.10.3 — ダッシュボード（dashboard.mjs）のテスト
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -25,7 +25,7 @@ function write(dir, rel, text) { fs.mkdirSync(path.dirname(path.join(dir, rel)),
 function commit(dir, day, msg) { gitAt(dir, day, 'add', '-A'); gitAt(dir, day, 'commit', '-q', '-m', msg); }
 
 test('キットのコミットの判定: 件名（導入・更新・日報の自動更新）か、キットのファイルだけを変えた', () => {
-  assert.equal(isKitCommit({ subject: 'chore: 日報の仕組みを更新（daily-log-kit v1.10.2）', files: ['package.json', 'tools/daily-log.mjs'] }), true);
+  assert.equal(isKitCommit({ subject: 'chore: 日報の仕組みを更新（daily-log-kit v1.10.3）', files: ['package.json', 'tools/daily-log.mjs'] }), true);
   assert.equal(isKitCommit({ subject: 'docs(log): 日報を更新 [skip ci]', files: [] }), true);
   assert.equal(isKitCommit({ subject: 'Merge pull request #3 from x/chore/daily-log-v1.8.0', files: [] }), true);
   assert.equal(isKitCommit({ subject: 'chore: 準備のルールを追加', files: ['docs/log/config.json'] }), true);
@@ -66,7 +66,7 @@ test('集計: キット本体以外は、キット・日報のコミットを最
   write(dir, 'src/a.js', 'a');
   commit(dir, addDays(TODAY, -40), 'feat: 最初の機能');
   install(dir, {});
-  commit(dir, addDays(TODAY, -3), 'chore: 日報の仕組みを導入（daily-log-kit v1.10.2）');
+  commit(dir, addDays(TODAY, -3), 'chore: 日報の仕組みを導入（daily-log-kit v1.10.3）');
   write(dir, 'docs/log/config.json', '{"weeklyIssue": true}\n');
   commit(dir, addDays(TODAY, -2), 'chore: 週の Issue を有効に');
   write(dir, 'docs/log/README.md', '# 日報\n');

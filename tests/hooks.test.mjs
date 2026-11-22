@@ -1,4 +1,4 @@
-// daily-log-kit v1.10.2 — フックの結合テスト（一時的な Git リポジトリに導入して、実際にフックを動かす）
+// daily-log-kit v1.10.3 — フックの結合テスト（一時的な Git リポジトリに導入して、実際にフックを動かす）
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -142,4 +142,41 @@ test('Stop フック: 作業の差分があってメモがなければ1回だけ
   assert.match(first.stderr, /日報メモがまだありません/);
   assert.equal(runHook(dir, '.claude/hooks/daily-log-reminder.mjs').status, 0);
   assert.equal(runHook(dir, '.claude/hooks/daily-log-reminder.mjs', '{"stop_hook_active":true}').status, 0);
+});
+
+test('daily-log.yml: 先に別の回が日報を push していても、最新の main に合わせて作り直して push できる（v1.10.3。RPGMZ_Prototype の連続マージで失敗した形）', () => {
+  const yml = fs.readFileSync(path.join(KIT, 'files/.github/workflows/daily-log.yml'), 'utf8');
+  assert.doesNotMatch(yml, /pull --rebase/, '自動生成の日報どうしが衝突するので rebase しない');
+  const step = yml.split(/\r?\n/);
+  const start = step.findIndex((l) => /name: 日報を作り直して push/.test(l));
+  const runAt = step.findIndex((l, i) => i > start && /^\s+run: \|/.test(l));
+  const body = [];
+  for (let i = runAt + 1; i < step.length && (/^\s{10}/.test(step[i]) || step[i].trim() === ''); i++) body.push(step[i].slice(10));
+  const script = body.join('\n').replace(/\$\{\{ inputs\.all \}\}/g, '');
+
+  // GitHub 役と、2つの回（先に終わった回 A と、古いコミットから始まった回 B）
+  const dir = makeRepo();
+  fs.rmSync(path.join(dir, 'b.txt'));
+  const remote = fs.mkdtempSync(path.join(os.tmpdir(), 'dlk-remote-'));
+  git(remote, 'init', '-q', '--bare', '-b', 'main');
+  git(dir, 'remote', 'add', 'origin', remote);
+  git(dir, 'push', '-q', '-u', 'origin', 'main');
+  const runB = fs.mkdtempSync(path.join(os.tmpdir(), 'dlk-runB-'));
+  git(runB, 'clone', '-q', remote, '.');
+  // 回 A: 新しいマージの日報を作って先に push した（README.md が変わる）
+  fs.writeFileSync(path.join(dir, 'c.txt'), 'c');
+  git(dir, 'add', '-A');
+  git(dir, 'commit', '-q', '-m', 'Merge pull request #81');
+  git(dir, 'push', '-q', 'origin', 'main');
+  execFileSync(process.execPath, [path.join(dir, 'tools/daily-log.mjs'), 'generate'], { cwd: dir, env, stdio: 'ignore' });
+  git(dir, 'add', '-A');
+  git(dir, 'commit', '-q', '-m', 'docs(log): 日報を更新 [skip ci]');
+  git(dir, 'push', '-q', 'origin', 'main');
+  // 回 B: 古いコミット（#81 の前）から始まり、自分で日報を作っていた
+  execFileSync(process.execPath, [path.join(runB, 'tools/daily-log.mjs'), 'generate'], { cwd: runB, env, stdio: 'ignore' });
+  const r = spawnSync('bash', ['-e', '-c', script], { cwd: runB, encoding: 'utf8', env: { ...env, GITHUB_REF_NAME: 'main' } });
+  assert.equal(r.status, 0, r.stdout + r.stderr);
+  assert.doesNotMatch(r.stdout + r.stderr, /CONFLICT|unmerged/);
+  // GitHub 役の main は、回 A の日報の上に積まれている（巻き戻していない）
+  assert.match(git(remote, 'log', '--format=%s', 'main'), /Merge pull request #81/);
 });

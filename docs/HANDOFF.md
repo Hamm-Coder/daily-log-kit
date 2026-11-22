@@ -1,6 +1,6 @@
 # 引き継ぎ資料（daily-log-kit）
 
-- 作成日: 2026-11-13（最終更新: 2026-11-22）
+- 作成日: 2026-11-13（最終更新: 2026-11-23）
 - 対象: このキットの開発を Claude Code（Web版・PC版）で続けるための資料
 - キットの版: `install.mjs` の `KIT_VERSION` を見る（最終更新の時点は v1.10.3）
 
@@ -93,6 +93,7 @@ Hamm-Coder/daily-log-kit（公開）          ← このリポジトリ。キッ
 | 11/22 | 利用者が PC でダッシュボードの合計の表示を確認（OK）。HANDOFF の「次の一手」を今の状態に書き直した |
 | 11/22 | RPGMZ_Prototype で #81・#85・#86・#87 を1分以内にマージし、#85 の `daily-log` Actions が失敗（`CONFLICT … docs/log/README.md` の後、やり直しも「unmerged files」で失敗）。`concurrency` は効いていて同時には動いていない。原因は、各回が起動したときのコミットから日報を作り、先に終わった回（#81）の日報の上に `git pull --rebase` で載せようとして、自動生成の日報どうしが衝突したこと。#86 の「cancelled」は、待っていた回が新しい回に置き換わっただけで問題ない |
 | 11/22 | v1.10.3: `daily-log.yml` の push の手順を「最新の main に合わせる（fetch と reset --hard）→ 作り直す → push」を最大5回に変えた（rebase しない）。重複していた「日報を生成」の手順は外した。同じ形を再現する検査を追加し、古いワークフローでは同じエラーで失敗し、新しいものでは通ることを確認 |
+| 11/23 | 利用者が v1.10.3 を8リポジトリに配布してマージ（MangaCreation_Sys_withGAS は PC の `git fetch` が「cannot lock ref」で一度止まり、取り込み直して再実行）。8つとも既定のブランチが v1.10.3 で、`daily-log.yml` は rebase をやめて最新の main に合わせる手順。マージ後の自動更新コミットは新しい手順で成功。残っていた `chore/daily-log-v…` ブランチもなくなった |
 
 ## 4. 確認済みの範囲
 
@@ -139,7 +140,7 @@ Hamm-Coder/daily-log-kit（公開）          ← このリポジトリ。キッ
 
 ## 7. 次の一手（推奨順）
 
-状態（11/22）: 8リポジトリとも v1.10.2。日報メモの循環（v1.10.0）、自動生成の日報の衝突（v1.10.1）、`CLAUDE.md` の管理区間の衝突（lifelog_with_GAS）を防ぐ仕組みがそろった。ダッシュボードは作成日・過去30日のグラフ・全リポジトリの合計まで利用者が確認済み。SPEC は K・L1・M1〜M5・M8 が完了
+状態（11/23）: 8リポジトリとも v1.10.3（続けてマージしたときの Actions の衝突も修正済み）。日報メモの循環（v1.10.0）、自動生成の日報の衝突（v1.10.1）、`CLAUDE.md` の管理区間の衝突（lifelog_with_GAS）を防ぐ仕組みがそろった。ダッシュボードは作成日・過去30日のグラフ・全リポジトリの合計まで利用者が確認済み。SPEC は K・L1・M1〜M5・M8 が完了
 
 1. SPEC L3: GoogleFlowCharacterMakingTools 用の依頼文を利用者に渡した（claude.ai のプロジェクト「GoogleFlow専用のキャラクター一貫性を維持したプロンプト・リソース作成」、期間はプロジェクトの開始〜11/15）。zip が届いたら、日報メモ（`docs/log/entries/`）だけを入れて PR にする。ほかの6リポジトリは、claude.ai にプロジェクトがあるかを利用者に確かめてから（automaticPromptsMaker と Unity_CharacterTest を優先）
 2. SPEC L2: 昔のリポジトリを `C:\AllGitRepository` に置き、`install-all.ps1 -Repos <名前> -Backfill -Apply -CreatePR` で導入する（`C:\AllGitRepository` の外には適用しない決まり）。対象は利用者が決める

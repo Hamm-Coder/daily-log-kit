@@ -90,6 +90,7 @@ Hamm-Coder/daily-log-kit（公開）          ← このリポジトリ。キッ
 | 11/21 | 利用者が v1.10.2 を8リポジトリに配布してマージ。8つとも既定のブランチが v1.10.2（`check` の修正入り）、`CLAUDE.md` の管理区間は日報の見出しだけ、マージ後に `daily-log` Actions の自動更新コミットあり。lifelog_with_GAS にマージ済みの `chore/daily-log-v1.10.0` ブランチが残っている（害なし） |
 | 11/22 | 依頼文3（`prompts/3-claude-ai-chat-backfill.md`）を直した: 受け取った zip から日報メモ（`docs/log/entries/`）だけをコミットする手順にし（v1.10.1 の仕様 4.4。前は `generate --all` で自動生成の日報まで PR に入れていた）、PC の PowerShell の手順と「記録済みの日は書かない」を追加。GoogleFlowCharacterMakingTools 用の依頼文を利用者に渡した（L3） |
 | 11/22 | 利用者の依頼で、ダッシュボードの「過去30日のコミット数」の説明文に全リポジトリの30日の合計を、一覧の表の最後に全リポジトリのコミット数の合計（直近24週／全期間）の行を追加。版は上げない |
+| 11/22 | 利用者が PC でダッシュボードの合計の表示を確認（OK）。HANDOFF の「次の一手」を今の状態に書き直した |
 
 ## 4. 確認済みの範囲
 
@@ -136,11 +137,14 @@ Hamm-Coder/daily-log-kit（公開）          ← このリポジトリ。キッ
 
 ## 7. 次の一手（推奨順）
 
-1. （完了 11/18）SPEC L1: Unity_CharacterTest は導入済みで v1.9.1、`daily-log` Actions も成功していた。日報の仕組みは今 8 リポジトリに入っている
-2. （完了 11/18）RPGMZ_Prototype の週1回の Issue の定期実行を確認した（SPEC M3）。次は 11/23（月）の分で、同じ件名の Issue が残らず1件だけ開いていることを、気づいたときに見ればよい
-3. 次に RPGMZ_Prototype の PR #38 のテストプレイをするとき: PC の Claude Code アプリで引き継ぎ（SessionStart フック）と、書き直した準備の手順が渡されるか、利用者に確かめてもらう
-4. マージ済みの `chore/daily-log-v…` ブランチが各リポジトリに残っている。消すか、GitHub の「Automatically delete head branches」を有効にするよう利用者に案内する（Web 版のセッションからは他のブランチを消さない）
-5. 1か月運用した後（12月中旬）: SPEC M7（繰り返しの判別のしきい値）と Q2（分析のしきい値）を実データで見直す
+状態（11/22）: 8リポジトリとも v1.10.2。日報メモの循環（v1.10.0）、自動生成の日報の衝突（v1.10.1）、`CLAUDE.md` の管理区間の衝突（lifelog_with_GAS）を防ぐ仕組みがそろった。ダッシュボードは作成日・過去30日のグラフ・全リポジトリの合計まで利用者が確認済み。SPEC は K・L1・M1〜M5・M8 が完了
+
+1. SPEC L3: GoogleFlowCharacterMakingTools 用の依頼文を利用者に渡した（claude.ai のプロジェクト「GoogleFlow専用のキャラクター一貫性を維持したプロンプト・リソース作成」、期間はプロジェクトの開始〜11/15）。zip が届いたら、日報メモ（`docs/log/entries/`）だけを入れて PR にする。ほかの6リポジトリは、claude.ai にプロジェクトがあるかを利用者に確かめてから（automaticPromptsMaker と Unity_CharacterTest を優先）
+2. SPEC L2: 昔のリポジトリを `C:\AllGitRepository` に置き、`install-all.ps1 -Repos <名前> -Backfill -Apply -CreatePR` で導入する（`C:\AllGitRepository` の外には適用しない決まり）。対象は利用者が決める
+3. 11/23（月）以降: RPGMZ_Prototype の週1回の Issue が、同じ件名で1件だけ開いているかを、気づいたときに見る（同じ週の更新は GitHub 上では未確認）
+4. 次に RPGMZ_Prototype のテストプレイをするとき: PC の Claude Code アプリで引き継ぎ（SessionStart フック）と準備の手順が渡されるか、利用者に確かめてもらう
+5. マージ済みの `chore/daily-log-v…` ブランチ（lifelog_with_GAS の `chore/daily-log-v1.10.0` など）は、利用者が消すか「Automatically delete head branches」を有効にする（Web 版のセッションからは他のブランチを消さない）
+6. 1か月運用した後（12月中旬）: SPEC M7（繰り返しの判別のしきい値）と Q2（分析のしきい値）を実データで見直す。RPGMZ_prototype の「世界設定」の「設定」を準備作業と取り違える誤検出もここで直す
 
 ### 作業上の注意（このセッションで分かったこと）
 
@@ -153,6 +157,8 @@ Hamm-Coder/daily-log-kit（公開）          ← このリポジトリ。キッ
 | 版の更新 | `bump-version.mjs` はテストの中の「daily-log-kit v…」の文字列も書き換える（害はない） |
 | Actions | 既定のブランチへの push で登録されるはずのワークフローが、GitHub に登録されないことがある（RPGMZ_Prototype の `daily-log-weekly`）。そのファイルにコメントを1行足す PR のマージで登録された |
 | 既定のブランチ | 手元の `origin/HEAD` は clone したときのままで、`git fetch` では変わらない。GitHub の既定のブランチを使う処理は `git remote set-head origin --auto` で確かめ直す（v1.9.1）。既定のブランチが `claude/...` のリポジトリが3つ残っている（automaticPromptsMaker、MangaCreation_Sys_withGAS、Unity_CharacterTest。11/18 時点。promptBatchExportTool と A1111_SD_TokenCounter は main に変更済み） |
+| マージの確認 | 「マージしました」の後は、PR のコミットが main に入ったかを `git merge-base --is-ancestor <PR の先頭> origin/main` で確かめてから作業ブランチを作り直す（11/21、まだ開いていた #29 をマージ済みと誤って伝えた） |
+| 他のリポジトリの写し | 既定のブランチが消えたリポジトリは取得が失敗する。`git config remote.origin.fetch '+refs/heads/*:refs/remotes/origin/*'` で直してから `git fetch --prune` |
 | ダッシュボード | `dashboard.ps1` が作る HTML には非公開のリポジトリの内容が入る。キットのリポジトリは公開なので、集計結果や画面の案をコミットしない |
 | 利用者 | 説明は日本語で、根拠と手順を具体的に。PC で実行するコマンドは PowerShell で、1行ずつのコードブロックにする |
 

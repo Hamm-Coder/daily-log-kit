@@ -98,6 +98,9 @@ Hamm-Coder/daily-log-kit（公開）          ← このリポジトリ。キッ
 | 11/23 | MangaCreation_Sys_withGAS のダッシュボードに「日報メモの書き忘れ（4日のうち3日、75%）」。調べると書き忘れではなく、メモの日付のずれ: 11/23 朝（日本時間 6:46〜7:46）の作業のメモ3件が `entries/2026-11-22/` に置かれていた。同じずれが 11/22 朝の4件にもある（合わせて7件、どれも日本時間 4〜9時に書いたもの＝ UTC ではまだ前日）。このリポジトリのメモは30件中19件が `date:` の見出しなしで、`new-entry` を使わず手で作られていた。Claude が UTC の日付でフォルダを決めたと考えられる。ほかの7リポジトリのメモはすべて `new-entry` で作られていて、ずれなし |
 | 11/23 | GoogleFlowCharacterMakingTools の「書き忘れ（67%）」も調査: 11/21 は P2-1 の PR #7 のマージだけの日（作業は 11/16 でメモあり）で、マージだけの日を作業日に数えていたため |
 | 11/23 | v1.10.4: 記録率はマージ以外のコミットがある日で数える。引き継ぎに「今日の作業日」を毎回出す（メモがないリポジトリでも）。Skill に `new-entry` 必須と明記。`check` が `date:` の見出しがない・フォルダと日付が違うメモを見つけたら終了コード 5、Stop フックが1回知らせる。仕様 4.5。検査3件を追加。実データで GoogleFlow は 100% になった |
+| 11/23 | 利用者が v1.10.4 を8リポジトリに配布してマージ。8つとも v1.10.4、マージ後の自動更新も成功。記録率は GoogleFlow 100%（マージだけの日を数えなくなった）。MangaCreation の直し（#32）は、既定のブランチが main に変わっていたのに古い `claude/manga-auto-generation-system-7t6pjw` 向けに作ってしまい、main に入っていなかった。main 向けに作り直し（#35。#32 の後に増えた 11/23 8:32 のメモ1件も移動）、マージで 100% になった。RPGMZ_Prototype の 83% は、11/19 の PC 作業（D8 の DB 取り込み、プラグイン登録）の日報メモが本当にない分 |
+| 11/23 | lifelog_with_GAS を調査: v1.10.4、開いた PR なし、日報・`gas-test` とも成功、記録率 100%。止まっているのは PC での clasp の初回反映（Apps Script API・clasp login・clasp clone で src/ と比較・初回 push とデプロイ）と、その判断待ち3件 |
+| 11/23 | SPEC L3: 利用者が claude.ai で作った yukkuriScenarioMaker の日報メモ（zip、2件、2026-10-18）を点検して PR（Hamm-Coder/yukkuriScenarioMaker#18）。`date:` とフォルダ・`source: chat`・重なり・「決めたこと」・推定の根拠を点検し、直すものはなかった（推定の根拠はリポジトリの最初のコミットの時刻と一致）。このリポジトリには日報の仕組みがまだ入っていない |
 
 ## 4. 確認済みの範囲
 
@@ -144,15 +147,16 @@ Hamm-Coder/daily-log-kit（公開）          ← このリポジトリ。キッ
 
 ## 7. 次の一手（推奨順）
 
-状態（11/23）: 8リポジトリとも v1.10.3（続けてマージしたときの Actions の衝突も修正済み）。日報メモの循環（v1.10.0）、自動生成の日報の衝突（v1.10.1）、`CLAUDE.md` の管理区間の衝突（lifelog_with_GAS）を防ぐ仕組みがそろった。ダッシュボードは作成日・過去30日のグラフ・全リポジトリの合計まで利用者が確認済み。SPEC は K・L1・M1〜M5・M8 が完了
+状態（11/23）: 8リポジトリとも v1.10.4。日報メモの循環（v1.10.0）、自動生成の日報の衝突（v1.10.1）、続けてマージしたときの Actions の衝突（v1.10.3）、日報メモの日付のずれと、マージだけの日の誤った「書き忘れ」（v1.10.4）を防ぐ仕組みがそろった。ダッシュボードは利用者が確認済み。SPEC は K・L1・M1〜M5・M8 が完了
 
-1. v1.10.4 を配布する。MangaCreation_Sys_withGAS のずれた7件のメモを正しいフォルダへ移す PR をマージする（11/23 の経緯）
-2. SPEC L3: GoogleFlowCharacterMakingTools 用の依頼文を利用者に渡した（claude.ai のプロジェクト「GoogleFlow専用のキャラクター一貫性を維持したプロンプト・リソース作成」、期間はプロジェクトの開始〜11/15）。zip が届いたら、日報メモ（`docs/log/entries/`）だけを入れて PR にする。ほかの6リポジトリは、claude.ai にプロジェクトがあるかを利用者に確かめてから（automaticPromptsMaker と Unity_CharacterTest を優先）
-3. SPEC L2: 昔のリポジトリを `C:\AllGitRepository` に置き、`install-all.ps1 -Repos <名前> -Backfill -Apply -CreatePR` で導入する（`C:\AllGitRepository` の外には適用しない決まり）。対象は利用者が決める
-4. 11/23（月）以降: RPGMZ_Prototype の週1回の Issue が、同じ件名で1件だけ開いているかを、気づいたときに見る（同じ週の更新は GitHub 上では未確認）
-5. 次に RPGMZ_Prototype のテストプレイをするとき: PC の Claude Code アプリで引き継ぎ（SessionStart フック）と準備の手順が渡されるか、利用者に確かめてもらう
-6. マージ済みの `chore/daily-log-v…` ブランチ（lifelog_with_GAS の `chore/daily-log-v1.10.0` など）は、利用者が消すか「Automatically delete head branches」を有効にする（Web 版のセッションからは他のブランチを消さない）
-7. 1か月運用した後（12月中旬）: SPEC M7（繰り返しの判別のしきい値）と Q2（分析のしきい値）を実データで見直す。RPGMZ_prototype の「世界設定」の「設定」を準備作業と取り違える誤検出もここで直す
+1. yukkuriScenarioMaker に日報の仕組みを導入する（PC で `.\install-all.ps1 -Repos yukkuriScenarioMaker -Backfill -Apply -CreatePR`）。チャットの日報メモの PR（#18）とはどちらを先にマージしてもよい。このリポジトリは定期実行の自動開発で PR が多い
+2. RPGMZ_Prototype の 11/19 の PC 作業の日報メモを補う（そのリポジトリのセッションで `new-entry --date 2026-11-19`）。補えば記録率 100%
+3. SPEC L3: GoogleFlowCharacterMakingTools 用の依頼文は渡し済み。zip が届いたら、yukkuri と同じ点検（依頼文3の点検項目）をして日報メモだけを PR にする。ほかのリポジトリは、claude.ai にプロジェクトがあるかを利用者に確かめてから
+4. SPEC L2: 昔のリポジトリを `C:\AllGitRepository` に置き、`install-all.ps1 -Repos <名前> -Backfill -Apply -CreatePR` で導入する（`C:\AllGitRepository` の外には適用しない決まり）。対象は利用者が決める
+5. 依頼文3に、Claude Code に渡すときの点検の頼み方（`date:` とフォルダ、`source: chat`、重なり、「決めたこと」、推定の根拠）を足す（11/23 に利用者へ提案、未着手）
+6. 次に RPGMZ_Prototype のテストプレイをするとき: PC の Claude Code アプリで引き継ぎ（SessionStart フック。v1.10.4 からは「今日の作業日」も出る）と準備の手順が渡されるか、利用者に確かめてもらう
+7. MangaCreation_Sys_withGAS に、使われなくなった `claude/manga-auto-generation-system-7t6pjw` ブランチ（#32 が入ったもの）が残っている。消すかは利用者が決める
+8. 1か月運用した後（12月中旬）: SPEC M7（繰り返しの判別のしきい値）と Q2（分析のしきい値）を実データで見直す。RPGMZ_prototype の「世界設定」の「設定」を準備作業と取り違える誤検出もここで直す
 
 ### 作業上の注意（このセッションで分かったこと）
 
@@ -165,6 +169,7 @@ Hamm-Coder/daily-log-kit（公開）          ← このリポジトリ。キッ
 | 版の更新 | `bump-version.mjs` はテストの中の「daily-log-kit v…」の文字列も書き換える（害はない） |
 | Actions | 既定のブランチへの push で登録されるはずのワークフローが、GitHub に登録されないことがある（RPGMZ_Prototype の `daily-log-weekly`）。そのファイルにコメントを1行足す PR のマージで登録された |
 | 既定のブランチ | 手元の `origin/HEAD` は clone したときのままで、`git fetch` では変わらない。GitHub の既定のブランチを使う処理は `git remote set-head origin --auto` で確かめ直す（v1.9.1）。既定のブランチが `claude/...` のリポジトリが3つ残っている（automaticPromptsMaker、MangaCreation_Sys_withGAS、Unity_CharacterTest。11/18 時点。promptBatchExportTool と A1111_SD_TokenCounter は main に変更済み） |
+| PR の向き先 | 他のリポジトリに PR を作る前に、`git ls-remote --symref origin HEAD` で今の既定のブランチを確かめる。手元の写しの記録は古いことがある（11/23、MangaCreation の #32 を使われなくなったブランチ向けに作った） |
 | マージの確認 | 「マージしました」の後は、PR のコミットが main に入ったかを `git merge-base --is-ancestor <PR の先頭> origin/main` で確かめてから作業ブランチを作り直す（11/21、まだ開いていた #29 をマージ済みと誤って伝えた） |
 | 他のリポジトリの写し | 既定のブランチが消えたリポジトリは取得が失敗する。`git config remote.origin.fetch '+refs/heads/*:refs/remotes/origin/*'` で直してから `git fetch --prune` |
 | ダッシュボード | `dashboard.ps1` が作る HTML には非公開のリポジトリの内容が入る。キットのリポジトリは公開なので、集計結果や画面の案をコミットしない |

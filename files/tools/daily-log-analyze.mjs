@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// daily-log-kit v1.10.4 — 日報と Git 履歴の分析（作業の傾向、改善点、判断待ちの一覧）
+// daily-log-kit v1.10.5 — 日報と Git 履歴の分析（作業の傾向、改善点、判断待ちの一覧）
 // 仕様: docs/specs/daily-log.md の「12. 分析」
 //
 // 使い方:
@@ -320,7 +320,7 @@ export function detectFindings(m, a = ANALYSIS_DEFAULTS) {
   const pct = (x) => `${Math.round(x * 100)}%`;
   if (m.memoCoverage && m.memoCoverage.commitDays >= 3 && m.memoCoverage.ratio < a.memoCoverageMin) {
     f.push({ id: 'memo-coverage', level: '注意', title: '日報メモの書き忘れ',
-      evidence: `日報の仕組みを入れた ${m.memoCoverage.since} 以降、コミットのあった ${m.memoCoverage.commitDays}日のうちメモがあるのは ${m.memoCoverage.withMemo}日（${pct(m.memoCoverage.ratio)}）`,
+      evidence: `日報の仕組みを入れた ${m.memoCoverage.since} 以降、コミットのあった ${m.memoCoverage.commitDays}日のうちメモがあるのは ${m.memoCoverage.withMemo}日（${pct(m.memoCoverage.ratio)}）${m.memoCoverage.preInstallCommits ? `。導入前のコミット ${m.memoCoverage.preInstallCommits}件は記録の対象外` : ''}`,
       action: 'Stop フックが効いているか（.claude/settings.json）を確認し、PCで作業した日は「日報を書いて」と頼む' });
   }
   if (m.commits >= 10 && m.lateNight.ratio >= a.lateNightRatioMax) {
@@ -553,7 +553,7 @@ export function renderReport(results, { today, generatedFor } = {}) {
     out.push(`| コミット / PR / 日報メモ | ${m.commits}件 / ${m.prs}本 / ${m.memos}件 |`);
     out.push(`| 作業のまとまり（推定） | ${m.sessions.count}回、約${m.sessions.estimatedHours}時間（コミットの間隔から推定した目安） |`);
     const cov = m.memoCoverage;
-    out.push(`| 日報メモの記録率 | ${!cov ? 'メモなし' : cov.commitDays ? `${Math.round(cov.ratio * 100)}%（導入した ${cov.since} 以降、コミットのあった ${cov.commitDays}日のうち ${cov.withMemo}日）` : `対象の日なし（導入した ${cov.since} 以降、日報の仕組み以外のコミットがない）`} |`);
+    out.push(`| 日報メモの記録率 | ${!cov ? 'メモなし' : cov.commitDays ? `${Math.round(cov.ratio * 100)}%（導入した ${cov.since} 以降、コミットのあった ${cov.commitDays}日のうち ${cov.withMemo}日）` : `対象の日なし（導入した ${cov.since} 以降、日報の仕組み以外のコミットがない）`}${cov?.preInstallCommits ? `。導入前のコミット ${cov.preInstallCommits}件は記録の対象外` : ''} |`);
     out.push(`| 深夜（0〜4時）のコミット | ${Math.round(m.lateNight.ratio * 100)}%（${m.lateNight.count}件） |`);
     out.push(`| PRの最初のコミットからマージまで（中央値） | ${m.prLeadTime.count ? `${formatDuration(m.prLeadTime.medianDays)}（${m.prLeadTime.count}本）` : '—（マージコミットなし）'} |`);
     out.push(`| 最後の作業日 | ${m.lastActiveDay || '—'}${m.lastActiveDay ? `（${m.daysSinceActive}日前）` : ''} |`, '');
@@ -761,7 +761,6 @@ export function analyzeRepo(root, opts = {}) {
   const days = [...dayCounts.keys()].sort();
   const commitDays = days.filter((d) => dayCounts.get(d).commits > 0);
   // 記録率は、マージ以外のコミットがある日で数える（PR のマージだけの日は作業ではなく、メモを書かない日。仕様 4.3、v1.10.4）
-  const workDays = new Set(nonMerge.map((c) => dayKey(c.date, cfg)));
   const memoDays = new Set(memos.map((m) => m.day));
 
   // 記録率は「日報の仕組みを入れた日」以降で数える（後から補った過去のメモで起点が早まらないように）
@@ -769,9 +768,14 @@ export function analyzeRepo(root, opts = {}) {
   if (memos.length) {
     const installed = (tryGit(['log', '--diff-filter=A', '--format=%aI', '--', 'tools/daily-log.mjs'], root) || '').split('\n').filter(Boolean).at(-1);
     const since = installed ? dayKey(installed, cfg) : [...memoDays].sort()[0];
-    const target = commitDays.filter((d) => d >= since && workDays.has(d));
+    // 導入より前のコミットは記録の対象外（メモを書く仕組みがまだない。導入日の導入前のコミットも外す。v1.10.5）。件数は数えて示す
+    const installedMs = installed ? Date.parse(installed) : null;
+    const afterInstall = (c) => (installedMs === null ? dayKey(c.date, cfg) >= since : Date.parse(c.date) >= installedMs);
+    const preInstallCommits = nonMerge.filter((c) => !afterInstall(c)).length;
+    const targetDays = new Set(nonMerge.filter(afterInstall).map((c) => dayKey(c.date, cfg)));
+    const target = [...targetDays].sort();
     const withMemo = target.filter((d) => memoDays.has(d)).length;
-    memoCoverage = { since, commitDays: target.length, withMemo, ratio: target.length ? withMemo / target.length : 1 };
+    memoCoverage = { since, commitDays: target.length, withMemo, ratio: target.length ? withMemo / target.length : 1, preInstallCommits };
   }
   const recentSince = addDays(today, -a.recentDays);
   const recentCommits = nonMerge.filter((c) => dayKey(c.date, cfg) >= recentSince);

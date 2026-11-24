@@ -1,4 +1,4 @@
-// daily-log-kit v1.10.4 — 分析と引き継ぎが日報の仕組み自身のコミットを作業に数えないこと（仕様 4.3・12.1）。実際の Git リポジトリで確かめる
+// daily-log-kit v1.10.5 — 分析と引き継ぎが日報の仕組み自身のコミットを作業に数えないこと（仕様 4.3・12.1）。実際の Git リポジトリで確かめる
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -80,6 +80,30 @@ test('記録率: PR のマージだけの日は数えない（v1.10.4。GoogleFl
     const m = analyzeRepo(dir, { today: '2026-11-22', now: '2026-11-22T03:00:00Z' }).metrics;
     assert.equal(m.memoCoverage.commitDays, 2, '11/15 と 11/16 だけ（11/21 はマージだけ）');
     assert.equal(m.memoCoverage.withMemo, 2);
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('記録率: 導入より前のコミットは対象外で、件数だけ示す（v1.10.5。yukkuriScenarioMaker で導入日の朝の自動開発を数えて 0% になった形）', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'dlk-pre-install-'));
+  const t = (iso, ...args) => { const env = { ...process.env, GIT_AUTHOR_NAME: 't', GIT_AUTHOR_EMAIL: 't@example.com', GIT_COMMITTER_NAME: 't', GIT_COMMITTER_EMAIL: 't@example.com', GIT_AUTHOR_DATE: iso, GIT_COMMITTER_DATE: iso }; execFileSync('git', args, { cwd: dir, env, stdio: 'ignore' }); };
+  g(dir, null, 'init', '-q', '-b', 'main');
+  write(dir, 'app.js', 'v0\n'); t('2026-10-18T12:00:00+09:00', 'add', '-A'); t('2026-10-18T12:00:00+09:00', 'commit', '-q', '-m', 'feat: 最初');
+  write(dir, 'app.js', 'v1\n'); t('2026-11-23T10:44:00+09:00', 'add', '-A'); t('2026-11-23T10:44:00+09:00', 'commit', '-q', '-m', 'feat: 自動開発');
+  write(dir, 'tools/daily-log.mjs', '// v1\n'); write(dir, 'docs/log/entries/2026-10-18/0700-a.md', memo('2026-10-18', 'チャット', ['設計']));
+  t('2026-11-23T20:33:00+09:00', 'add', '-A'); t('2026-11-23T20:33:00+09:00', 'commit', '-q', '-m', 'chore: 日報の仕組みを導入');
+  try {
+    const r = analyzeRepo(dir, { today: '2026-11-24', now: '2026-11-24T03:00:00Z' });
+    const m = r.metrics;
+    assert.equal(m.commits, 2, 'コミットの件数には導入前のものも含める');
+    assert.equal(m.memoCoverage.commitDays, 0, '導入日の朝のコミットは対象外');
+    assert.equal(m.memoCoverage.preInstallCommits, 2);
+    assert.ok(!r.findings.some((f) => f.id === 'memo-coverage'));
+    // 導入後のコミットは数える
+    write(dir, 'app.js', 'v2\n'); t('2026-11-23T21:00:00+09:00', 'add', '-A'); t('2026-11-23T21:00:00+09:00', 'commit', '-q', '-m', 'feat: 導入後');
+    const c = analyzeRepo(dir, { today: '2026-11-24', now: '2026-11-24T03:00:00Z' }).metrics.memoCoverage;
+    assert.deepEqual([c.commitDays, c.withMemo, c.preInstallCommits], [1, 0, 2]);
   } finally {
     fs.rmSync(dir, { recursive: true, force: true });
   }

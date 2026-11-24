@@ -101,6 +101,8 @@ Hamm-Coder/daily-log-kit（公開）          ← このリポジトリ。キッ
 | 11/23 | 利用者が v1.10.4 を8リポジトリに配布してマージ。8つとも v1.10.4、マージ後の自動更新も成功。記録率は GoogleFlow 100%（マージだけの日を数えなくなった）。MangaCreation の直し（#32）は、既定のブランチが main に変わっていたのに古い `claude/manga-auto-generation-system-7t6pjw` 向けに作ってしまい、main に入っていなかった。main 向けに作り直し（#35。#32 の後に増えた 11/23 8:32 のメモ1件も移動）、マージで 100% になった。RPGMZ_Prototype の 83% は、11/19 の PC 作業（D8 の DB 取り込み、プラグイン登録）の日報メモが本当にない分 |
 | 11/23 | lifelog_with_GAS を調査: v1.10.4、開いた PR なし、日報・`gas-test` とも成功、記録率 100%。止まっているのは PC での clasp の初回反映（Apps Script API・clasp login・clasp clone で src/ と比較・初回 push とデプロイ）と、その判断待ち3件 |
 | 11/23 | SPEC L3: 利用者が claude.ai で作った yukkuriScenarioMaker の日報メモ（zip、2件、2026-10-18）を点検して PR（Hamm-Coder/yukkuriScenarioMaker#18）。`date:` とフォルダ・`source: chat`・重なり・「決めたこと」・推定の根拠を点検し、直すものはなかった（推定の根拠はリポジトリの最初のコミットの時刻と一致）。このリポジトリには日報の仕組みがまだ入っていない |
+| 11/24 | 新しいセッションで引き継ぎを確認（9リポジトリを読み取りで追加して調査）。9つとも v1.10.4、開いている PR なし。yukkuriScenarioMaker は導入済み（#19）で #18 もマージ済み。既定のブランチが `claude/...` なのは automaticPromptsMaker と Unity_CharacterTest の2つ（MangaCreation は main に変更済み）。yukkuri の記録率 0% は導入日の朝（導入前）の自動開発のコミットを数えていたため |
+| 11/24 | v1.10.5: 導入前のコミットを記録率から外す（導入時刻で判定）。コミットの件数には含め、分析・ダッシュボードに「導入前のコミット N件は記録の対象外」と表示。仕様 4.5・12.1、検査1件を追加。実データで yukkuri は「対象の日なし（導入前 18件は対象外）」、RPGMZ は 83% のまま |
 
 ## 4. 確認済みの範囲
 
@@ -147,9 +149,9 @@ Hamm-Coder/daily-log-kit（公開）          ← このリポジトリ。キッ
 
 ## 7. 次の一手（推奨順）
 
-状態（11/23）: 8リポジトリとも v1.10.4。日報メモの循環（v1.10.0）、自動生成の日報の衝突（v1.10.1）、続けてマージしたときの Actions の衝突（v1.10.3）、日報メモの日付のずれと、マージだけの日の誤った「書き忘れ」（v1.10.4）を防ぐ仕組みがそろった。ダッシュボードは利用者が確認済み。SPEC は K・L1・M1〜M5・M8 が完了
+状態（11/24）: 9リポジトリ（yukkuriScenarioMaker を含む）とも v1.10.4。v1.10.5（導入前のコミットを記録率から外す）を PR 中。日報メモの循環（v1.10.0）、自動生成の日報の衝突（v1.10.1）、続けてマージしたときの Actions の衝突（v1.10.3）、日報メモの日付のずれと、マージだけの日の誤った「書き忘れ」（v1.10.4）を防ぐ仕組みがそろった。ダッシュボードは利用者が確認済み。SPEC は K・L1・M1〜M5・M8 が完了
 
-1. yukkuriScenarioMaker に日報の仕組みを導入する（PC で `.\install-all.ps1 -Repos yukkuriScenarioMaker -Backfill -Apply -CreatePR`）。チャットの日報メモの PR（#18）とはどちらを先にマージしてもよい。このリポジトリは定期実行の自動開発で PR が多い
+1. v1.10.5 をマージした後、PC で `.\install-all.ps1 -Apply -CreatePR` を実行して9リポジトリに配る（yukkuriScenarioMaker の導入は 11/23 に完了）
 2. RPGMZ_Prototype の 11/19 の PC 作業の日報メモを補う（そのリポジトリのセッションで `new-entry --date 2026-11-19`）。補えば記録率 100%
 3. SPEC L3: GoogleFlowCharacterMakingTools 用の依頼文は渡し済み。zip が届いたら、yukkuri と同じ点検（依頼文3の点検項目）をして日報メモだけを PR にする。ほかのリポジトリは、claude.ai にプロジェクトがあるかを利用者に確かめてから
 4. SPEC L2: 昔のリポジトリを `C:\AllGitRepository` に置き、`install-all.ps1 -Repos <名前> -Backfill -Apply -CreatePR` で導入する（`C:\AllGitRepository` の外には適用しない決まり）。対象は利用者が決める
@@ -168,7 +170,7 @@ Hamm-Coder/daily-log-kit（公開）          ← このリポジトリ。キッ
 | 改行 | Windows では `.yml` などが CRLF で取り出される。テストで改行を含む正規表現は `\r?\n` にする |
 | 版の更新 | `bump-version.mjs` はテストの中の「daily-log-kit v…」の文字列も書き換える（害はない） |
 | Actions | 既定のブランチへの push で登録されるはずのワークフローが、GitHub に登録されないことがある（RPGMZ_Prototype の `daily-log-weekly`）。そのファイルにコメントを1行足す PR のマージで登録された |
-| 既定のブランチ | 手元の `origin/HEAD` は clone したときのままで、`git fetch` では変わらない。GitHub の既定のブランチを使う処理は `git remote set-head origin --auto` で確かめ直す（v1.9.1）。既定のブランチが `claude/...` のリポジトリが3つ残っている（automaticPromptsMaker、MangaCreation_Sys_withGAS、Unity_CharacterTest。11/18 時点。promptBatchExportTool と A1111_SD_TokenCounter は main に変更済み） |
+| 既定のブランチ | 手元の `origin/HEAD` は clone したときのままで、`git fetch` では変わらない。GitHub の既定のブランチを使う処理は `git remote set-head origin --auto` で確かめ直す（v1.9.1）。既定のブランチが `claude/...` のリポジトリが2つ残っている（automaticPromptsMaker、Unity_CharacterTest。11/24 時点。ほかは main に変更済み） |
 | PR の向き先 | 他のリポジトリに PR を作る前に、`git ls-remote --symref origin HEAD` で今の既定のブランチを確かめる。手元の写しの記録は古いことがある（11/23、MangaCreation の #32 を使われなくなったブランチ向けに作った） |
 | マージの確認 | 「マージしました」の後は、PR のコミットが main に入ったかを `git merge-base --is-ancestor <PR の先頭> origin/main` で確かめてから作業ブランチを作り直す（11/21、まだ開いていた #29 をマージ済みと誤って伝えた） |
 | 他のリポジトリの写し | 既定のブランチが消えたリポジトリは取得が失敗する。`git config remote.origin.fetch '+refs/heads/*:refs/remotes/origin/*'` で直してから `git fetch --prune` |

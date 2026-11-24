@@ -1,4 +1,4 @@
-# daily-log-kit v1.10.4
+# daily-log-kit v1.10.5
 
 Claude Code を使うリポジトリに「日報（日毎ログ）」の仕組みを入れるキット。チャット・Claude Code・Git の作業を `docs/log/` に日ごとにまとめ、作業の傾向・改善点・判断待ちを分析する。
 
@@ -51,7 +51,7 @@ node ..\daily-log-kit\install.mjs . --dry-run     # 変更予定の確認
 node ..\daily-log-kit\install.mjs . --backfill    # 導入＋過去の日報
 node --test tools/daily-log.test.mjs tools/daily-log-analyze.test.mjs tools/daily-log-brief.test.mjs
 git add -A
-git commit -m "chore: 日報の仕組みを導入（daily-log-kit v1.10.4）"
+git commit -m "chore: 日報の仕組みを導入（daily-log-kit v1.10.5）"
 git push -u origin chore/daily-log
 gh pr create --fill
 ```
@@ -117,7 +117,7 @@ cd C:\AllGitRepository\daily-log-kit
 node --test
 git init -b main
 git add -A
-git commit -m "daily-log-kit v1.10.4"
+git commit -m "daily-log-kit v1.10.5"
 gh repo create Hamm-Coder/daily-log-kit --public --source . --push
 git tag v1.0.0
 git push origin v1.0.0
@@ -189,6 +189,7 @@ git pull
 
 | 版 | 日付 | 内容 |
 | --- | --- | --- |
+| 1.10.5 | 2026-11-24 | 日報の仕組みを導入する前のコミットを、日報メモの記録率から外す（導入日の、導入より前の時刻のコミットも外す。yukkuriScenarioMaker で導入日の朝の自動開発を数えて 0% になっていた）。コミットの件数には含め、分析とダッシュボードに「導入前のコミット N件は記録の対象外」と示す。仕様 4.5・12.1 |
 | 1.10.4 | 2026-11-23 | ダッシュボードの「日報メモの書き忘れ」の誤った表示を直す。① PR のマージだけの日を記録率に数えない（GoogleFlowCharacterMakingTools）② 日報メモの日付のずれを防ぐ（MangaCreation_Sys_withGAS で、`new-entry` を使わず手で作ったメモ7件が、UTC の日付で前の日のフォルダに入っていた）: 引き継ぎに「今日の作業日」を毎回出す、Skill に `new-entry` を必須と明記、Stop フックが `date:` の見出しがない・フォルダと日付が違うメモを1回知らせる（`check` の終了コード 5）。仕様 4.5 を追加 |
 | 1.10.3 | 2026-11-22 | PR を続けてマージすると、`daily-log` Actions が失敗する不具合を修正（RPGMZ_Prototype で #81・#85・#86・#87 を1分以内にマージしたときに発生）。各回は起動したときのコミットから日報を作るため、先に別の回が日報を push していると `git pull --rebase` が自動生成の日報どうしで衝突し、やり直しても衝突の状態のまま失敗していた。push の前に最新の既定のブランチに合わせて（`fetch` と `reset --hard`）日報を作り直すようにした。古いワークフローで失敗し、新しいもので通る検査を追加 |
 | 1.10.2 | 2026-11-21 | 既定のブランチを取り込んだ（merge）作業ブランチで、`check`（Stop フック）が取り込んだ分のファイルまで作業ブランチの変更と数えていた不具合を修正。分岐点からの差分のうち、既定のブランチと中身が同じものは除く（lifelog_with_GAS #4 の衝突を解決したときに、自動生成の日報の誤った知らせとして見つかった） |

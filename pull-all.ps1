@@ -1,5 +1,5 @@
 ﻿<#
-daily-log-kit v1.10.4 — 日報の仕組みを入れたリポジトリを、まとめて git pull する
+daily-log-kit v1.10.5 — 日報の仕組みを入れたリポジトリを、まとめて git pull する
 
 対象
 - -Root（既定 C:\AllGitRepository）直下の Git リポジトリのうち、日報の仕組みが入っているもの（tools/daily-log.mjs がある）と、キット自身

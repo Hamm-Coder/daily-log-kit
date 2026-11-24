@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// daily-log-kit v1.10.4 — 複数リポジトリのダッシュボード（HTML 1枚）を作る（各リポジトリには配らない）
+// daily-log-kit v1.10.5 — 複数リポジトリのダッシュボード（HTML 1枚）を作る（各リポジトリには配らない）
 //   node dashboard.mjs [--out dashboard.html] [--today YYYY-MM-DD] [--json] <リポジトリのフォルダ...>
 // 普段は dashboard.ps1 から呼ぶ。対象の選び方（日報の仕組みを入れたリポジトリとキット本体）は dashboard.ps1 が行う
 // 作った HTML には非公開のリポジトリの内容が入るので、コミットしない（.gitignore で除外）
@@ -139,6 +139,7 @@ export function collectRepo(dir, { today } = {}) {
     commits24: weeks.reduce((s, w) => s + w.commits, 0), commitsAll: commits.length,
     daily: dailyCounts(commits, day),
     prs: m.prs, memos: m.memos, weeks,
+    coverage: m.memoCoverage ? (({ since, commitDays, withMemo, ratio, preInstallCommits }) => ({ since, commitDays, withMemo, ratio, preInstallCommits }))(m.memoCoverage) : null,
     next: m.latestNext, pending: m.pending, resolved: m.resolved || [], pcTasks: m.pcTasks,
     feel: m.feel || null, blockers: m.blockers || null, decisions: (m.recentDecisions || []).slice(0, 5),
     findings: r.findings.map(({ id, level, title, evidence, action }) => ({ id, level, title, evidence, action })),

@@ -1,6 +1,6 @@
 # SPEC: daily-log-kit の作業キュー
 
-- 更新日: 2026-11-19
+- 更新日: 2026-11-24
 - 正本の優先順位: この SPEC.md と `docs/decisions/` → `docs/HANDOFF.md` → 会話の合意
 - 状態: 未着手 / 作業中 / 完了 / 保留
 
@@ -27,7 +27,7 @@ Claude Code・claude.ai・Git での作業と決定を、各リポジトリの `
 | --- | --- | --- | --- | --- |
 | L1 | Unity_CharacterTest など他のリポジトリへ導入する | `.\install-all.ps1 -Backfill` の確認後、対象を選んで PR をマージ | PC | 完了（11/15: GoogleFlowCharacterMakingTools に v1.9.0 を導入。11/17: lifelog_with_GAS に v1.9.1 を導入。11/18: Unity_CharacterTest は 11/13 に v1.1.2 で導入済み、11/17 に v1.9.1 に更新済みで、`daily-log` Actions の成功と日報の生成を確認。利用者の決定: 保管用を含め、追加するリポジトリには同じように導入する） |
 | L2 | 昔のリポジトリ（Android/Kotlin など）の過去の日報を作る | 対象を `C:\AllGitRepository` に置き、`.\install-all.ps1 -Repos <名前> -Backfill -Apply -CreatePR` の PR をマージ（11/19 の決まり: `C:\AllGitRepository` の外のフォルダには適用しない。保管用も導入する決まり（11/17）と合わせ、日報だけを作って仕組みを入れない使い方はしない） | PC | 未着手 |
-| L3 | チャットだけの日の補完 | 各 claude.ai プロジェクトで `prompts/3-claude-ai-chat-backfill.md` を使い、日報メモを追加 | claude.ai → Web | 未着手 |
+| L3 | チャットだけの日の補完 | 各 claude.ai プロジェクトで `prompts/3-claude-ai-chat-backfill.md` を使い、日報メモを追加 | claude.ai → Web | 作業中（yukkuriScenarioMaker は #18 でマージ済み。GoogleFlowCharacterMakingTools は zip 待ち） |
 
 ### M: 分析の活用（`docs/analysis.md` の提案）
 
@@ -42,6 +42,7 @@ Claude Code・claude.ai・Git での作業と決定を、各リポジトリの `
 | M7 | 繰り返しの判別のしきい値を実際のデータで見直す | 誤検出と見逃しが減る | 0円・小（1か月運用した後に `analysis` の設定を調整） | 未着手 |
 | M8 | RPGMZ_Prototype の `docs/log/config.json` に準備のルール（`prep`）を書く | テストプレイやプラグイン登録の前に必要な手順が毎回出る | 0円・小（仕様 13.1 の例をもとに） | 完了（RPGMZ_Prototype #44 で5つのルールを追加、#51 でテストプレイとプラグイン登録の手順に実行場所・ツール・コマンドを書き足した。PC の Claude Code アプリでの受け取りは次のテストプレイのときに確かめる） |
 | M9 | PC の会話記録から「同じ依頼の繰り返し」を見つけ、Skill の候補にする | 繰り返しの判別に、コミットにならない作業も入る | 0円・中。M6 と同じく形式が非公式 | 保留 |
+| M10 | 導入前のコミットを記録率から外し、件数を「記録の対象外」として示す（分析・ダッシュボード・仕様 4.5） | 新しく導入したリポジトリが最初に 0% と出る誤表示がなくなる | 0円・小 | 完了（v1.10.5） |
 
 ## 未決事項
 

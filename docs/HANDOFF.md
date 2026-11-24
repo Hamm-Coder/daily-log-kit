@@ -101,6 +101,7 @@ Hamm-Coder/daily-log-kit（公開）          ← このリポジトリ。キッ
 | 11/23 | 利用者が v1.10.4 を8リポジトリに配布してマージ。8つとも v1.10.4、マージ後の自動更新も成功。記録率は GoogleFlow 100%（マージだけの日を数えなくなった）。MangaCreation の直し（#32）は、既定のブランチが main に変わっていたのに古い `claude/manga-auto-generation-system-7t6pjw` 向けに作ってしまい、main に入っていなかった。main 向けに作り直し（#35。#32 の後に増えた 11/23 8:32 のメモ1件も移動）、マージで 100% になった。RPGMZ_Prototype の 83% は、11/19 の PC 作業（D8 の DB 取り込み、プラグイン登録）の日報メモが本当にない分 |
 | 11/23 | lifelog_with_GAS を調査: v1.10.4、開いた PR なし、日報・`gas-test` とも成功、記録率 100%。止まっているのは PC での clasp の初回反映（Apps Script API・clasp login・clasp clone で src/ と比較・初回 push とデプロイ）と、その判断待ち3件 |
 | 11/23 | SPEC L3: 利用者が claude.ai で作った yukkuriScenarioMaker の日報メモ（zip、2件、2026-10-18）を点検して PR（Hamm-Coder/yukkuriScenarioMaker#18）。`date:` とフォルダ・`source: chat`・重なり・「決めたこと」・推定の根拠を点検し、直すものはなかった（推定の根拠はリポジトリの最初のコミットの時刻と一致）。このリポジトリには日報の仕組みがまだ入っていない |
+| 11/23 | 利用者が yukkuriScenarioMaker に v1.10.4 を導入（#19）し、チャットの日報メモ（#18）もマージ。日報の仕組みは9リポジトリに入った。新しい Claude Code のセッションへ引き継ぐ（8章の始め方を書き直した） |
 | 11/24 | 新しいセッションで引き継ぎを確認（9リポジトリを読み取りで追加して調査）。9つとも v1.10.4、開いている PR なし。yukkuriScenarioMaker は導入済み（#19）で #18 もマージ済み。既定のブランチが `claude/...` なのは automaticPromptsMaker と Unity_CharacterTest の2つ（MangaCreation は main に変更済み）。yukkuri の記録率 0% は導入日の朝（導入前）の自動開発のコミットを数えていたため |
 | 11/24 | v1.10.5: 導入前のコミットを記録率から外す（導入時刻で判定）。コミットの件数には含め、分析・ダッシュボードに「導入前のコミット N件は記録の対象外」と表示。仕様 4.5・12.1、検査1件を追加。実データで yukkuri は「対象の日なし（導入前 18件は対象外）」、RPGMZ は 83% のまま |
 
@@ -181,10 +182,32 @@ Hamm-Coder/daily-log-kit（公開）          ← このリポジトリ。キッ
 
 ```
 このリポジトリ（daily-log-kit）の開発を引き継いでください。CLAUDE.md、docs/HANDOFF.md、SPEC.md を読み、
-今の状態と次にやること（SPEC の作業キュー）を3行で要約してから、私が指定した作業キューの項目に着手してください。
+今の状態と次にやること（SPEC の作業キューと HANDOFF 7章「次の一手」）を3行で要約してから、私が指定した項目に着手してください。
+docs/HANDOFF.md の7章「作業上の注意」は必ず読んでから作業してください。
 作業の終わりに SPEC.md の状態と docs/HANDOFF.md の経緯を更新してください。
+説明は日本語で、PC で実行するコマンドは PowerShell で1行ずつ書いてください。
 ```
 
-各リポジトリ（RPGMZ_Prototype など）の日報や導入状況を見る作業では、そのリポジトリをセッションに追加するよう頼む（7章の作業上の注意）。
+### 日報の仕組みを入れたリポジトリ（11/23 時点、9つ。すべて v1.10.4）
+
+| リポジトリ | 既定のブランチ |
+| --- | --- |
+| A1111_SD_TokenCounter | main |
+| automaticPromptsMaker | `claude/html-prompt-generation-system-6z1tgj` |
+| GoogleFlowCharacterMakingTools | main |
+| lifelog_with_GAS（PC のフォルダ名は GAS_LifeLogWebApps） | main |
+| MangaCreation_Sys_withGAS | main |
+| promptBatchExportTool | main |
+| RPGMZ_Prototype | main |
+| Unity_CharacterTest | `claude/vroid-vrm-animation-test-v9utgs` |
+| yukkuriScenarioMaker | main（定期実行の自動開発で PR が多い） |
+
+### 他のリポジトリを扱うときの手順（7章の作業上の注意の要点）
+
+1. `add_repo` でセッションに追加して clone する。clone は浅いので、日報の生成や分析の前に `git fetch --unshallow`（既定のブランチが消えたリポジトリは、先に `git config remote.origin.fetch '+refs/heads/*:refs/remotes/origin/*'`）
+2. PR を作る前に、`git ls-remote --symref origin HEAD` で今の既定のブランチを確かめ、その向きに作る（手元の記録は古いことがある）
+3. そのリポジトリの CLAUDE.md の決まり（ブランチ名、コミットの書き方、テスト）に従う。日報メモは `new-entry` で作り、自動生成の日報は PR に含めない
+4. 「マージしました」と言われたら、PR の先頭のコミットが既定のブランチに入ったかを `git merge-base --is-ancestor` で確かめてから伝える
+5. 他のリポジトリのブランチは消さない（消すのは利用者）
 
 改良を頼むだけなら `prompts/5-claude-code-kit-improve.md` の依頼文（「直して、版を上げて PR にして」）を使う。
